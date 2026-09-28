@@ -2147,8 +2147,66 @@ async function uploadFileToDrive(file,token,folderId){
   const uploadData=await uploadRes.json();
   if(!uploadData.id)throw new Error('업로드 실패');
   const fileId=uploadData.id;
-  await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/permissions`,{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({role:'reader',type:'anyone'})});
+  // (2026-09-28) 공개 링크로 공유하지 않음 — 나만 보기. 화면 표시는 아래 fixDriveImg 가 처리
   return{id:fileId,viewUrl:`https://drive.google.com/uc?export=view&id=${fileId}`,downloadUrl:`https://drive.google.com/uc?export=download&id=${fileId}`,thumbUrl:`https://drive.google.com/thumbnail?id=${fileId}&sz=w400`,bigUrl:`https://drive.google.com/thumbnail?id=${fileId}&sz=w1600`};
+}
+// ── 첨부·붙여넣은 사진을 "나만 보기"로 (2026-09-28)
+//  드라이브 파일을 공개 링크로 두지 않습니다. 대신 화면에 사진을 띄울 때
+//  실비아님 로그인으로 드라이브에서 직접 받아와서 보여줍니다(이 기기 메모리에만 잠깐 보관).
+const DRIVE_IMG_RE=/^https:\/\/drive\.google\.com\/(?:thumbnail|uc)\?(?:.*&)?id=([\w-]+)/;
+const _driveImgCache=new Map();
+function driveImgBlobUrl(id){
+  if(_driveImgCache.has(id))return _driveImgCache.get(id);
+  const p=(async()=>{
+    const token=await driveSilentToken();
+    let r=await fetch(`https://www.googleapis.com/drive/v3/files/${id}?alt=media`,{headers:{Authorization:'Bearer '+token}});
+    if(r.status===401){driveAccessToken=null;driveTokenExpiry=0;const t2=await driveSilentToken();r=await fetch(`https://www.googleapis.com/drive/v3/files/${id}?alt=media`,{headers:{Authorization:'Bearer '+t2}});}
+    if(!r.ok)throw new Error('img '+r.status);
+    return URL.createObjectURL(await r.blob());
+  })();
+  p.catch(()=>_driveImgCache.delete(id));
+  _driveImgCache.set(id,p);
+  return p;
+}
+function fixDriveImg(img){
+  const src=img.getAttribute('src')||'';
+  const m=src.match(DRIVE_IMG_RE);if(!m)return;
+  img.setAttribute('data-drive-src',src);          // 저장할 땐 이 원래 주소로 되돌립니다
+  img.style.opacity='.35';
+  driveImgBlobUrl(m[1]).then(u=>{if(img.getAttribute('data-drive-src')===src){img.src=u;img.style.opacity='';}})
+    .catch(()=>{img.style.opacity='';img.title='사진을 불러오지 못했어요 (드라이브 연결 확인)';});
+}
+new MutationObserver(list=>{
+  for(const mu of list){
+    if(mu.type==='attributes'){if(mu.target.tagName==='IMG')fixDriveImg(mu.target);continue;}
+    mu.addedNodes.forEach(n=>{
+      if(n.nodeType!==1)return;
+      if(n.tagName==='IMG')fixDriveImg(n);
+      else if(n.querySelectorAll)n.querySelectorAll('img').forEach(fixDriveImg);
+    });
+  }
+}).observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['src']});
+// 설명란을 저장할 때, 화면용으로 바꿔 둔 사진 주소를 원래 드라이브 주소로 되돌립니다
+function restoreDriveImgSrc(html){
+  if(!html||html.indexOf('data-drive-src')<0)return html;
+  const t=document.createElement('template');t.innerHTML=html;
+  t.content.querySelectorAll('img[data-drive-src]').forEach(i=>{i.setAttribute('src',i.getAttribute('data-drive-src'));i.removeAttribute('data-drive-src');i.style.opacity='';if(!i.getAttribute('style'))i.removeAttribute('style');});
+  return t.innerHTML;
+}
+// 예전에 공개 링크로 올린 파일들을 한 번에 "나만 보기"로 바꿉니다 (기기연동 창의 버튼)
+async function makeDriveFilesPrivate(){
+  const s=JSON.stringify(state);
+  const ids=[...new Set([...s.matchAll(/drive\.google\.com\/[^"\\ ]*?[?&]id=([\w-]+)/g)].map(m=>m[1]).concat(
+    (state.boards||[]).flatMap(b=>(b.columns||[]).flatMap(c=>(c.cards||[]).flatMap(k=>(k.attachments||[]).map(a=>a.driveId).filter(Boolean))))))];
+  let done=0,already=0,fail=0;
+  const token=await driveSilentToken();
+  for(const id of ids){
+    try{
+      const r=await fetch(`https://www.googleapis.com/drive/v3/files/${id}/permissions/anyoneWithLink`,{method:'DELETE',headers:{Authorization:'Bearer '+token}});
+      if(r.ok)done++;else if(r.status===404)already++;else fail++;
+    }catch(e){fail++;}
+  }
+  return {total:ids.length,done,already,fail};
 }
 function updateDriveStatusUI(){
   const el=document.getElementById('drive-status');if(!el)return;
@@ -4981,7 +5039,7 @@ document.getElementById('modal-desc-display').addEventListener('click',e=>{
   if(e.target.tagName==='IMG'){e.target.classList.toggle('desc-img-zoomed');return;}
   document.getElementById('modal-desc-display').style.display='none';document.getElementById('modal-desc-edit-wrap').style.display='flex';document.getElementById('desc-toolbar').classList.add('visible');document.getElementById('modal-desc-input').focus();
 });
-document.getElementById('modal-desc-save').addEventListener('click',()=>{const card=getActiveCard();if(!card)return;card.desc=document.getElementById('modal-desc-input').innerHTML.trim();saveState();document.getElementById('modal-desc-edit-wrap').style.display='none';document.getElementById('desc-toolbar').classList.remove('visible');document.getElementById('modal-desc-display').style.display='';showDescDisplay(card.desc||'');updateCoverSwitch(card);refreshCard(activeCardId,activeColId);showToast('💾','설명이 저장되었어요!');});
+document.getElementById('modal-desc-save').addEventListener('click',()=>{const card=getActiveCard();if(!card)return;card.desc=restoreDriveImgSrc(document.getElementById('modal-desc-input').innerHTML).trim();saveState();document.getElementById('modal-desc-edit-wrap').style.display='none';document.getElementById('desc-toolbar').classList.remove('visible');document.getElementById('modal-desc-display').style.display='';showDescDisplay(card.desc||'');updateCoverSwitch(card);refreshCard(activeCardId,activeColId);showToast('💾','설명이 저장되었어요!');});
 document.getElementById('modal-desc-cancel').addEventListener('click',()=>{const card=getActiveCard();document.getElementById('modal-desc-edit-wrap').style.display='none';document.getElementById('desc-toolbar').classList.remove('visible');document.getElementById('modal-desc-display').style.display='';showDescDisplay(card?card.desc||'':'');});
 document.getElementById('modal-desc-input').addEventListener('paste',async function(e){
   const items=e.clipboardData&&e.clipboardData.items;if(!items)return;
