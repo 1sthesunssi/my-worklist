@@ -2710,6 +2710,14 @@ let dsVersion=localStorage.getItem('ds_version')||'';
 let dsDirty=localStorage.getItem('ds_dirty')==='1';
 let dsEnabled=localStorage.getItem('ds_enabled')==='1';
 let dsBaseText=null;          // 마지막으로 드라이브와 맞춘 내용(합치기 기준점) — IndexedDB 에 보관
+let dsBusyTimer=null;
+function dsUserBusy(){
+  const a=document.activeElement;
+  if(a&&(a.tagName==='TEXTAREA'||a.isContentEditable||(a.tagName==='INPUT'&&!/^(checkbox|radio|button|submit|range|color|file)$/i.test(a.type||''))))return true;
+  if([...document.querySelectorAll('.add-card-form')].some(f=>f.style.display==='flex'))return true;
+  if(typeof dragCardId!=='undefined'&&(dragCardId||dragColId))return true;
+  return false;
+}
 let dsBusy=false,dsAgain=false,dsPollTimer=null,dsLastOk=Number(localStorage.getItem('ds_last_ok')||0);
 let isSyncing=false;          // 예전 코드 호환용
 function dsSetDirty(v){dsDirty=v;try{localStorage.setItem('ds_dirty',v?'1':'0');}catch(e){}}
@@ -2915,8 +2923,16 @@ async function dsSyncOnce(opts){
     setSyncStatus('syncing','확인 중...');
     const remoteVer=await dsGetMeta();
     if(String(remoteVer)!==String(dsVersion)){
+      // (10/2) 지금 카드를 쓰는 중이면 화면을 다시 그리지 않고 잠시 뒤로 미룸 — 입력 중인 카드가 사라지던 문제
+      if(dsUserBusy()){
+        setSyncStatus('syncing','입력 중 · 잠시 후 맞춤');
+        clearTimeout(dsBusyTimer);dsBusyTimer=setTimeout(()=>dsSyncOnce(),3000);
+        return;
+      }
       // 다른 기기에서 바뀜 → 받아오기
       const text=await dsDownload();
+      if(text===dsBaseText){dsVersion=String(remoteVer);dsSaveMeta();}   // 내용이 같으면 화면을 건드리지 않음
+      else{
       let remote=null;try{remote=JSON.parse(text);}catch(e){throw new Error('드라이브 파일을 읽을 수 없어요.');}
       if(remote&&remote.boards){
         if((!dsDirty&&dsBaseText!==null)||!dsHasContent(state)){
@@ -2931,13 +2947,20 @@ async function dsSyncOnce(opts){
         }
       }
       await dsSetBase(text);dsVersion=String(remoteVer);dsSaveMeta();
+      }
     }
     if(dsDirty){
-      setSyncStatus('syncing','저장 중...');
       const text=JSON.stringify(state);
-      const v=await dsUpload(text);
-      await dsSetBase(text);dsVersion=String(v);
-      if(JSON.stringify(state)===text)dsSetDirty(false);   // 올리는 사이 또 고쳤으면 다음 차례에 다시 올림
+      if(text===dsBaseText){dsSetDirty(false);}            // 드라이브와 똑같으면 올리지 않음
+      else{
+        // 올리기 직전에 한 번 더 확인 — 그 사이 다른 기기가 저장했으면 먼저 받아서 합친 뒤 올림
+        const v0=await dsGetMeta();
+        if(String(v0)!==String(dsVersion)){dsAgain=true;return;}
+        setSyncStatus('syncing','저장 중...');
+        const v=await dsUpload(text);
+        await dsSetBase(text);dsVersion=String(v);
+        if(JSON.stringify(state)===text)dsSetDirty(false);   // 올리는 사이 또 고쳤으면 다음 차례에 다시 올림
+      }
     }
     dsLastOk=Date.now();dsSaveMeta();
     setSyncStatus('ok','드라이브 저장됨');
@@ -3591,10 +3614,14 @@ const MAX_UNDO=30;
 function saveState(){
   // 이번 변경이 일어나기 '직전' 상태(lastSnapshot)를 실행취소 스택에 쌓고,
   // 이번 변경 후의 상태를 다음번 비교 기준으로 갱신합니다.
-  undoStack.push(lastSnapshot);
-  if(undoStack.length>MAX_UNDO)undoStack.shift();
-  lastSnapshot=JSON.stringify(state);
-  saveLocal();debouncedPush();
+  // (10/2) 화면만 다시 그리고 내용은 그대로면 저장·동기화하지 않음 — 기기끼리 끝없이 서로 저장하던 문제 원인
+  const snap=JSON.stringify(state);
+  if(snap!==lastSnapshot){
+    undoStack.push(lastSnapshot);
+    if(undoStack.length>MAX_UNDO)undoStack.shift();
+    lastSnapshot=snap;
+    saveLocal();debouncedPush();
+  }
   updateUndoBtn();
   if(typeof updateReminderBadge==='function')updateReminderBadge();
 }
