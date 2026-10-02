@@ -1357,6 +1357,13 @@ body{font-family:'NanumSquare',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-
 .wv-sheet{background:#fff;border-radius:12px;box-shadow:0 1px 2px rgba(9,30,66,.08),0 6px 24px rgba(9,30,66,.08);max-width:1180px;margin:0 auto}
 .wv-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:14px 18px;border-bottom:1px solid #e6e9ef}
 .wv-head h2{font-size:16px;font-weight:800}
+#modal-meta{font-size:12px;color:#97a0af;margin-top:3px;padding-left:7px;letter-spacing:-.1px}
+.wv-days{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:10px 18px;border-bottom:1px solid #eef0f3;background:#fbfcfd}
+.wv-days button{border:1px solid #e1e4ea;background:#fff;border-radius:999px;padding:4px 12px;font-size:12px;font-weight:700;color:var(--muted);cursor:pointer;font-family:inherit}
+.wv-days button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.wv-days input[type=date]{border:1px solid #e1e4ea;border-radius:999px;padding:3px 10px;font-size:12px;font-family:inherit;color:var(--text);background:#fff}
+.wv-days input[type=date].on{border-color:var(--accent);box-shadow:0 0 0 2px rgba(0,82,204,.15)}
+.wv-reg{font-size:12px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
 .wv-sub{font-size:12px;color:var(--muted);font-weight:600}
 .wv-sp{flex:1}
 .wv-scope{display:inline-flex;background:#f6f7f9;border-radius:7px;padding:2px;border:1px solid #e6e9ef}
@@ -1682,6 +1689,7 @@ body{font-family:'NanumSquare',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-
     <div id="modal-header">
       <textarea id="modal-title" rows="1" placeholder="카드 제목..."></textarea>
       <div id="modal-col-label"></div>
+      <div id="modal-meta"></div>
     </div>
     <button id="modal-close">✕</button>
     <div id="modal-body">
@@ -2887,7 +2895,7 @@ function dsHasContent(s){
 }
 function dsCountCards(s){return (s.boards||[]).reduce((n,b)=>n+(b.columns||[]).reduce((m,c)=>m+(c.cards||[]).length,0),0);}
 function dsApplyState(next){
-  state=next;lastSnapshot=JSON.stringify(state);saveLocal();
+  state=next;if(typeof cardSigScan==='function')cardSigScan(false);lastSnapshot=JSON.stringify(state);saveLocal();
   isSyncing=true;try{renderCurrentView();}catch(e){console.error(e);}isSyncing=false;
 }
 
@@ -3609,14 +3617,28 @@ bindOverlayClose('sync-overlay',closeSyncModal);
 //  실행취소 (UNDO)
 // ════════════════════════════
 let undoStack=[];
+// (10/2) 카드 최종 수정 시각 — 저장할 때 카드 내용(또는 리스트)이 바뀐 카드에 updatedAt 을 찍어요.
+//  다른 기기에서 받아온 변경은 찍지 않아요(그 기기에서 이미 찍혀서 옴). 같은 리스트 안 순서만 바꾼 건 수정으로 안 셈.
+let _cardSig=null;
+function cardSigScan(stamp){
+  const now=Date.now(),m=new Map();
+  (state.boards||[]).forEach(b=>(b.columns||[]).forEach(c=>(c.cards||[]).forEach(k=>{
+    const {updatedAt,...rest}=k;const sig=c.id+'|'+JSON.stringify(rest);
+    if(stamp&&_cardSig&&_cardSig.has(k.id)&&_cardSig.get(k.id)!==sig)k.updatedAt=now;
+    m.set(k.id,sig);
+  })));
+  _cardSig=m;
+}
+cardSigScan(false);
 let lastSnapshot=JSON.stringify(state);
 const MAX_UNDO=30;
 function saveState(){
   // 이번 변경이 일어나기 '직전' 상태(lastSnapshot)를 실행취소 스택에 쌓고,
   // 이번 변경 후의 상태를 다음번 비교 기준으로 갱신합니다.
   // (10/2) 화면만 다시 그리고 내용은 그대로면 저장·동기화하지 않음 — 기기끼리 끝없이 서로 저장하던 문제 원인
-  const snap=JSON.stringify(state);
+  let snap=JSON.stringify(state);
   if(snap!==lastSnapshot){
+    cardSigScan(true);snap=JSON.stringify(state);
     undoStack.push(lastSnapshot);
     if(undoStack.length>MAX_UNDO)undoStack.shift();
     lastSnapshot=snap;
@@ -3630,6 +3652,7 @@ function undoLast(){
   if(!undoStack.length){showToast('↩️','더 이상 실행취소할 내역이 없어요.',2200);return;}
   const prev=undoStack.pop();
   state=JSON.parse(prev);
+  cardSigScan(false);
   lastSnapshot=JSON.stringify(state);
   saveLocal();
   clearTimeout(_pt); // 취소 전 변경사항이 뒤늦게 다시 올라가지 않도록 예약된 동기화를 정리
@@ -4152,6 +4175,9 @@ const WV_BUCKETS=[
   {k:'later',name:'나중',hint:'다음 주 이후',color:'#8993a4'},
   {k:'none',name:'날짜 없음',hint:'마감일 미지정',color:'#c1c7d0'},
 ];
+// 카드 창 제목 밑: 등록 10.1(목) 13:20 · 수정 10.2(금) 09:41
+function fmtStamp(t){if(!t)return '';const d=new Date(+t);if(isNaN(d))return '';const w='일월화수목금토'[d.getDay()];const p=n=>String(n).padStart(2,'0');const y=d.getFullYear()!==new Date().getFullYear()?String(d.getFullYear()).slice(2)+'.':'';return `${y}${d.getMonth()+1}.${d.getDate()}(${w}) ${p(d.getHours())}:${p(d.getMinutes())}`;}
+function renderModalMeta(card){const el=document.getElementById('modal-meta');if(!el)return;const parts=[];if(card.createdAt)parts.push('등록 '+fmtStamp(card.createdAt));if(card.updatedAt)parts.push('수정 '+fmtStamp(card.updatedAt));el.textContent=parts.join(' · ');el.style.display=parts.length?'':'none';}
 function wvGet(k,def){try{const v=localStorage.getItem(k);return v===null?def:v;}catch(e){return def;}}
 function wvSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
 let wvScope=wvGet('wv-scope','board');        // 'board' | 'all'
@@ -4209,7 +4235,7 @@ function renderAltView(){
   const keep=el.scrollTop;
   if(wvMode()==='table')wvRenderTable(el);else wvRenderDash(el);
   el.scrollTop=keep;
-  el.querySelectorAll('.wv-scope button').forEach(x=>x.onclick=()=>{wvScope=x.dataset.s;wvSet('wv-scope',wvScope);renderAltView();});
+  el.querySelectorAll('.wv-scope button[data-s]').forEach(x=>x.onclick=()=>{wvScope=x.dataset.s;wvSet('wv-scope',wvScope);renderAltView();});
 }
 // 카드가 바뀔 때(저장될 때)마다 표·대시보드도 다시 그려요. 한 번에 몰아서.
 function queueAltRender(){
@@ -4218,7 +4244,56 @@ function queueAltRender(){
 }
 
 // ─── 표 ───
+// (10/2) 표 보기 — [마감일순 | 등록일별] 전환. 등록일별은 날짜로 묶고 오늘·어제·날짜 고르기로 좁혀 봄
+let wvSort=wvGet('wv-sort','due'),wvDay='';
+function wvSortSeg(){return `<div class="wv-scope"><button data-o="due" class="${wvSort==='due'?'on':''}">마감일순</button><button data-o="created" class="${wvSort==='created'?'on':''}">등록일별</button></div>`;}
+function wvBindSortSeg(el){el.querySelectorAll('[data-o]').forEach(x=>x.onclick=()=>{wvSort=x.dataset.o;wvSet('wv-sort',wvSort);renderAltView();});}
+function wvYmd(t){const d=new Date(+t);const p=n=>String(n).padStart(2,'0');return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;}
+function wvRenderTableByCreated(el){
+  const all=wvScope==='all';
+  const today=wvYmd(Date.now()),yest=wvYmd(Date.now()-86400000);
+  let rows=wvRows().filter(r=>r.card.createdAt);
+  if(wvDay)rows=rows.filter(r=>wvYmd(r.card.createdAt)===wvDay);
+  rows.sort((a,b)=>(+b.card.createdAt)-(+a.card.createdAt));
+  const days=[];const byDay=new Map();
+  rows.forEach(r=>{const k=wvYmd(r.card.createdAt);if(!byDay.has(k)){byDay.set(k,[]);days.push(k);}byDay.get(k).push(r);});
+  const p=n=>String(n).padStart(2,'0');
+  let body='';
+  days.forEach(k=>{
+    const list=byDay.get(k);const d=new Date(k+'T00:00:00');const w='일월화수목금토'[d.getDay()];
+    const tag=k===today?' · 오늘':k===yest?' · 어제':'';
+    const yr=d.getFullYear()!==new Date().getFullYear()?d.getFullYear()+'년 ':'';
+    body+=`<tr class="wv-grp"><td colspan="6"><span class="wv-dot" style="background:var(--accent);margin-right:6px"></span>${yr}${d.getMonth()+1}월 ${d.getDate()}일 (${w})${tag}<span class="n">${list.length}</span></td></tr>`;
+    body+=list.map(({card,b,col,done})=>{const t=new Date(+card.createdAt);return `<tr class="wv-row${done?' done':''}${card.starred?' starred':''}" data-b="${b.id}" data-c="${col.id}" data-id="${card.id}">
+      <td style="width:30px"><input type="checkbox" class="wv-cbx" ${card.done?'checked':''} ${wvIsDoneList(col)&&!card.done?'disabled title="완료 리스트에 있는 카드예요"':''}></td>
+      <td><div class="wv-title">${card.starred?'<span class="wv-star">★</span>':''}${esc(card.title)}${card.recurring?'<span class="wv-rep" title="반복 카드">🔁</span>':''}</div></td>
+      <td class="c-where"><div class="wv-where">${all?`<span class="wv-dot" style="background:${getBoardColor(b)}"></span>${esc(b.title)} ›`:''} ${esc(col.title)}</div></td>
+      <td class="c-lbl">${wvChips(card,b)}</td>
+      <td class="wv-reg">${p(t.getHours())}:${p(t.getMinutes())}</td>
+      <td style="white-space:nowrap">${wvDueBadge(card,done)}</td></tr>`;}).join('');
+  });
+  const dayLabel=wvDay===today?'오늘':wvDay===yest?'어제':wvDay?wvDay.slice(5).replace('-','.')+' ':'';
+  el.innerHTML=`<div class="wv-sheet">
+    <div class="wv-head"><h2>표로 보기</h2>${wvSortSeg()}<span class="wv-sub">${wvDay?dayLabel+' 등록':'등록 최신순'} · ${rows.length}장</span><span class="wv-sp"></span>${wvScopeSeg()}</div>
+    <div class="wv-days"><button data-d="" class="${!wvDay?'on':''}">전체</button><button data-d="${today}" class="${wvDay===today?'on':''}">오늘</button><button data-d="${yest}" class="${wvDay===yest?'on':''}">어제</button>
+      <input type="date" id="wv-day-pick" value="${wvDay&&wvDay!==today&&wvDay!==yest?wvDay:''}" class="${wvDay&&wvDay!==today&&wvDay!==yest?'on':''}" max="${today}" title="날짜 고르기"></div>
+    <div class="wv-tbl-wrap"><table class="wv-tbl"><thead><tr><th></th><th>카드</th><th class="c-where">${all?'보드 › 리스트':'리스트'}</th><th class="c-lbl">라벨</th><th>등록</th><th>마감</th></tr></thead>
+    <tbody>${body||`<tr><td colspan="6" class="wv-empty">${wvDay?'이 날 등록한 카드가 없어요':'카드가 없어요'}</td></tr>`}</tbody></table></div></div>`;
+  wvBindSortSeg(el);
+  el.querySelectorAll('.wv-days [data-d]').forEach(x=>x.onclick=()=>{wvDay=x.dataset.d;renderAltView();});
+  el.querySelector('#wv-day-pick').onchange=e=>{wvDay=e.target.value||'';renderAltView();};
+  el.querySelectorAll('.wv-row').forEach(tr=>{
+    const cb=tr.querySelector('.wv-cbx');
+    cb.addEventListener('click',e=>e.stopPropagation());
+    cb.addEventListener('change',e=>{
+      const card=wvFind(tr.dataset.b,tr.dataset.c,tr.dataset.id);if(!card)return;
+      applyCardDone(card,e.target.checked);saveState();gtaskSync(card);renderAltView();
+    });
+    tr.addEventListener('click',()=>wvOpenCard(tr.dataset.b,tr.dataset.c,tr.dataset.id));
+  });
+}
 function wvRenderTable(el){
+  if(wvSort==='created')return wvRenderTableByCreated(el);
   let rows=wvRows().filter(r=>wvShowDone||!r.done);
   rows.sort((a,b)=>{const x=a.card.due,y=b.card.due;if(!x&&!y)return 0;if(!x)return 1;if(!y)return -1;return x<y?-1:x>y?1:0;});
   const all=wvScope==='all',cols=all?5:5;
@@ -4236,11 +4311,12 @@ function wvRenderTable(el){
       <td style="white-space:nowrap">${wvDueBadge(card,done)}</td></tr>`).join('');
   });
   el.innerHTML=`<div class="wv-sheet">
-    <div class="wv-head"><h2>표로 보기</h2><span class="wv-sub">마감일 빠른 순 · ${rows.length}장</span><span class="wv-sp"></span>
+    <div class="wv-head"><h2>표로 보기</h2>${wvSortSeg()}<span class="wv-sub">마감일 빠른 순 · ${rows.length}장</span><span class="wv-sp"></span>
       <label class="wv-chk"><input type="checkbox" id="wv-show-done" ${wvShowDone?'checked':''}> 완료 카드도 보기</label>${wvScopeSeg()}</div>
     <div class="wv-tbl-wrap"><table class="wv-tbl"><thead><tr><th></th><th>카드</th><th class="c-where">${all?'보드 › 리스트':'리스트'}</th><th class="c-lbl">라벨</th><th>마감</th></tr></thead>
     <tbody>${body||`<tr><td colspan="${cols}" class="wv-empty">카드가 없어요</td></tr>`}</tbody></table></div></div>`;
   el.querySelector('#wv-show-done').onchange=e=>{wvShowDone=e.target.checked;wvSet('wv-show-done',wvShowDone?'1':'0');renderAltView();};
+  wvBindSortSeg(el);
   el.querySelectorAll('.wv-row').forEach(tr=>{
     const cb=tr.querySelector('.wv-cbx');
     cb.addEventListener('click',e=>e.stopPropagation());
@@ -5033,7 +5109,7 @@ function showDescDisplay(html){
 function openModal(cardId,colId){
   activeCardId=cardId;activeColId=colId;
   const b=getBoard();const col=b.columns.find(c=>c.id===colId);const card=col.cards.find(c=>c.id===cardId);
-  document.getElementById('modal-title').value=card.title;document.getElementById('modal-col-label').textContent='리스트: '+col.title;
+  document.getElementById('modal-title').value=card.title;renderModalMeta(card);document.getElementById('modal-col-label').textContent='리스트: '+col.title;
   document.getElementById('modal-done-chk').checked=!!card.done;updateDoneRow(card.done);
   const dew=document.getElementById('modal-desc-edit-wrap');
   document.getElementById('modal-desc-display').style.display='';dew.style.display='none';document.getElementById('desc-toolbar').classList.remove('visible');
