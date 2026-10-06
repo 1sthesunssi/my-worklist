@@ -4139,7 +4139,7 @@ function goHome(){
   document.getElementById('board-bar').classList.remove('visible');
   document.getElementById('hdr-search').value='';
   const __hsr=document.getElementById('hdr-search-results');if(__hsr){__hsr.classList.remove('open');__hsr.innerHTML='';}
-  document.body.style.background='#ffffff';
+  document.body.style.background='#e9edf2';   // 홈 배경: 흰색 대신 톤다운한 회색 — 흰 카드·칸이 또렷하게 보이도록 (10/6)
   toggleSideNav(false);
   renderHome();
   if(!isPopStateNav){
