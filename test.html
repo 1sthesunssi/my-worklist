@@ -8069,7 +8069,7 @@ function renderContractSection(card){
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <span style="font-size:12px;font-weight:800;padding:3px 9px;border-radius:4px;background:#00875a;color:#fff">계약 확정</span>
         <span style="font-size:13px;color:#216e4e;font-weight:700">${esc(c.date)}</span>
-        <span style="margin-left:auto;display:flex;gap:6px"><button type="button" class="ct-btn" style="min-height:36px;font-size:12.5px" onclick="ctEdit()">고치기</button><button type="button" class="ct-btn" style="min-height:36px;font-size:12.5px" onclick="ctRemove()">계약 지우기</button></span>
+        <span style="margin-left:auto;display:flex;gap:6px"><button type="button" class="ct-btn" style="min-height:36px;font-size:12.5px" onclick="ctEdit()">수정</button><button type="button" class="ct-btn" style="min-height:36px;font-size:12.5px" onclick="ctRemove()">계약 지우기</button></span>
       </div>
       <div class="ct-vals"><div><small>구분</small><b>${esc(ctCat(c.cat))}</b></div><div><small>상품</small><b>${esc(c.product||'-')}</b></div><div><small>${CT_UNIT[ctCat(c.cat)]||'보험료'}</small><b>${ctWon(c.amount)}원</b></div></div>
       ${c.memo?`<div style="font-size:12.5px;color:#44546f">메모: ${esc(c.memo)}</div>`:''}
