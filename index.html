@@ -1456,6 +1456,7 @@ body{font-family:'NanumSquare',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-
     <button class="hdr-btn icon-only" id="undo-btn" onclick="undoLast()" title="실행취소 (Ctrl+Z)" disabled>↩</button>
     <button class="hdr-btn" id="myday-btn" onclick="openMyDay()">나의 하루<span id="myday-badge" class="hdr-badge" style="display:none"></span></button>
     <button class="hdr-btn" id="planner-btn" onclick="openPlanner()">✍️ 플래너</button>
+    <button class="hdr-btn" id="sales-btn" onclick="openSales()">💰 매출</button>
     <button class="hdr-btn" onclick="openCalendar()">캘린더</button>
     <div id="sync-status" onclick="openSyncModal()" title="기기 연동 (구글 드라이브)" style="cursor:pointer"><div id="sync-dot"></div><span id="sync-text">연결 안 됨</span></div>
     <div id="more-wrap">
@@ -1843,6 +1844,7 @@ body{font-family:'NanumSquare',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-
             </div>
           </div>
         </div>
+        <div id="modal-contract-section"></div>
       </div>
       <div id="modal-sidebar">
         <div class="sb-sec">라벨</div>
@@ -4881,7 +4883,7 @@ function renderCard(card,colId){
   // 카드 커버 — 이 카드에서 "카드 커버" 스위치를 끄지 않은 이상 기본으로 보여줍니다(트렐로처럼 기본 켜짐)
   const coverSrc=card.coverHidden?'':getCardCoverSrc(card);
   const coverHtml=coverSrc?`<img class="card-cover" src="${coverSrc}" alt="" loading="lazy" onerror="this.style.display='none'">`:'';
-  el.innerHTML=`${coverHtml}<button class="card-star-btn${card.starred?' on':''}" title="${card.starred?'별표 해제':'별표 표시'}">${card.starred?'★':'☆'}</button>${labHtml}<div class="card-title-row"><input type="checkbox" class="card-done-check" ${card.done?'checked':''} title="완료 토글"><span class="card-title">${esc(card.title)}</span></div>${(startBadge||phoneBadge||dueBadge||clBadge||attBadge)?`<div class="card-meta">${startBadge}${phoneBadge}${dueBadge}${clBadge}${attBadge}</div>`:''}<div class="card-actions"><button class="ca-btn ca-edit" title="편집">✏️</button><button class="ca-btn ca-copy" title="카드 복사">⧉</button><button class="ca-btn ca-del" title="삭제">🗑️</button></div>`;
+  el.innerHTML=`${coverHtml}<button class="card-star-btn${card.starred?' on':''}" title="${card.starred?'별표 해제':'별표 표시'}">${card.starred?'★':'☆'}</button>${labHtml}<div class="card-title-row"><input type="checkbox" class="card-done-check" ${card.done?'checked':''} title="완료 토글"><span class="card-title">${esc(card.title)}</span></div>${(()=>{const ctB=contractBadgeHtml(card);return (ctB||startBadge||phoneBadge||dueBadge||clBadge||attBadge)?`<div class="card-meta">${ctB}${startBadge}${phoneBadge}${dueBadge}${clBadge}${attBadge}</div>`:'';})()}<div class="card-actions"><button class="ca-btn ca-edit" title="편집">✏️</button><button class="ca-btn ca-copy" title="카드 복사">⧉</button><button class="ca-btn ca-del" title="삭제">🗑️</button></div>`;
   el.querySelector('.card-done-check').addEventListener('change',e=>{e.stopPropagation();applyCardDone(card,e.target.checked);saveState();refreshCard(card.id,colId);gtaskSync(card);});
   el.querySelector('.card-star-btn').addEventListener('click',e=>{e.stopPropagation();card.starred=!card.starred;const btn=el.querySelector('.card-star-btn');btn.textContent=card.starred?'★':'☆';btn.classList.toggle('on',card.starred);el.classList.toggle('starred',card.starred);btn.title=card.starred?'중요 해제':'중요 표시';saveState();if(document.getElementById('modal-star-btn'))updateStarBtn(card);});
   el.querySelector('.ca-edit').addEventListener('click',e=>{e.stopPropagation();openModal(card.id,colId);});
@@ -5114,7 +5116,7 @@ function openModal(cardId,colId){
   const dew=document.getElementById('modal-desc-edit-wrap');
   document.getElementById('modal-desc-display').style.display='';dew.style.display='none';document.getElementById('desc-toolbar').classList.remove('visible');
   showDescDisplay(card.desc||'');document.getElementById('modal-desc-input').innerHTML=card.desc||'';
-  renderLabelPicker(card);renderAttachments(card);renderModalCL(card);renderLocalLinks(card);renderWebLinks(card);renderPhoneSection(card);
+  renderLabelPicker(card);renderAttachments(card);renderModalCL(card);renderLocalLinks(card);renderWebLinks(card);renderPhoneSection(card);try{renderContractSection(card);}catch(e){console.error(e);}
   document.getElementById('local-link-add-form').style.display='none';document.getElementById('local-link-add-btn').style.display='';
   document.getElementById('weblink-add-form').style.display='none';document.getElementById('weblink-add-btn').style.display='';
   updateDateSummary(card);updateGcalBtn(card.due);updateCompletedRow(card);
@@ -7596,6 +7598,227 @@ bindOverlayClose('print-overlay',closePrintView);
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'&&document.getElementById('print-overlay').classList.contains('open'))closePrintView();
 });
+</script>
+
+<style>
+.card-contract-badge{font-size:11px;font-weight:800;color:#216e4e;background:#dcfff1;padding:2px 7px;border-radius:6px;white-space:nowrap}
+#modal-contract-section{margin-top:18px}
+.ct-box{border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.ct-empty{border:1px dashed #c1c7d0;display:flex;flex-direction:row;align-items:center;flex-wrap:wrap;gap:12px}
+.ct-btn{font:inherit;font-size:13.5px;min-height:42px;padding:0 16px;border-radius:8px;border:1px solid #dfe1e6;background:#fff;color:#44546f;cursor:pointer}
+.ct-btn.go{border-color:#00875a;background:#00875a;color:#fff;font-weight:800}
+.ct-form{border:2px solid #00875a;background:#f3fcf7}
+.ct-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.ct-grid label,.ct-field{display:flex;flex-direction:column;gap:4px;font-size:12.5px;font-weight:700;color:#44546f}
+.ct-grid input,.ct-grid select,.ct-field input{font:inherit;font-size:14px;min-height:40px;padding:0 10px;border:1px solid #c1c7d0;border-radius:8px;color:#172b4d;background:#fff;width:100%;box-sizing:border-box}
+.ct-cats{display:flex;gap:6px}
+.ct-cat{flex:1;min-height:40px;border-radius:8px;border:1px solid #c1c7d0;background:#fff;color:#44546f;font:inherit;font-size:13.5px;cursor:pointer}
+.ct-cat.on{border:2px solid #00875a;color:#216e4e;font-weight:800}
+.ct-done{border:1px solid #baf3db;background:#f3fcf7}
+.ct-vals{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;font-size:13px}
+.ct-vals small{display:block;font-size:11.5px;color:#626f86}
+@media(max-width:600px){.ct-grid{grid-template-columns:1fr}}
+#sales-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);z-index:150;overflow-y:auto;padding:28px 12px 60px}
+#sales-overlay.open{display:flex;justify-content:center;align-items:flex-start}
+#sales-panel{background:#e9edf2;border-radius:14px;width:100%;max-width:1100px;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.35);padding:20px;display:flex;flex-direction:column;gap:16px;color:#172b4d;box-sizing:border-box}
+#sales-close{position:absolute;top:12px;right:12px;width:38px;height:38px;border-radius:50%;border:0;background:rgba(9,30,66,.08);font-size:18px;cursor:pointer}
+.sl-card{background:#fff;border:1px solid #dfe1e6;border-radius:12px;padding:14px 16px;box-sizing:border-box}
+.sl-pill{font:inherit;font-size:13px;min-height:38px;padding:0 14px;border-radius:19px;border:1px solid #dfe1e6;background:#fff;color:#44546f;cursor:pointer}
+.sl-pill.on{background:#0052cc;border-color:#0052cc;color:#fff;font-weight:800}
+.sl-cats{display:flex;flex-wrap:wrap;gap:12px}
+.sl-cat{flex:1 1 220px;text-align:left;font:inherit;color:#172b4d;background:#fff;border:2px solid #dfe1e6;border-radius:12px;padding:14px 16px;cursor:pointer;display:flex;flex-direction:column;gap:6px}
+.sl-cat.on{border-color:#0052cc}
+.sl-bars{display:flex;align-items:flex-end;gap:6px;height:190px;border-bottom:1px solid #c1c7d0;padding:0 2px}
+.sl-bar{flex:1 1 0;min-width:0;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px}
+.sl-bar i{display:block;width:70%;max-width:38px;border-radius:4px 4px 0 0}
+.sl-bar span{font-size:10.5px;color:#44546f;font-weight:700;white-space:nowrap}
+.sl-months{display:flex;gap:6px;padding:6px 2px 0}
+.sl-months div{flex:1 1 0;min-width:0;text-align:center;font-size:11.5px;color:#44546f}
+.sl-table{width:100%;border-collapse:collapse;font-size:13px;min-width:560px}
+.sl-table th{text-align:left;color:#5e6c84;font-size:12px;font-weight:700;padding:8px 10px;border-bottom:1px solid #dfe1e6}
+.sl-table td{padding:9px 10px;border-bottom:1px solid #f1f2f4}
+.sl-table tr.go{cursor:pointer}.sl-table tr.go:hover td{background:#f4f7ff}
+</style>
+<div id="sales-overlay" onclick="if(event.target===this)closeSales()"><div id="sales-panel" role="dialog" aria-label="매출"></div></div>
+<script>
+// ════════════════════════════
+//  계약 확정 · 매출 (장기 / 자동차 / 일반 따로 집계) — 테스트판
+// ════════════════════════════
+const CT_CATS=['장기','자동차','일반'];
+const CT_PRODUCTS={'장기':['실손','암/건강','운전자','종합','기타 장기'],'자동차':['개인용','업무용','영업용','이륜차'],'일반':['화재','배상책임','행사배상','승강기배상','적재물','기타 일반']};
+const CT_UNIT={'장기':'월 보험료','자동차':'연 보험료(일시납)','일반':'보험료(일시납)'};
+const ctWon=n=>Math.round(Number(n)||0).toLocaleString('ko-KR');
+const ctMD=d=>d?Number(d.slice(5,7))+'/'+Number(d.slice(8,10)):'';
+let ctEditing=false,ctDraft=null;
+
+function contractBadgeHtml(card){
+  const c=card&&card.contract;if(!c||!c.date)return '';
+  return `<span class="card-contract-badge" title="계약 확정 ${esc(c.date)} · ${esc(c.product||'')} ${ctWon(c.amount)}원">✓ ${esc(c.cat||'')} ${ctMD(c.date)}</span>`;
+}
+
+function renderContractSection(card){
+  const box=document.getElementById('modal-contract-section');if(!box)return;
+  if(!card){box.innerHTML='';return;}
+  const c=card.contract;
+  if(ctEditing){
+    const d=ctDraft;
+    const prods=CT_PRODUCTS[d.cat]||[];
+    box.innerHTML=`<form class="ct-box ct-form" onsubmit="event.preventDefault();ctSave()">
+      <div style="font-size:14px;font-weight:800;color:#216e4e">계약 정보</div>
+      <div class="ct-field">구분 <span style="font-weight:400;color:#626f86">매출이 따로 모여요</span>
+        <div class="ct-cats">${CT_CATS.map(k=>`<button type="button" class="ct-cat${k===d.cat?' on':''}" onclick="ctPickCat('${k}')">${k}</button>`).join('')}</div></div>
+      <div class="ct-grid">
+        <label>확정일 <span style="font-weight:400;color:#626f86">매출이 잡히는 날</span><input type="date" id="ct-date" value="${esc(d.date)}" required></label>
+        <label>상품<select id="ct-product">${prods.map(p=>`<option${p===d.product?' selected':''}>${esc(p)}</option>`).join('')}</select></label>
+        <label>${CT_UNIT[d.cat]} (원)<input type="text" id="ct-amount" inputmode="numeric" value="${d.amount?ctWon(d.amount):''}" placeholder="예: 74,500" oninput="this.value=this.value.replace(/[^0-9]/g,'').replace(/\\B(?=(\\d{3})+(?!\\d))/g,',')" style="text-align:right"></label>
+        <label>증권번호·메모 <span style="font-weight:400;color:#626f86">선택</span><input type="text" id="ct-memo" value="${esc(d.memo||'')}"></label>
+      </div>
+      ${card.done?'':`<label style="display:flex;gap:8px;align-items:center;font-size:13px;color:#44546f"><input type="checkbox" id="ct-markdone" checked> 저장하면 이 카드를 '완료'로 표시</label>`}
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button type="button" class="ct-btn" onclick="ctCancel()">취소</button>
+        <button type="submit" class="ct-btn go">저장</button>
+      </div></form>`;
+    return;
+  }
+  if(c&&c.date){
+    box.innerHTML=`<div class="ct-box ct-done">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span style="font-size:12px;font-weight:800;padding:3px 9px;border-radius:4px;background:#00875a;color:#fff">계약 확정</span>
+        <span style="font-size:13px;color:#216e4e;font-weight:700">${esc(c.date)}</span>
+        <span style="margin-left:auto;display:flex;gap:6px"><button type="button" class="ct-btn" style="min-height:36px;font-size:12.5px" onclick="ctEdit()">고치기</button><button type="button" class="ct-btn" style="min-height:36px;font-size:12.5px" onclick="ctRemove()">계약 지우기</button></span>
+      </div>
+      <div class="ct-vals"><div><small>구분</small><b>${esc(c.cat)}</b></div><div><small>상품</small><b>${esc(c.product||'-')}</b></div><div><small>${CT_UNIT[c.cat]||'보험료'}</small><b>${ctWon(c.amount)}원</b></div></div>
+      ${c.memo?`<div style="font-size:12.5px;color:#44546f">메모: ${esc(c.memo)}</div>`:''}
+      <a href="#" onclick="event.preventDefault();openSales()" style="font-size:12.5px">매출 화면에서 보기 →</a></div>`;
+    return;
+  }
+  box.innerHTML=`<div class="ct-box ct-empty"><div style="flex:1 1 240px;font-size:13px;color:#44546f;line-height:1.5">계약이 확정되면 눌러 주세요. 확정일과 보험료를 적으면 <b>매출 화면</b>에 모여요.</div><button type="button" class="ct-btn go" onclick="ctEdit()">✓ 계약 확정</button></div>`;
+}
+function ctGuessCat(card){
+  const t=(card.title||'')+' '+(document.getElementById('modal-col-label')||{}).textContent;
+  if(/자고|자동차/.test(t))return '자동차';
+  if(/일반|화재|배상|행사|승강기|적재물/.test(t))return '일반';
+  return '장기';
+}
+function ctEdit(){
+  const card=getActiveCard();if(!card)return;
+  const c=card.contract||{};
+  const cat=c.cat||ctGuessCat(card);
+  ctDraft={cat,product:c.product||CT_PRODUCTS[cat][0],date:c.date||localDateStr(new Date()),amount:c.amount||0,memo:c.memo||''};
+  ctEditing=true;renderContractSection(card);
+}
+function ctReadForm(){
+  const g=id=>document.getElementById(id);
+  if(!ctDraft||!g('ct-date'))return;
+  ctDraft.date=g('ct-date').value;ctDraft.product=g('ct-product').value;
+  ctDraft.amount=Number((g('ct-amount').value||'').replace(/[^0-9]/g,''))||0;ctDraft.memo=g('ct-memo').value.trim();
+}
+function ctPickCat(cat){ctReadForm();ctDraft.cat=cat;if(!CT_PRODUCTS[cat].includes(ctDraft.product))ctDraft.product=CT_PRODUCTS[cat][0];renderContractSection(getActiveCard());}
+function ctCancel(){ctEditing=false;ctDraft=null;renderContractSection(getActiveCard());}
+function ctSave(){
+  const card=getActiveCard();if(!card)return;
+  ctReadForm();const d=ctDraft;
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(d.date||'')){showToast('⚠️','확정일을 넣어 주세요.',3000);return;}
+  if(!(d.amount>0)){showToast('⚠️','보험료를 넣어 주세요.',3000);return;}
+  const md=document.getElementById('ct-markdone');const markDone=!!(md&&md.checked);
+  card.contract={cat:d.cat,product:d.product,date:d.date,amount:d.amount,memo:d.memo};
+  if(markDone&&!card.done){applyCardDone(card,true);
+    document.getElementById('modal-done-chk').checked=!!card.done;updateDoneRow(card.done);updateCompletedRow(card);}
+  ctEditing=false;ctDraft=null;
+  saveState();try{refreshCard(card.id,activeColId);}catch(e){}
+  renderContractSection(card);showToast('✅',`${card.contract.cat} 계약을 기록했어요 (${ctMD(card.contract.date)})`,2500);
+}
+async function ctRemove(){
+  const card=getActiveCard();if(!card||!card.contract)return;
+  const ok=await confirm2('계약 지우기','이 카드의 계약 정보를 지울까요?\n매출 화면에서도 빠져요. (카드는 그대로예요)','지우기');if(!ok)return;
+  delete card.contract;saveState();try{refreshCard(card.id,activeColId);}catch(e){}
+  renderContractSection(card);
+}
+// 다른 카드를 열면 쓰던 양식은 닫습니다
+const _ctOpenModal=openModal;
+openModal=function(cardId,colId){ctEditing=false;ctDraft=null;return _ctOpenModal(cardId,colId);};
+
+// ── 매출 화면
+let slPeriod='year',slCat='장기',slFrom='',slTo='';
+function slAll(){
+  const out=[];
+  (state.boards||[]).forEach(b=>(b.columns||[]).forEach(col=>(col.cards||[]).forEach(card=>{
+    const c=card.contract;if(c&&c.date&&CT_CATS.includes(c.cat))out.push({c,card,board:b,col});
+  })));
+  return out;
+}
+function slRange(){
+  const t=new Date(),y=t.getFullYear(),m=t.getMonth();
+  const ds=(Y,M,D)=>localDateStr(new Date(Y,M,D));
+  if(slPeriod==='month')return [ds(y,m,1),ds(y,m+1,0),`${y}년 ${m+1}월`];
+  if(slPeriod==='last')return [ds(y,m-1,1),ds(y,m,0),`${new Date(y,m-1,1).getFullYear()}년 ${new Date(y,m-1,1).getMonth()+1}월`];
+  if(slPeriod==='custom'){
+    if(!slFrom)slFrom=ds(y,m,1);if(!slTo)slTo=localDateStr(t);
+    return [slFrom,slTo,`${slFrom} ~ ${slTo}`];
+  }
+  return [`${y}-01-01`,`${y}-12-31`,`${y}년 전체`];
+}
+function openSales(){
+  try{if(document.getElementById('modal-overlay').classList.contains('open'))closeModal();}catch(e){}
+  renderSales();document.getElementById('sales-overlay').classList.add('open');
+}
+function closeSales(){document.getElementById('sales-overlay').classList.remove('open');}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('sales-overlay').classList.contains('open'))closeSales();});
+function slSet(k,v){if(k==='p')slPeriod=v;if(k==='c')slCat=v;renderSales();}
+function slDates(){slFrom=document.getElementById('sl-from').value;slTo=document.getElementById('sl-to').value;if(slFrom&&slTo&&slFrom>slTo){const x=slFrom;slFrom=slTo;slTo=x;}renderSales();}
+function renderSales(){
+  const panel=document.getElementById('sales-panel');if(!panel)return;
+  const [from,to,label]=slRange();
+  const all=slAll(),inR=d=>d>=from&&d<=to;
+  const sel=all.filter(x=>inR(x.c.date));
+  const sum=a=>a.reduce((s,x)=>s+(Number(x.c.amount)||0),0);
+  const pills=[['year','올해'],['month','이번 달'],['last','지난달'],['custom','직접 지정']].map(([k,t])=>`<button type="button" class="sl-pill${k===slPeriod?' on':''}" onclick="slSet('p','${k}')">${t}</button>`).join('');
+  const sub={'장기':'실손·건강·운전자 등','자동차':'개인용·업무용','일반':'화재·배상·행사 등'};
+  const cats=CT_CATS.map(k=>{const rs=sel.filter(x=>x.c.cat===k);return `<button type="button" class="sl-cat${k===slCat?' on':''}" onclick="slSet('c','${k}')">
+    <span style="display:flex;gap:8px;align-items:center;width:100%"><b style="font-size:15px">${k}</b><span style="font-size:11.5px;color:#5e6c84">${sub[k]}</span><span style="margin-left:auto;font-size:12px;color:#44546f;font-weight:700">${rs.length}건</span></span>
+    <span style="font-size:24px;font-weight:800">${ctWon(sum(rs))}<span style="font-size:13px">원</span></span>
+    <span style="font-size:12px;color:#5e6c84">${CT_UNIT[k]} 합계</span></button>`;}).join('');
+  const mine=sel.filter(x=>x.c.cat===slCat);
+  const Y=Number(from.slice(0,4));
+  const months=[];for(let m=1;m<=12;m++){const key=`${Y}-${String(m).padStart(2,'0')}`;
+    const v=sum(all.filter(x=>x.c.cat===slCat&&x.c.date.startsWith(key)));
+    const mEnd=localDateStr(new Date(Y,m,0));months.push({m,v,on:!(mEnd<from||`${key}-01`>to)});}
+  const max=Math.max(1,...months.map(x=>x.v));
+  const bars=months.map(x=>`<div class="sl-bar" title="${x.m}월 ${slCat} ${ctWon(x.v)}원"><span>${x.v?(x.v/10000).toFixed(1):''}</span><i style="height:${Math.round(x.v/max*150)}px;background:${x.on?'#0052cc':'#b3c7ee'}"></i></div>`).join('');
+  const tm={};mine.forEach(x=>{const p=x.c.product||'(상품 없음)';tm[p]=tm[p]||{n:0,s:0};tm[p].n++;tm[p].s+=Number(x.c.amount)||0;});
+  const tl=Object.entries(tm).sort((a,b)=>b[1].s-a[1].s),tmax=Math.max(1,...tl.map(t=>t[1].s));
+  const types=tl.length?tl.map(([p,t])=>`<div style="display:flex;flex-direction:column;gap:4px"><div style="display:flex;gap:8px;font-size:13px"><b style="flex:1">${esc(p)}</b><span style="color:#44546f">${t.n}건</span><b>${ctWon(t.s)}원</b></div><div style="height:8px;background:#f1f2f4;border-radius:4px"><div style="height:8px;width:${Math.max(2,Math.round(t.s/tmax*100))}%;background:#0052cc;border-radius:4px"></div></div></div>`).join(''):'<div style="font-size:13px;color:#5e6c84">이 기간에 확정된 계약이 없어요</div>';
+  const rows=mine.slice().sort((a,b)=>b.c.date.localeCompare(a.c.date)).map((x,i)=>`<tr class="go" data-i="${i}" title="카드 열기"><td style="white-space:nowrap">${esc(x.c.date)}</td><td><b>${esc(x.card.title)}</b><div style="font-size:11.5px;color:#5e6c84">${esc(x.board.title)} › ${esc(x.col.title)}</div></td><td>${esc(x.c.product||'')}</td><td style="text-align:right;font-weight:700;white-space:nowrap">${ctWon(x.c.amount)}원</td></tr>`).join('');
+  window.__slRows=mine.slice().sort((a,b)=>b.c.date.localeCompare(a.c.date));
+  panel.innerHTML=`<button id="sales-close" type="button" onclick="closeSales()" aria-label="닫기">✕</button>
+    <div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;padding-right:44px">
+      <div><div style="font-size:22px;font-weight:800">💰 매출</div><div style="font-size:12.5px;color:#5e6c84;margin-top:4px">계약 확정일 기준 · ${esc(label)} · 장기/자동차/일반 따로 집계</div></div>
+      <div style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">${pills}</div></div>
+    ${slPeriod==='custom'?`<div class="sl-card" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:13px"><label>시작일 <input type="date" id="sl-from" value="${from}" onchange="slDates()" style="font:inherit;min-height:36px;border:1px solid #c1c7d0;border-radius:8px;padding:0 8px"></label> ~ <label>끝일 <input type="date" id="sl-to" value="${to}" onchange="slDates()" style="font:inherit;min-height:36px;border:1px solid #c1c7d0;border-radius:8px;padding:0 8px"></label></div>`:''}
+    <div class="sl-cats">${cats}</div>
+    <div style="font-size:12px;color:#5e6c84;margin-top:-6px">칸을 누르면 아래가 그 구분으로 바뀌어요. 세 구분은 금액 성격이 달라 서로 더하지 않아요.</div>
+    <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start">
+      <div class="sl-card" style="flex:999 1 520px;min-width:0"><div style="font-size:15px;font-weight:800">월별 ${slCat} 보험료 (${Y}년)</div><div style="font-size:12px;color:#5e6c84;margin:2px 0 12px">고른 기간의 달은 진하게 · 숫자는 만 원 단위</div>
+        <div class="sl-bars">${bars}</div><div class="sl-months">${months.map(x=>`<div>${x.m}월</div>`).join('')}</div></div>
+      <div class="sl-card" style="flex:1 1 300px;min-width:0;display:flex;flex-direction:column;gap:10px"><div style="font-size:15px;font-weight:800">${slCat} · 상품별</div>${types}</div>
+    </div>
+    <div class="sl-card"><div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap"><div style="font-size:15px;font-weight:800">${slCat} 계약 목록 <span style="font-size:12px;color:#5e6c84;font-weight:400">${mine.length}건 · 누르면 카드가 열려요</span></div>
+      <button type="button" class="ct-btn" style="margin-left:auto;min-height:36px;font-size:12.5px" onclick="slExport()">엑셀(CSV)로 내보내기</button></div>
+      <div style="overflow-x:auto">${mine.length?`<table class="sl-table"><thead><tr><th>확정일</th><th>카드</th><th>상품</th><th style="text-align:right">${CT_UNIT[slCat]}</th></tr></thead><tbody id="sl-tbody">${rows}</tbody></table>`:'<div style="font-size:13px;color:#5e6c84;padding:8px 0">이 기간에 확정된 계약이 없어요</div>'}</div></div>`;
+  const tb=document.getElementById('sl-tbody');
+  if(tb)tb.addEventListener('click',e=>{const tr=e.target.closest('tr[data-i]');if(!tr)return;const x=window.__slRows[Number(tr.dataset.i)];if(!x)return;
+    closeSales();openBoard(x.board.id);setTimeout(()=>openModal(x.card.id,x.col.id),200);});
+}
+function slExport(){
+  const [from,to]=slRange();
+  const rows=slAll().filter(x=>x.c.date>=from&&x.c.date<=to).sort((a,b)=>a.c.date.localeCompare(b.c.date));
+  const q=s=>'"'+String(s==null?'':s).replace(/"/g,'""')+'"';
+  const lines=[['확정일','구분','상품','보험료(원)','카드 제목','보드','리스트','메모'].map(q).join(',')]
+    .concat(rows.map(x=>[x.c.date,x.c.cat,x.c.product,Number(x.c.amount)||0,x.card.title,x.board.title,x.col.title,x.c.memo||''].map(q).join(',')));
+  const blob=new Blob(['﻿'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`매출_${from}_${to}.csv`;
+  document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);
+}
 </script>
 </body>
 </html>
