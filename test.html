@@ -3144,6 +3144,14 @@ function dsNotifyConflicts(before){
   if(fresh)showToast('⚠️',`다른 기기와 겹친 것이 있어요. 확인할 것 ${mwlOpenCount()}건`,5000);
   mwlRenderConflictBtn();
 }
+// (Codex 3차 · 실제 브라우저에서 발견) 드라이브 내용을 그대로 받는 경로(이 기기에 안 올린 변경이 없을 때)에서도
+// 보류함·충돌 알림을 다시 그림. 화면에 자료를 반영하는 모든 경로가 dsApplyState 를 지나므로 여기서 한 번에 처리
+const _mwlApplyState=dsApplyState;
+dsApplyState=function(next){
+  let before=[];try{before=mwlOpenSig();}catch(e){}
+  _mwlApplyState(next);
+  try{dsNotifyConflicts(before);}catch(e){}
+};
 
 
 const DS_RETRY_MAX=6;
@@ -3208,11 +3216,9 @@ async function dsSyncOnce(opts){
           // 이 기기에도 안 올린 변경이 있음 (또는 이 기기에서 처음 연결) → 합치기
           dsMarkDeleted();
           const base=dsBaseText!==null?JSON.parse(dsBaseText):DS_NOBASE;
-          const before=mwlOpenSig();
           const merged=mwlMerge(base,JSON.parse(JSON.stringify(state)),remote);
           dsApplyState(merged);
           dsSetDirty(!dsEq(merged,remote));
-          dsNotifyConflicts(before);
         }
       }
       await dsSetBase(text);dsVersion=got.version;dsEtag=got.etag;dsSaveMeta();
