@@ -3040,6 +3040,17 @@ function mwlMerge(base, local, remote) {
   const held = B ? dsMerge(B.held || {}, local.held || {}, remote.held || {})
                  : Object.assign({}, remote.held || {}, local.held || {});
   const at = new Date().toISOString();
+  // 삭제 확정한 수정본의 '지문' — 같은 수정본이 다시 들어와도 또 보류하지 않음 (Codex 3차 ①)
+  const dropped = B ? dsMerge(B.heldDropped || {}, local.heldDropped || {}, remote.heldDropped || {})
+                    : Object.assign({}, remote.heldDropped || {}, local.heldDropped || {});
+  // 보류함에 넣기: 수정본 내용의 지문(fp)을 함께 기록. 충돌 id 에 fp 가 들어가므로
+  //  · 새 수정본 → 새 충돌(미확인)   · 같은 수정본 반복 수신 → 같은 충돌(알림 반복 없음)
+  const putHeld = (id, X) => {
+    const fp = mwlHid(JSON.stringify(X.card));
+    if (dropped[id] === fp) return;                                   // 이미 '삭제 확정'한 바로 그 수정본
+    if (!(held[id] && held[id].fp === fp)) held[id] = { card: X.card, colId: X.col, boardId: X.board, at, fp };
+    conflicts.push({ path: 'card:' + id + '@delete', kind: 'delete-edit', kept: 'held:' + fp, lost: 'card' });
+  };
 
   const bi = B ? mwlCardIndex(B) : new Map(), li = mwlCardIndex(local), ri = mwlCardIndex(remote);
   const colExists = new Set(); (shell.boards || []).forEach(b => (b.columns || []).forEach(c => colExists.add(c.id)));
@@ -3061,16 +3072,14 @@ function mwlMerge(base, local, remote) {
       if (tomb[id] || (Bx && !edited)) {
         if (tomb[id] && edited) {
           // ⑥ 삭제와 수정이 겹침 → 삭제 표시 유지, 수정본은 보류함으로 (보드에는 안 나옴)
-          held[id] = { card: X.card, colId: X.col, boardId: X.board, at };
-          conflicts.push({ path: 'card:' + id + '@delete', kind: 'delete-edit', kept: 'held', lost: 'card' });
+          putHeld(id, X);
         }
         return;                                       // 지운 쪽을 따름
       }
       if (Bx && edited) {
         // 삭제 표시 없이 사라짐(예전 판 기기) + 수정 → 보류함
-        held[id] = { card: X.card, colId: X.col, boardId: X.board, at };
         tomb[id] = tomb[id] || at;
-        conflicts.push({ path: 'card:' + id + '@delete', kind: 'delete-edit', kept: 'held', lost: 'card' });
+        putHeld(id, X);
         return;
       }
       card = X.card; col = X.col;                      // 새로 만든 카드
@@ -3080,7 +3089,7 @@ function mwlMerge(base, local, remote) {
       conflicts.push({ path: 'card:' + id + '@list-missing', kind: 'list-missing', kept: back, lost: col });
       col = back;
     }
-    if (col === undefined) { held[id] = { card, colId: null, boardId: null, at }; return; }
+    if (col === undefined) { putHeld(id, { card, col: null, board: null }); return; }
     place.set(id, { col, card });
   });
 
@@ -3093,6 +3102,7 @@ function mwlMerge(base, local, remote) {
   }));
   shell.tombstones = tomb;
   shell.held = held;
+  shell.heldDropped = dropped;
 
   // AI 접수 상태: "상태|시각|기기" 문자열, 양쪽이 다르게 바꾸면 우선순위(삭제>제외>등록>나중에)
   const ai = {}, la = local.aiInbox || {}, ra = remote.aiInbox || {}, ba = (B && B.aiInbox) || {};
@@ -3126,9 +3136,12 @@ function dsMarkDeleted(){
   const now=mwlCardIndex(state);const at=new Date().toISOString();
   mwlCardIndex(base).forEach((v,id)=>{if(!now.has(id)){state.tombstones=state.tombstones||{};if(!state.tombstones[id])state.tombstones[id]=at;}});
 }
+// 확인할 것의 '목록 서명' — 보류함 카드의 수정본 지문 + 미확인 충돌 id. 새 항목이 생기면(같은 카드의 새 수정본 포함) 알림
+function mwlOpenSig(){return mwlHeldList().map(h=>h.id+':'+(h.fp||'')).concat(mwlOpenConflicts().map(c=>c.id));}
 function dsNotifyConflicts(before){
-  const n=mwlOpenConflicts().length;
-  if(n>before)showToast('⚠️',`다른 기기와 같은 곳을 고친 게 있어요. 확인할 것 ${n}건`,5000);
+  const now=mwlOpenSig(),prev=new Set(before||[]);
+  const fresh=now.filter(x=>!prev.has(x)).length;
+  if(fresh)showToast('⚠️',`다른 기기와 겹친 것이 있어요. 확인할 것 ${mwlOpenCount()}건`,5000);
   mwlRenderConflictBtn();
 }
 
@@ -3195,7 +3208,7 @@ async function dsSyncOnce(opts){
           // 이 기기에도 안 올린 변경이 있음 (또는 이 기기에서 처음 연결) → 합치기
           dsMarkDeleted();
           const base=dsBaseText!==null?JSON.parse(dsBaseText):DS_NOBASE;
-          const before=mwlOpenConflicts().length;
+          const before=mwlOpenSig();
           const merged=mwlMerge(base,JSON.parse(JSON.stringify(state)),remote);
           dsApplyState(merged);
           dsSetDirty(!dsEq(merged,remote));
@@ -3262,45 +3275,55 @@ function mwlConflictLabel(c){
   else if(p.startsWith('aiInbox:'))where='AI 접수 상태';
   return {where,kept:show(c.kept),lost:show(c.lost)};
 }
-function mwlOpenConflicts(){return (state.conflicts||[]).filter(c=>!c.resolved);}
+// 확인할 것 = 보류함에 남은 카드(충돌 기록과 상관없이 항상) + 아직 확인 안 한 다른 충돌
+function mwlHeldList(){return Object.entries((state&&state.held)||{}).map(([id,h])=>Object.assign({id},h));}
+function mwlOpenConflicts(){return (state.conflicts||[]).filter(c=>!c.resolved&&c.kind!=='delete-edit');}
+function mwlOpenCount(){return mwlHeldList().length+mwlOpenConflicts().length;}
 function mwlRenderConflictBtn(){
   let btn=document.getElementById('mwl-conflict-btn');
-  const n=(typeof state!=='undefined'&&state)?mwlOpenConflicts().length:0;
+  const n=(typeof state!=='undefined'&&state)?mwlOpenCount():0;const nh=(typeof state!=='undefined'&&state)?mwlHeldList().length:0;
   if(!btn){
     btn=document.createElement('button');btn.id='mwl-conflict-btn';btn.type='button';
     btn.style.cssText='position:fixed;left:16px;bottom:16px;z-index:9000;background:#974f0c;color:#fff;border:0;border-radius:20px;padding:10px 16px;font:inherit;font-size:13px;font-weight:800;box-shadow:0 6px 18px rgba(0,0,0,.25);cursor:pointer;display:none';
     btn.addEventListener('click',mwlShowConflicts);document.body.appendChild(btn);
   }
-  btn.textContent=`⚠️ 확인할 충돌 ${n}건`;btn.style.display=n?'':'none';
+  btn.textContent=nh?`⚠️ 확인할 것 ${n}건 (보류 ${nh})`:`⚠️ 확인할 충돌 ${n}건`;btn.style.display=n?'':'none';
 }
 function mwlResolve(cid){(state.conflicts||[]).forEach(c=>{if(c.id===cid)c.resolved=true;});}
+function mwlResolveCard(id){(state.conflicts||[]).forEach(c=>{if(c.kind==='delete-edit'&&c.path==='card:'+id+'@delete')c.resolved=true;});}
 // 보류함의 카드를 원래 리스트로 되살림 (삭제 표시도 지움 → 다른 기기에도 전달)
-function mwlRestoreHeld(id,cid){
-  const h=state.held&&state.held[id];if(!h){mwlResolve(cid);return;}
+function mwlRestoreHeld(id){
+  const h=state.held&&state.held[id];if(!h){mwlResolveCard(id);return;}
   let col=null;
   (state.boards||[]).forEach(b=>(b.columns||[]).forEach(c=>{if(c.id===h.colId)col=c;}));
   if(!col){const b=(state.boards||[]).find(x=>x.id===h.boardId)||(state.boards||[])[0];col=b&&b.columns&&b.columns[0];}
   if(!col){showToast('⚠️','되살릴 리스트가 없어요. 리스트를 먼저 만들어 주세요.',4000);return;}
   col.cards.push(h.card);
-  delete state.held[id];if(state.tombstones)delete state.tombstones[id];
-  mwlResolve(cid);saveState();try{renderCurrentView();}catch(e){}
+  delete state.held[id];if(state.tombstones)delete state.tombstones[id];if(state.heldDropped)delete state.heldDropped[id];
+  mwlResolveCard(id);saveState();try{renderCurrentView();}catch(e){}
   showToast('↩️',`「${h.card.title}」 카드를 「${col.title}」에 되살렸어요.`,3500);
 }
-function mwlDropHeld(id,cid){if(state.held)delete state.held[id];mwlResolve(cid);saveState();}
+// 삭제 확정: 이 수정본의 지문을 남겨, 똑같은 수정본이 다시 들어와도 또 묻지 않음. 내용이 다른 새 수정본은 다시 보류함으로 옴
+function mwlDropHeld(id){const h=state.held&&state.held[id];if(h){state.heldDropped=state.heldDropped||{};state.heldDropped[id]=h.fp||'';delete state.held[id];}mwlResolveCard(id);saveState();}
 function mwlShowConflicts(){
   const list=mwlOpenConflicts();
   let box=document.getElementById('mwl-conflict-box');if(box)box.remove();
   box=document.createElement('div');box.id='mwl-conflict-box';
   box.style.cssText='position:fixed;inset:0;z-index:9001;background:rgba(9,30,66,.45);display:flex;align-items:center;justify-content:center;padding:16px';
   const btn='min-height:36px;padding:0 12px;border-radius:8px;border:1px solid #dfe1e6;background:#fff;font:inherit;font-size:12.5px;cursor:pointer';
-  const rows=list.map(c=>{const L=mwlConflictLabel(c);
-    if(L.held!==undefined)return `<div style="border:1px solid #fedec8;background:#fff8f3;border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:6px">
-      <div style="font-weight:800">${esc(L.where)}</div>
-      <div style="font-size:12.5px;color:#5e6c84">고친 카드는 '보류함'에 따로 두었어요. 보드에는 안 보여요.</div>
+  const held=mwlHeldList().sort((x,y)=>String(y.at).localeCompare(String(x.at)));
+  const heldRows=held.map(h=>{const k=h.card||{};const cl=(k.checklist||[]).map(i=>(i.checked?'☑':'☐')+' '+esc(i.text)).join('<br>');
+    const descTxt=String(k.desc||'').replace(/<[^>]+>/g,' ').trim();
+    return `<div class="mwl-item" style="border:1px solid #fedec8;background:#fff8f3;border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:6px">
+      <div style="font-weight:800">「${esc(k.title||'(제목 없음)')}」</div>
+      <div style="font-size:12.5px;color:#5e6c84">한 기기에서는 지우고, 다른 기기에서는 고친 카드예요. 보드에는 안 보여요. · ${esc(String(h.at||'').slice(0,16).replace('T',' '))}</div>
+      <details style="font-size:12.5px"><summary style="cursor:pointer;color:#0052cc">고친 내용 보기</summary>
+        <div style="margin-top:6px;line-height:1.6">${descTxt?esc(descTxt.slice(0,300)):'(설명 없음)'}${cl?'<div style="margin-top:4px">'+cl+'</div>':''}${k.due?'<div>기한 '+esc(k.due)+'</div>':''}</div></details>
       <div style="display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap">
-        <button type="button" data-act="drop" data-id="${esc(L.held)}" data-cid="${esc(c.id)}" style="${btn}">삭제 확정</button>
-        <button type="button" data-act="restore" data-id="${esc(L.held)}" data-cid="${esc(c.id)}" style="${btn};background:#0052cc;border-color:#0052cc;color:#fff;font-weight:800">되살리기</button></div></div>`;
-    return `<div style="border:1px solid #dfe1e6;border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:4px">
+        <button type="button" data-act="drop" data-id="${esc(h.id)}" style="${btn}">삭제 확정</button>
+        <button type="button" data-act="restore" data-id="${esc(h.id)}" style="${btn};background:#0052cc;border-color:#0052cc;color:#fff;font-weight:800">되살리기</button></div></div>`;}).join('');
+  const rows=list.map(c=>{const L=mwlConflictLabel(c);
+    return `<div class="mwl-item" style="border:1px solid #dfe1e6;border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:4px">
     <div style="font-weight:800">${esc(L.where)}</div>
     ${L.kept?`<div style="font-size:12.5px;color:#216e4e">남긴 값: ${esc(L.kept)}</div>`:''}
     ${L.lost?`<div style="font-size:12.5px;color:#974f0c">다른 기기 값: ${esc(L.lost)}</div>`:''}
@@ -3308,16 +3331,18 @@ function mwlShowConflicts(){
   box.innerHTML=`<div style="background:#fff;border-radius:12px;max-width:520px;width:100%;max-height:80vh;overflow:auto;padding:18px;display:flex;flex-direction:column;gap:10px;font-size:13.5px;color:#172b4d">
     <div style="font-size:16px;font-weight:800">다른 기기와 겹친 것</div>
     <div style="font-size:12.5px;color:#5e6c84">같은 곳을 다르게 고친 경우 이 기기 값을 남겼어요. 다른 값이 맞으면 카드를 직접 고친 뒤 "확인했어요"를 눌러 주세요.</div>
-    ${rows||'<div>없어요</div>'}
+    ${heldRows?'<div style="font-size:13px;font-weight:800;margin-top:4px">📥 보류함 '+held.length+'</div>'+heldRows:''}
+    ${rows?'<div style="font-size:13px;font-weight:800;margin-top:4px">같은 곳을 다르게 고친 것 '+list.length+'</div>'+rows:''}
+    ${(!heldRows&&!rows)?'<div>없어요</div>':''}
     <button type="button" id="mwl-conflict-close" style="min-height:40px;border-radius:8px;border:0;background:#0052cc;color:#fff;font:inherit;font-weight:800;cursor:pointer">닫기</button></div>`;
   box.addEventListener('click',e=>{
     if(e.target===box||e.target.id==='mwl-conflict-close'){box.remove();return;}
     const t=e.target.closest&&e.target.closest('button[data-act]');if(!t)return;
     const act=t.dataset.act,cid=t.dataset.cid,id=t.dataset.id;
-    if(act==='restore')mwlRestoreHeld(id,cid);
-    else if(act==='drop')mwlDropHeld(id,cid);
+    if(act==='restore')mwlRestoreHeld(id);
+    else if(act==='drop')mwlDropHeld(id);
     else{mwlResolve(cid);saveState();}
-    t.closest('div[style*="border-radius:10px"]').remove();mwlRenderConflictBtn();
+    const it=t.closest('.mwl-item');if(it)it.remove();mwlRenderConflictBtn();
   });
   document.body.appendChild(box);
 }
