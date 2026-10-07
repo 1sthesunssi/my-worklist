@@ -7980,13 +7980,13 @@ document.addEventListener('keydown',e=>{
 .hs-toggle{font:inherit;font-size:12.5px;font-weight:700;color:var(--muted);background:#fff;border:1px solid #e4e7ea;border-radius:16px;padding:6px 12px;cursor:pointer}
 .hs-toggle:hover{color:var(--text);border-color:#c1c7d0}
 .hs-head a{margin-left:auto;font-size:12px;font-weight:600;color:var(--accent);text-decoration:none}
-.hs-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.hs-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
 .hs-tile{font:inherit;text-align:left;background:#fff;border:1px solid #e4e7ea;border-radius:10px;padding:10px 12px;cursor:pointer;display:flex;flex-direction:column;gap:2px;color:var(--text);min-width:0}
 .hs-tile:hover{border-color:#0052cc}
 .hs-name{font-size:11.5px;color:var(--muted);font-weight:700}
 .hs-amt{font-size:18px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.hs-amt small{font-size:12px;font-weight:700}
 .hs-sub{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-@media(max-width:600px){.hs-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.hs-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .card-contract-badge{font-size:11px;font-weight:800;color:#216e4e;background:#dcfff1;padding:2px 7px;border-radius:6px;white-space:nowrap}
 #modal-contract-section{margin-top:18px}
 .ct-box{border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
@@ -8031,13 +8031,14 @@ document.addEventListener('keydown',e=>{
 //  계약 확정 · 매출 (장기 / 자동차 / 일반 따로 집계) — 테스트판
 // ════════════════════════════
 // 자동차는 DB 와 BB(외부에서 금액이 들어옴)를 따로 집계 — 서로 더하지 않음
-const CT_CATS=['장기','자동차 DB','자동차 BB','일반'];
+const CT_CATS=['장기','자동차 DB','자동차 BB','일반 DB','일반 타사'];
 const CT_AUTO=['개인용','업무용','영업용','이륜차'];
-const CT_PRODUCTS={'장기':['실손','암/건강','운전자','종합','재물','기타 장기'],'자동차 DB':CT_AUTO,'자동차 BB':CT_AUTO,'일반':['화재','배상책임','행사배상','승강기배상','적재물','기타 일반']};
-const CT_UNIT={'장기':'월 보험료','자동차 DB':'연 보험료','자동차 BB':'연 보험료','일반':'보험료(일시납)'};
-const CT_SUB={'장기':'실손·건강·운전자·재물 등','자동차 DB':'DB 자동차','자동차 BB':'외부 입금','일반':'화재·배상·행사 등'};
+const CT_GEN=['화재','배상책임','행사배상','승강기배상','적재물','기타 일반'];
+const CT_PRODUCTS={'장기':['실손','암/건강','운전자','종합','재물','기타 장기'],'자동차 DB':CT_AUTO,'자동차 BB':CT_AUTO,'일반 DB':CT_GEN,'일반 타사':CT_GEN};
+const CT_UNIT={'장기':'월 보험료','자동차 DB':'연 보험료','자동차 BB':'연 보험료','일반 DB':'보험료(일시납)','일반 타사':'보험료(일시납)'};
+const CT_SUB={'장기':'실손·건강·운전자·재물 등','자동차 DB':'DB 자동차','자동차 BB':'외부 입금','일반 DB':'DB 화재·배상 등','일반 타사':'다른 보험사'};
 // 예전에 '자동차'로 적은 계약은 '자동차 DB'로 봄
-const ctCat=c=>c==='자동차'?'자동차 DB':c;
+const ctCat=c=>c==='자동차'?'자동차 DB':c==='일반'?'일반 DB':c;   // 예전 '일반' → '일반 DB'
 const ctWon=n=>Math.round(Number(n)||0).toLocaleString('ko-KR');
 const ctMD=d=>d?Number(d.slice(5,7))+'/'+Number(d.slice(8,10)):'';
 let ctEditing=false,ctDraft=null;
@@ -8088,7 +8089,7 @@ function ctGuessCat(card){
   const t=(card.title||'')+' '+(document.getElementById('modal-col-label')||{}).textContent;
   if(/\bBB\b|비비/i.test(t))return '자동차 BB';
   if(/자고|자동차/.test(t))return '자동차 DB';
-  if(/일반|화재|배상|행사|승강기|적재물/.test(t))return '일반';
+  if(/일반|화재|배상|행사|승강기|적재물/.test(t))return /타사/.test(t)?'일반 타사':'일반 DB';
   return '장기';
 }
 function ctEdit(){
@@ -8209,7 +8210,7 @@ function renderSales(){
       <div style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">${pills}</div></div>
     ${slPeriod==='custom'?`<div class="sl-card" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:13px"><label>시작일 <input type="date" id="sl-from" value="${from}" onchange="slDates()" style="font:inherit;min-height:36px;border:1px solid #c1c7d0;border-radius:8px;padding:0 8px"></label> ~ <label>끝일 <input type="date" id="sl-to" value="${to}" onchange="slDates()" style="font:inherit;min-height:36px;border:1px solid #c1c7d0;border-radius:8px;padding:0 8px"></label></div>`:''}
     <div class="sl-cats">${cats}</div>
-    <div style="font-size:12px;color:#5e6c84;margin-top:-6px">칸을 누르면 아래가 그 구분으로 바뀌어요. 네 구분은 서로 더하지 않아요 (자동차 DB와 BB도 따로).</div>
+    <div style="font-size:12px;color:#5e6c84;margin-top:-6px">칸을 누르면 아래가 그 구분으로 바뀌어요. 구분끼리는 서로 더하지 않아요 (자동차 DB·BB, 일반 DB·타사도 따로).</div>
     <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start">
       <div class="sl-card" style="flex:999 1 520px;min-width:0"><div style="font-size:15px;font-weight:800">월별 ${slCat} 보험료 (${Y}년)</div><div style="font-size:12px;color:#5e6c84;margin:2px 0 12px">고른 기간의 달은 진하게 · 숫자는 만 원 단위</div>
         <div class="sl-bars">${bars}</div><div class="sl-months">${months.map(x=>`<div>${x.m}월</div>`).join('')}</div></div>
