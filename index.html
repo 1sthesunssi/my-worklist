@@ -1439,6 +1439,12 @@ body{font-family:'NanumSquare',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-
   .wv-tbl .c-where,.wv-tbl .c-lbl{display:none}
   .wv-title{max-width:52vw}
 }
+.ph-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 12px;background:#f7f8f9;border:1px solid #e4e7eb;border-radius:10px}
+.ph-lab{font-size:13px;font-weight:700;color:#44546f;white-space:nowrap}
+.ph-num{font-size:15.5px;font-weight:800;color:var(--accent);text-decoration:none;letter-spacing:.2px;font-variant-numeric:tabular-nums}
+.ph-num:hover{text-decoration:underline}
+.ph-edit{font:inherit;font-size:12.5px;height:30px;padding:0 12px;border-radius:7px;border:1px solid #d0d5dc;background:#fff;color:#44546f;cursor:pointer}
+.ph-edit:hover{background:#f1f2f4}
 </style>
 </head>
 <body>
@@ -1821,13 +1827,12 @@ body{font-family:'NanumSquare',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-
           <button id="weblink-add-btn" onclick="showWebLinkForm()">+ 링크 추가</button>
         </div>
         <div id="modal-phone-section" style="display:none">
-          <div class="sec-hd">📞 전화번호</div>
-          <div id="modal-phone-display" style="display:none">
-            <a id="modal-phone-link" href="#" style="font-size:15px;font-weight:700;color:var(--accent);text-decoration:none">-</a>
-            <div class="fbtn" style="margin-top:8px">
-              <button class="bx" onclick="showPhoneEditForm()">✏️ 수정</button>
-            </div>
+          <div id="modal-phone-display" class="ph-row" style="display:none">
+            <span class="ph-lab">📞 전화번호</span>
+            <a id="modal-phone-link" href="#" class="ph-num">-</a>
+            <button type="button" class="ph-edit" onclick="showPhoneEditForm()">수정</button>
           </div>
+          <div id="phone-edit-hd" class="sec-hd" style="display:none">📞 전화번호</div>
           <div id="phone-edit-form">
             <input id="phone-input" type="tel" placeholder="예: 010-1234-5678">
             <div class="fbtn" style="margin-top:6px">
@@ -2493,9 +2498,11 @@ function syncPhoneWidgets(card){
   if(hasPhone){
     disp.style.display='';form.style.display='none';
     const link=document.getElementById('modal-phone-link');
-    link.textContent='📞 '+card.phone;link.href='tel:'+card.phone.replace(/[^0-9+]/g,'');
+    link.textContent=phFmt(card.phone);link.href='tel:'+card.phone.replace(/[^0-9+]/g,'');
+    document.getElementById('phone-edit-hd').style.display='none';
   }else{
     disp.style.display='none';form.style.display='';
+    document.getElementById('phone-edit-hd').style.display='';
   }
   document.getElementById('phone-input').value=card.phone||'';
   document.getElementById('contact-search-box').style.display='none';
@@ -2508,8 +2515,15 @@ function renderPhoneSection(card){
   section.style.display=(card.phone&&card.phone.trim())?'':'none';
   syncPhoneWidgets(card);
 }
+// 숫자만 있는 번호를 보기 좋게: 01026936263 → 010-2693-6263
+function phFmt(p){const d=String(p||'').replace(/[^0-9]/g,'');
+  if(/^01\d{8,9}$/.test(d))return d.replace(/^(\d{3})(\d{3,4})(\d{4})$/,'$1-$2-$3');
+  if(/^02\d{7,8}$/.test(d))return d.replace(/^(02)(\d{3,4})(\d{4})$/,'$1-$2-$3');
+  if(/^0\d{9,10}$/.test(d))return d.replace(/^(\d{3})(\d{3,4})(\d{4})$/,'$1-$2-$3');
+  return String(p);}
 function showPhoneEditForm(){
   document.getElementById('modal-phone-display').style.display='none';
+  document.getElementById('phone-edit-hd').style.display='';
   document.getElementById('phone-edit-form').style.display='';
   document.getElementById('phone-input').focus();
 }
