@@ -8284,7 +8284,7 @@ const aiIdCache={};
 async function aiCardId(p,i){const k=JSON.stringify([String(p),String(i)]);if(aiIdCache[k])return aiIdCache[k];
   const h=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(k));
   return aiIdCache[k]='ai_'+[...new Uint8Array(h)].map(b=>b.toString(16).padStart(2,'0')).join('').slice(0,20);}
-function aiValidResult(j){return j&&j.schemaVersion===3&&typeof j.processId==='string'&&j.processId&&Array.isArray(j.items);}
+function aiValidResult(j){return j&&j.schemaVersion===3&&typeof j.processId==='string'&&j.processId&&Array.isArray(j.items)&&!(j.analysis&&j.analysis.transcriptSource==='synthetic_fixture'&&typeof MWL_TEST==='undefined');}   // 진짜 앱은 가상 시험 자료를 건너뜀
 async function aiLoad(){
   if(aiSample){aiResults=aiSampleResults();aiLoadedAt=Date.now();aiLoadErr='';return;}
   const fid=(state.aiConfig||{}).folderId;
