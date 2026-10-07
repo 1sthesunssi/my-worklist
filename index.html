@@ -7960,6 +7960,18 @@ async function aiLoad(){
   finally{aiLoading=false;}
 }
 // 이미 등록한 카드: 새 판(resultVersion↑)의 '출처 정보'만 빈칸 채우기 (제목·내용·기한·체크리스트는 그대로)
+function aiCleanDesc(){
+  let n=0;
+  (state.boards||[]).forEach(b=>(b.columns||[]).forEach(c=>(c.cards||[]).forEach(k=>{
+    const a=k.ai;if(!a||a.source!=='call'||a.descClean||typeof k.desc!=='string')return;
+    let d=k.desc;
+    d=d.replace(/(<br>)?<a href="[^"]*" target="_blank">▶ 원본 통화<\/a>/g,'');
+    d=d.replace(/(<br>)?<i>근거: “[^<]*”<\/i>/g,'');
+    d=d.replace(/^(<br>)+/,'');
+    a.descClean=1;if(d!==k.desc){k.desc=d;n++;}})));
+  if(n){saveState();try{renderCurrentView();}catch(e){}}
+}
+setTimeout(aiCleanDesc,6000);
 function aiBackfill(){
   const byP={};aiResults.forEach(r=>byP[r.processId]=r);let n=0;
   (state.boards||[]).forEach(b=>(b.columns||[]).forEach(c=>(c.cards||[]).forEach(k=>{
@@ -8013,9 +8025,7 @@ function aiMakeCard(x,col,auto){
   const it=x.it,r=x.r,src=r.source||{};
   const card=mkCard(it.title||'(제목 없음)');card.id=x.cid;
   const lines=[];if(it.desc)lines.push(esc(it.desc));
-  if(it.evidence)lines.push(`<i>근거: “${esc(it.evidence)}”</i>`);
   if(!it.due&&it.dueRaw)lines.push(`기한 원문: “${esc(it.dueRaw)}”${it.dueReason?' — '+esc(it.dueReason):''}`);
-  if(src.link)lines.push(`<a href="${esc(src.link)}" target="_blank">▶ 원본 통화</a>`);
   card.desc=lines.join('<br>');
   if(/^\d{4}-\d{2}-\d{2}$/.test(it.due||''))card.due=it.due;
   if(src.phone)card.phone=src.phone;
