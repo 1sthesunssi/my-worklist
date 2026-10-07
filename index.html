@@ -7691,7 +7691,6 @@ function renderContractSection(card){
         <label>${CT_UNIT[d.cat]} (원)<input type="text" id="ct-amount" inputmode="numeric" value="${d.amount?ctWon(d.amount):''}" placeholder="예: 74,500" oninput="this.value=this.value.replace(/[^0-9]/g,'').replace(/\\B(?=(\\d{3})+(?!\\d))/g,',')" style="text-align:right"></label>
         <label>증권번호·메모 <span style="font-weight:400;color:#626f86">선택</span><input type="text" id="ct-memo" value="${esc(d.memo||'')}"></label>
       </div>
-      ${card.done?'':`<label style="display:flex;gap:8px;align-items:center;font-size:13px;color:#44546f"><input type="checkbox" id="ct-markdone" checked> 저장하면 이 카드를 '완료'로 표시</label>`}
       <div style="display:flex;gap:8px;justify-content:flex-end">
         <button type="button" class="ct-btn" onclick="ctCancel()">취소</button>
         <button type="submit" class="ct-btn go">저장</button>
@@ -7739,10 +7738,7 @@ function ctSave(){
   ctReadForm();const d=ctDraft;
   if(!/^\d{4}-\d{2}-\d{2}$/.test(d.date||'')){showToast('⚠️','확정일을 넣어 주세요.',3000);return;}
   if(!(d.amount>0)){showToast('⚠️','보험료를 넣어 주세요.',3000);return;}
-  const md=document.getElementById('ct-markdone');const markDone=!!(md&&md.checked);
   card.contract={cat:d.cat,product:d.product,date:d.date,amount:d.amount,memo:d.memo};
-  if(markDone&&!card.done){applyCardDone(card,true);
-    document.getElementById('modal-done-chk').checked=!!card.done;updateDoneRow(card.done);updateCompletedRow(card);}
   ctEditing=false;ctDraft=null;
   saveState();try{refreshCard(card.id,activeColId);}catch(e){}
   renderContractSection(card);showToast('✅',`${card.contract.cat} 계약을 기록했어요 (${ctMD(card.contract.date)})`,2500);
