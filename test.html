@@ -623,7 +623,7 @@ body{font-family:'NanumSquare',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-
 #board.compact .card-title-row{flex:1;min-width:0;align-items:center}
 #board.compact .card-title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px}
 #board.compact .card-meta{margin-top:0;flex-shrink:0;flex-wrap:nowrap}
-#board.compact .card-labels,#board.compact .card-cl,#board.compact .card-attach-badge,#board.compact .card-start,#board.compact .card-phone{display:none}
+#board.compact .card-labels,#board.compact .card-cl,#board.compact .card-attach-badge,#board.compact .card-start{display:none}
 #board.compact .card-actions{display:none!important}
 #board.compact .card-star-btn{top:50%;transform:translateY(-50%);right:6px}
 #board.compact .card-star-btn:hover{transform:translateY(-50%) scale(1.2)}
@@ -1445,6 +1445,11 @@ body{font-family:'NanumSquare',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-
 .ph-num:hover{text-decoration:underline}
 .ph-edit{font:inherit;font-size:12.5px;height:30px;padding:0 12px;border-radius:7px;border:1px solid #d0d5dc;background:#fff;color:#44546f;cursor:pointer}
 .ph-edit:hover{background:#f1f2f4}
+#board.compact .card-phone{background:none;padding:0 4px;font-size:13px;opacity:0;transition:opacity .15s}
+#board.compact .card-phone .cp-num{display:none}
+#board.compact .card:hover .card-phone{opacity:1}
+#board.compact .card-phone:hover{background:#dcfce7}
+@media (hover:none){#board.compact .card-phone{opacity:.55}}
 </style>
 </head>
 <body>
@@ -5266,7 +5271,7 @@ function renderCard(card,colId){
   }
   let clBadge='';if(!card.done&&card.checklist&&card.checklist.length){const d=card.checklist.filter(i=>i.checked).length,t=card.checklist.length;clBadge=`<span class="card-cl ${d===t?'all-done':''}">☑️ ${d}/${t}</span>`;}
   let attBadge='';if(card.attachments&&card.attachments.length)attBadge=`<span class="card-attach-badge">📎 ${card.attachments.length}</span>`;
-  let phoneBadge='';if(card.phone&&!card.done){phoneBadge=`<a class="card-phone" href="tel:${card.phone.replace(/[^0-9+]/g,'')}" title="전화 걸기: ${esc(card.phone)}" onclick="event.stopPropagation()">📞 ${esc(card.phone)}</a>`;}
+  let phoneBadge='';if(card.phone&&!card.done){phoneBadge=`<a class="card-phone" href="tel:${card.phone.replace(/[^0-9+]/g,'')}" title="전화 걸기: ${esc(card.phone)}" onclick="event.stopPropagation()">📞<span class="cp-num"> ${esc(card.phone)}</span></a>`;}
   // 카드 커버 — 이 카드에서 "카드 커버" 스위치를 끄지 않은 이상 기본으로 보여줍니다(트렐로처럼 기본 켜짐)
   const coverSrc=card.coverHidden?'':getCardCoverSrc(card);
   const coverHtml=coverSrc?`<img class="card-cover" src="${coverSrc}" alt="" loading="lazy" onerror="this.style.display='none'">`:'';
