@@ -8301,8 +8301,23 @@ async function aiLoad(){
     // 같은 processId 가 여러 판이면 resultVersion 이 가장 큰 것만
     const best={};out.forEach(r=>{const v=Number(r.resultVersion||1);if(!best[r.processId]||v>Number(best[r.processId].resultVersion||1))best[r.processId]=r;});
     aiResults=Object.values(best);aiLoadedAt=Date.now();aiLoadErr='';
+    aiBackfill();
   }catch(e){aiLoadErr=e.message==='login'?'login':String(e.message||e);}
   finally{aiLoading=false;}
+}
+// 이미 등록한 카드: 새 판(resultVersion↑)의 '출처 정보'만 빈칸 채우기 (제목·내용·기한·체크리스트는 그대로)
+function aiBackfill(){
+  const byP={};aiResults.forEach(r=>byP[r.processId]=r);let n=0;
+  (state.boards||[]).forEach(b=>(b.columns||[]).forEach(c=>(c.cards||[]).forEach(k=>{
+    const a=k.ai;if(!a||a.source!=='call')return;const r=byP[a.processId];if(!r)return;
+    const v=Number(r.resultVersion||1);if(v<=Number(a.resultVersion||1))return;
+    const src=r.source||{};
+    if(src.link&&!a.link)a.link=src.link;
+    if(src.driveFileId&&!a.driveFileId)a.driveFileId=src.driveFileId;
+    if(src.counterpart&&!a.counterpart)a.counterpart=src.counterpart;
+    if(src.phone&&!k.phone)k.phone=src.phone;
+    a.resultVersion=v;a.updatedFrom=new Date().toISOString();n++;})));
+  if(n){saveState();try{renderCurrentView();}catch(e){}showToast('🔗',`등록한 카드 ${n}장에 원본 링크·상대 정보를 채웠어요.`,3500);}
 }
 function aiFindCard(id){let hit=null;(state.boards||[]).forEach(b=>(b.columns||[]).forEach(c=>(c.cards||[]).forEach(k=>{if(k.id===id)hit={card:k,board:b,col:c};})));return hit;}
 async function aiItems(){
@@ -8345,7 +8360,7 @@ async function aiRegister(cid){
   if(/^\d{4}-\d{2}-\d{2}$/.test(it.due||''))card.due=it.due;
   if(src.phone)card.phone=src.phone;
   card.checklist=(it.checklist||[]).map(t=>({id:uid(),text:String(t),checked:false,due:''}));
-  card.ai={source:'call',processId:r.processId,itemId:String(it.itemId),link:src.link||'',evidence:it.evidence||'',callAt:src.callAt||'',counterpart:src.counterpart||'',registeredAt:new Date().toISOString()};
+  card.ai={source:'call',processId:r.processId,itemId:String(it.itemId),resultVersion:Number(r.resultVersion||1),driveFileId:src.driveFileId||'',link:src.link||'',evidence:it.evidence||'',callAt:src.callAt||'',counterpart:src.counterpart||'',registeredAt:new Date().toISOString()};
   col.cards.push(card);aiSetStatus(x.key,'registered');saveState();
   showToast('✅',`「${card.title}」 카드를 만들었어요 → ${col.title}`,3000);
   try{renderCurrentView();}catch(e){}
@@ -8433,7 +8448,7 @@ const _aiRenderContract=renderContractSection;
 renderContractSection=function(card){_aiRenderContract(card);const box=document.getElementById('modal-contract-section');if(!box||!card||!card.ai)return;
   const a=card.ai;box.insertAdjacentHTML('afterbegin',`<div style="border:1px solid #ddd3ff;background:#f8f5ff;border-radius:10px;padding:12px 14px;margin-bottom:12px;font-size:13px;line-height:1.55;display:flex;flex-direction:column;gap:5px">
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><span class="card-ai-badge">AI · 통화에서 등록</span><span style="font-size:12px;color:#626f86">${esc(aiTime(a.registeredAt))} 확인 · 처리번호 ${esc(a.processId)} #${esc(a.itemId)}</span></div>
-    ${a.evidence?`<div>근거: “${esc(a.evidence)}”</div>`:''}
+    ${a.counterpart?`<div>상대: ${esc(a.counterpart)}</div>`:''}${a.evidence?`<div>근거: “${esc(a.evidence)}”</div>`:''}
     <div style="display:flex;gap:12px;flex-wrap:wrap">${a.link?`<a href="${esc(a.link)}" target="_blank" rel="noopener">▶ 원본 통화 듣기</a>`:'<span style="color:#8590a2">▶ 원본 통화: 아직 연결 전</span>'}<a href="#card=${esc(card.id)}" onclick="event.preventDefault();navigator.clipboard&&navigator.clipboard.writeText(location.origin+location.pathname+'#card=${esc(card.id)}');showToast('🔗','카드 바로가기 링크를 복사했어요.',2000)">🔗 이 카드 링크 복사</a></div></div>`);};
 // #card=카드ID 바로가기: 로그인·동기화 뒤 지금 위치를 찾아 열기
 let aiHashTries=0;
