@@ -1457,6 +1457,7 @@ body{font-family:'NanumSquare',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-
     <button class="hdr-btn icon-only" id="undo-btn" onclick="undoLast()" title="실행취소 (Ctrl+Z)" disabled>↩</button>
     <button class="hdr-btn" id="myday-btn" onclick="openMyDay()">나의 하루<span id="myday-badge" class="hdr-badge" style="display:none"></span></button>
     <button class="hdr-btn" id="planner-btn" onclick="openPlanner()">✍️ 플래너</button>
+    <button class="hdr-btn" id="ai-btn" onclick="openAiInbox()">📞 AI 접수<span id="ai-badge" class="hdr-badge" style="display:none"></span></button>
     <button class="hdr-btn" id="sales-btn" onclick="openSales()">💰 매출</button>
     <button class="hdr-btn" onclick="openCalendar()">캘린더</button>
     <div id="sync-status" onclick="mwlSyncClick()" title="기기 연동 (구글 드라이브)" style="cursor:pointer"><div id="sync-dot"></div><span id="sync-text">연결 안 됨</span></div>
@@ -3120,6 +3121,10 @@ function mwlMerge(base, local, remote) {
     ai[k] = win; conflicts.push({ path: 'aiInbox:' + k, kind: 'ai', kept: win, lost: win === lv ? rv : lv });
   });
   shell.aiInbox = ai;
+  // AI 결과 폴더 설정: 바꾼 쪽을 따름 (둘 다 바꿨으면 이 기기 것)
+  { const J = x => JSON.stringify(x || null), bc = J(B && B.aiConfig), lc = J(local.aiConfig), rc = J(remote.aiConfig);
+    const pick = lc !== bc ? local.aiConfig : rc !== bc ? remote.aiConfig : (local.aiConfig || remote.aiConfig);
+    if (pick) shell.aiConfig = pick; else delete shell.aiConfig; }
 
   // 충돌 기록: 쌓기만 하고 지우지 않음 (확인하면 resolved)
   const prev = {};
@@ -8231,6 +8236,229 @@ function slExport(){
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`매출_${from}_${to}.csv`;
   document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);
 }
+</script>
+
+<style>
+#ai-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);z-index:150;overflow-y:auto;padding:28px 12px 60px}
+#ai-overlay.open{display:flex;justify-content:center;align-items:flex-start}
+#ai-panel{background:#e9edf2;border-radius:14px;width:100%;max-width:880px;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.35);padding:20px;display:flex;flex-direction:column;gap:14px;color:#172b4d;box-sizing:border-box}
+.ai-card{background:#fff;border:1px solid #dfe1e6;border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:9px}
+.ai-tag{font-size:11.5px;font-weight:800;padding:2px 8px;border-radius:4px;background:#ede7ff;color:#4c1d95;white-space:nowrap}
+.ai-tag.g{background:#f1f2f4;color:#44546f;font-weight:700}
+.ai-q{margin:0;padding:8px 11px;background:#f7f8f9;border-radius:8px;font-size:13px;line-height:1.55;color:#2c3e5d}
+.ai-btn{font:inherit;font-size:13px;min-height:40px;padding:0 14px;border-radius:8px;border:1px solid #dfe1e6;background:#fff;color:#44546f;cursor:pointer}
+.ai-btn.go{border-color:#0052cc;background:#0052cc;color:#fff;font-weight:800}
+.ai-sel{font:inherit;font-size:13px;min-height:40px;border:1px solid #c1c7d0;border-radius:8px;padding:0 8px;max-width:230px;background:#fff}
+.card-ai-badge{font-size:11px;font-weight:800;color:#4c1d95;background:#ede7ff;padding:2px 7px;border-radius:6px;white-space:nowrap}
+</style>
+<div id="ai-overlay" onclick="if(event.target===this)closeAiInbox()"><div id="ai-panel" role="dialog" aria-label="AI 접수함"></div></div>
+<script>
+// ════════════════════════════
+//  AI 접수함 (테스트판) — 통화 분석 결과(v3)를 읽어 카드로 등록
+// ════════════════════════════
+const AI_SCOPE='https://www.googleapis.com/auth/drive.readonly';
+let aiTokenClient=null,aiToken=localStorage.getItem('ai_ro_token')||null,aiTokenExp=Number(localStorage.getItem('ai_ro_token_exp')||0);
+let aiResults=[],aiLoadErr='',aiLoadedAt=0,aiLoading=false,aiShowLater=false,aiSample=false;
+const aiSignedIn=()=>!!aiToken&&Date.now()<aiTokenExp;
+function aiGetToken(interactive){
+  return new Promise((res,rej)=>{
+    if(aiSignedIn())return res(aiToken);
+    if(!window.google||!google.accounts){rej(new Error('구글 로그인 스크립트를 아직 못 불러왔어요.'));return;}
+    if(!aiTokenClient)aiTokenClient=google.accounts.oauth2.initTokenClient({client_id:GOOGLE_CLIENT_ID,scope:AI_SCOPE,callback:()=>{}});
+    aiTokenClient.callback=r=>{if(!r||r.error||!r.access_token){rej(new Error('읽기 권한을 받지 못했어요.'));return;}
+      aiToken=r.access_token;aiTokenExp=Date.now()+((r.expires_in||3300)-60)*1000;
+      localStorage.setItem('ai_ro_token',aiToken);localStorage.setItem('ai_ro_token_exp',String(aiTokenExp));res(aiToken);};
+    aiTokenClient.error_callback=()=>rej(new Error('로그인 창을 열 수 없어요. 팝업 차단을 확인해 주세요.'));
+    try{aiTokenClient.requestAccessToken({prompt:interactive?'consent':'',hint:OWNER_EMAIL});}catch(e){rej(e);}
+  });
+}
+async function aiApi(path){
+  const t=await withTimeout(aiGetToken(false),15000,'login');
+  const r=await fetch('https://www.googleapis.com/drive/v3/'+path,{headers:{Authorization:'Bearer '+t}});
+  if(r.status===401){aiToken=null;aiTokenExp=0;localStorage.removeItem('ai_ro_token');throw new Error('login');}
+  if(!r.ok)throw new Error('드라이브 '+r.status);
+  return r;
+}
+// 카드 id: processId·itemId 를 JSON 배열로 묶어 SHA-256 → 앞 20자리 (서로 다른 값이 같은 id 가 되지 않음)
+const aiIdCache={};
+async function aiCardId(p,i){const k=JSON.stringify([String(p),String(i)]);if(aiIdCache[k])return aiIdCache[k];
+  const h=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(k));
+  return aiIdCache[k]='ai_'+[...new Uint8Array(h)].map(b=>b.toString(16).padStart(2,'0')).join('').slice(0,20);}
+function aiValidResult(j){return j&&j.schemaVersion===3&&typeof j.processId==='string'&&j.processId&&Array.isArray(j.items);}
+async function aiLoad(){
+  if(aiSample){aiResults=aiSampleResults();aiLoadedAt=Date.now();aiLoadErr='';return;}
+  const fid=(state.aiConfig||{}).folderId;
+  if(!fid){aiLoadErr='folder';return;}
+  aiLoading=true;
+  try{
+    const q=encodeURIComponent(`'${fid}' in parents and trashed=false`);
+    const list=await (await aiApi(`files?q=${q}&fields=files(id,name,mimeType,modifiedTime)&pageSize=200&orderBy=modifiedTime desc`)).json();
+    const files=(list.files||[]).filter(f=>/\.json$/i.test(f.name)||f.mimeType==='application/json');
+    const out=[];
+    for(const f of files){
+      try{const j=JSON.parse(await (await aiApi(`files/${f.id}?alt=media`)).text());if(aiValidResult(j))out.push(Object.assign(j,{_file:f}));}catch(e){}
+    }
+    // 같은 processId 가 여러 판이면 resultVersion 이 가장 큰 것만
+    const best={};out.forEach(r=>{const v=Number(r.resultVersion||1);if(!best[r.processId]||v>Number(best[r.processId].resultVersion||1))best[r.processId]=r;});
+    aiResults=Object.values(best);aiLoadedAt=Date.now();aiLoadErr='';
+  }catch(e){aiLoadErr=e.message==='login'?'login':String(e.message||e);}
+  finally{aiLoading=false;}
+}
+function aiFindCard(id){let hit=null;(state.boards||[]).forEach(b=>(b.columns||[]).forEach(c=>(c.cards||[]).forEach(k=>{if(k.id===id)hit={card:k,board:b,col:c};})));return hit;}
+async function aiItems(){
+  const out=[];
+  for(const r of aiResults){
+    if(!r.analysis||r.analysis.status!=='done')continue;
+    for(const it of r.items){
+      if(it.withdrawn)continue;
+      const cid=await aiCardId(r.processId,it.itemId),key=cid.slice(3);
+      const st=String((state.aiInbox||{})[key]||'').split('|')[0];
+      out.push({r,it,cid,key,st,reg:!!aiFindCard(cid)||st==='registered'||st==='deleted'});
+    }
+  }
+  return out;
+}
+async function aiUpdateBadge(){
+  const b=document.getElementById('ai-badge');if(!b)return;
+  try{const n=(await aiItems()).filter(x=>!x.reg&&x.st!=='excluded'&&x.st!=='later').length;b.textContent=n;b.style.display=n?'':'none';}catch(e){}
+}
+function aiSetStatus(key,st){state.aiInbox=state.aiInbox||{};state.aiInbox[key]=`${st}|${new Date().toISOString()}|${/Mobi/i.test(navigator.userAgent)?'폰':'PC'}`;}
+function aiListOptions(){
+  const last=localStorage.getItem('ai_last_col')||'';const o=[];
+  (state.boards||[]).forEach(b=>(b.columns||[]).forEach(c=>o.push(`<option value="${c.id}"${c.id===last?' selected':''}>${esc(b.title)} › ${esc(c.title)}</option>`)));
+  return o.join('');
+}
+async function aiRegister(cid){
+  const all=await aiItems();const x=all.find(y=>y.cid===cid);if(!x)return;
+  if(aiFindCard(cid)){showToast('ℹ️','이미 카드로 등록돼 있어요.',2500);return renderAiInbox();}
+  const sel=document.getElementById('sel-'+cid);const colId=sel&&sel.value;
+  let col=null;(state.boards||[]).forEach(b=>(b.columns||[]).forEach(c=>{if(c.id===colId)col=c;}));
+  if(!col){showToast('⚠️','넣을 리스트를 골라 주세요.',3000);return;}
+  localStorage.setItem('ai_last_col',colId);
+  const it=x.it,r=x.r,src=r.source||{};
+  const card=mkCard(it.title||'(제목 없음)');card.id=cid;
+  const lines=[];if(it.desc)lines.push(esc(it.desc));
+  if(it.evidence)lines.push(`<i>근거: “${esc(it.evidence)}”</i>`);
+  if(!it.due&&it.dueRaw)lines.push(`기한 원문: “${esc(it.dueRaw)}”${it.dueReason?' — '+esc(it.dueReason):''}`);
+  if(src.link)lines.push(`<a href="${esc(src.link)}" target="_blank">▶ 원본 통화</a>`);
+  card.desc=lines.join('<br>');
+  if(/^\d{4}-\d{2}-\d{2}$/.test(it.due||''))card.due=it.due;
+  if(src.phone)card.phone=src.phone;
+  card.checklist=(it.checklist||[]).map(t=>({id:uid(),text:String(t),checked:false,due:''}));
+  card.ai={source:'call',processId:r.processId,itemId:String(it.itemId),link:src.link||'',evidence:it.evidence||'',callAt:src.callAt||'',counterpart:src.counterpart||'',registeredAt:new Date().toISOString()};
+  col.cards.push(card);aiSetStatus(x.key,'registered');saveState();
+  showToast('✅',`「${card.title}」 카드를 만들었어요 → ${col.title}`,3000);
+  try{renderCurrentView();}catch(e){}
+  renderAiInbox();
+}
+function aiMark(key,st){aiSetStatus(key,st);saveState();renderAiInbox();}
+function aiUndo(key){if(state.aiInbox)delete state.aiInbox[key];saveState();renderAiInbox();}
+async function aiSaveFolder(){
+  let v=(document.getElementById('ai-folder').value||'').trim();
+  const m=v.match(/folders\/([\w-]+)/);if(m)v=m[1];
+  if(!/^[\w-]{10,}$/.test(v)){showToast('⚠️','폴더 ID(또는 폴더 링크)를 넣어 주세요.',3000);return;}
+  state.aiConfig=Object.assign({},state.aiConfig||{},{folderId:v});saveState();aiResults=[];await aiRefresh();
+}
+async function aiConnect(){try{await aiGetToken(true);await aiRefresh();}catch(e){showToast('⚠️',e.message,4000);}}
+async function aiRefresh(){aiLoading=true;renderAiInbox();try{await aiLoad();}finally{aiLoading=false;}renderAiInbox();aiUpdateBadge();}
+function openAiInbox(){
+  try{if(document.getElementById('modal-overlay').classList.contains('open'))closeModal();}catch(e){}
+  document.getElementById('ai-overlay').classList.add('open');
+  if(!aiLoadedAt||Date.now()-aiLoadedAt>60000)aiRefresh();else renderAiInbox();
+}
+function closeAiInbox(){document.getElementById('ai-overlay').classList.remove('open');}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('ai-overlay').classList.contains('open'))closeAiInbox();});
+const aiMD=d=>{if(!d)return '';const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(d);return m?`${+m[2]}/${+m[3]}`:'';};
+const aiTime=d=>{const t=d?new Date(d):null;return t&&!isNaN(t)?`${t.getMonth()+1}/${t.getDate()} ${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}`:'';};
+async function renderAiInbox(){
+  const p=document.getElementById('ai-panel');if(!p)return;
+  const cfg=state.aiConfig||{};
+  const head=`<button type="button" onclick="closeAiInbox()" aria-label="닫기" style="position:absolute;top:12px;right:12px;width:38px;height:38px;border-radius:50%;border:0;background:rgba(9,30,66,.08);font-size:18px;cursor:pointer">✕</button>
+    <div style="padding-right:44px"><div style="font-size:21px;font-weight:800">📞 AI 접수함</div><div style="font-size:12.5px;color:#5e6c84;margin-top:3px">통화에서 찾은 할 일 · 확인한 것만 카드가 돼요</div></div>`;
+  const setup=`<div class="ai-card" style="gap:8px">
+    <div style="font-size:13px;font-weight:800">결과 폴더 연결</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap"><input id="ai-folder" value="${esc(cfg.folderId||'')}" placeholder="폴더 ID 또는 드라이브 폴더 링크" style="flex:1 1 260px;font:inherit;font-size:13.5px;min-height:40px;border:1px solid #c1c7d0;border-radius:8px;padding:0 10px">
+      <button type="button" class="ai-btn" onclick="aiSaveFolder()">저장</button>
+      <button type="button" class="ai-btn go" onclick="aiConnect()">${aiSignedIn()?'다시 읽기':'읽기 권한 연결'}</button></div>
+    <div style="font-size:12px;color:#5e6c84">처음 한 번 구글 창에서 "드라이브 파일 보기" 권한을 허용해 주세요. 앱은 이 폴더의 결과 파일만 읽어요.${typeof MWL_TEST!=='undefined'?` · <a href="#" onclick="event.preventDefault();aiSample=!aiSample;aiRefresh()">${aiSample?'샘플 끄기':'샘플로 보기'}</a>`:''}</div></div>`;
+  if(aiLoading){p.innerHTML=head+setup+'<div class="ai-card">불러오는 중…</div>';return;}
+  let msg='';
+  if(!aiSample){
+    if(aiLoadErr==='folder')msg='결과 폴더 ID를 넣어 주세요.';
+    else if(aiLoadErr==='login')msg='읽기 권한이 필요해요. [읽기 권한 연결]을 눌러 주세요.';
+    else if(aiLoadErr)msg='불러오지 못했어요: '+esc(aiLoadErr);
+  }
+  const items=await aiItems();
+  const open=items.filter(x=>!x.reg&&x.st!=='excluded'&&x.st!=='later');
+  const later=items.filter(x=>!x.reg&&x.st==='later');
+  const done=items.filter(x=>x.reg||x.st==='excluded');
+  const failed=aiResults.filter(r=>!r.analysis||r.analysis.status!=='done');
+  const noWork=aiResults.filter(r=>r.analysis&&r.analysis.status==='done'&&!r.items.length);
+  const sched=[];aiResults.forEach(r=>(r.items||[]).forEach(it=>{if(it.schedule)sched.push({r,it});}));
+  const opts=aiListOptions();
+  const row=(x,mode)=>{const it=x.it,r=x.r,src=r.source||{};
+    const due=it.due?`<span class="ai-tag" style="background:#fff4e5;color:#974f0c">기한 ${aiMD(it.due)}</span>`:`<span class="ai-tag g">기한 확인 필요</span>`;
+    const rel=(it.relatedCards||[]).map(c=>`<a href="#card=${encodeURIComponent(c.cardId)}" onclick="closeAiInbox()" style="font-weight:700">${esc(c.title||c.cardId)}</a> <span style="color:#626f86;font-size:12px">${esc([c.board,c.list].filter(Boolean).join(' › '))}${c.reason?' · '+esc(c.reason):''}</span>`).join('<br>');
+    const acts=mode==='open'||mode==='later'?`<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-left:auto">
+        <select id="sel-${x.cid}" class="ai-sel" aria-label="넣을 리스트">${opts}</select>
+        ${mode==='open'?`<button type="button" class="ai-btn" onclick="aiMark('${x.key}','later')">나중에</button>`:''}
+        <button type="button" class="ai-btn" onclick="aiMark('${x.key}','excluded')">제외</button>
+        <button type="button" class="ai-btn go" onclick="aiRegister('${x.cid}')">등록</button></div>`
+      :`<div style="margin-left:auto;display:flex;gap:8px;align-items:center;font-size:13px">${x.reg?`<a href="#card=${x.cid}" onclick="closeAiInbox()" style="font-weight:700;color:#216e4e">✓ 카드 열기</a>`:'<span style="color:#626f86">제외함</span>'}${!aiFindCard(x.cid)?`<button type="button" class="ai-btn" style="min-height:34px" onclick="aiUndo('${x.key}')">되돌리기</button>`:''}</div>`;
+    return `<div class="ai-card"${mode==='done'?' style="opacity:.75"':''}>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center"><span class="ai-tag">AI · 통화</span>${it.area?`<span class="ai-tag g">${esc(it.area)}</span>`:''}${it.type?`<span class="ai-tag g">${esc(it.type)}</span>`:''}${due}</div>
+      <div style="font-size:15px;font-weight:800;line-height:1.4">${esc(it.title||'(제목 없음)')}</div>
+      ${it.desc?`<div style="font-size:13px;color:#44546f">${esc(it.desc)}</div>`:''}
+      ${it.evidence?`<blockquote class="ai-q"><span style="display:block;font-size:11.5px;font-weight:700;color:#626f86">근거 · ${esc(aiTime(src.callAt))} ${esc(src.counterpart||'')}</span>“${esc(it.evidence)}”${!it.due&&it.dueRaw?`<span style="display:block;font-size:12px;color:#974f0c;margin-top:3px">원문 “${esc(it.dueRaw)}”${it.dueReason?' — '+esc(it.dueReason):''}</span>`:''}</blockquote>`:''}
+      ${rel?`<div style="font-size:13px"><div style="font-size:12px;font-weight:700;color:#44546f">관련 있어 보이는 기존 카드</div>${rel}</div>`:''}
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;border-top:1px solid #ebecf0;padding-top:9px">${src.link?`<a href="${esc(src.link)}" target="_blank" rel="noopener" style="font-size:12.5px">▶ 원본 통화</a>`:''}${acts}</div></div>`;};
+  const schedHtml=sched.length?`<div class="ai-card"><div style="font-size:14px;font-weight:800">통화에서 나온 일정</div>${sched.map(({r,it})=>{const s=it.schedule;
+      const st=s.status==='registered'?`<b style="color:#216e4e">✓ 캘린더 등록됨</b>`:s.status==='failed'?`<b style="color:#bf2600">등록 실패</b>`:`<b style="color:#974f0c">확인 필요</b>`;
+      return `<div style="font-size:13px;line-height:1.6">${st} · ${esc(aiTime(s.start)||it.dueRaw||'')} ${esc(it.title||'')}${s.userChanged?` <span style="color:#626f86">(직접 ${s.userChanged==='deleted'?'삭제':'수정'}함)</span>`:''}${s.link?` · <a href="${esc(s.link)}" target="_blank" rel="noopener">일정 열기</a>`:''}</div>`;}).join('')}</div>`:'';
+  const report=`<div class="ai-card" style="flex-direction:row;flex-wrap:wrap;gap:14px;font-size:13px">
+    <span>읽은 통화 <b>${aiResults.length}</b></span><span>할 일 있음 <b>${aiResults.filter(r=>r.items&&r.items.length).length}</b></span><span>할 일 없음 <b>${noWork.length}</b></span><span style="color:#bf2600">분석 실패 <b>${failed.length}</b></span>
+    <span style="margin-left:auto;color:#5e6c84">${aiLoadedAt?'불러온 시각 '+aiTime(new Date(aiLoadedAt).toISOString()):''}${aiSample?' · 샘플':''}</span></div>`;
+  p.innerHTML=head+setup+(msg?`<div class="ai-card" style="color:#974f0c">${msg}</div>`:'')+report
+    +(open.length?open.map(x=>row(x,'open')).join(''):'<div class="ai-card" style="color:#5e6c84">새로 확인할 할 일이 없어요.</div>')
+    +schedHtml
+    +(later.length?`<button type="button" class="ai-btn" onclick="aiShowLater=!aiShowLater;renderAiInbox()">나중에 ${later.length}건 ${aiShowLater?'접기':'보기'}</button>${aiShowLater?later.map(x=>row(x,'later')).join(''):''}`:'')
+    +(done.length?`<details><summary style="cursor:pointer;font-size:13px;color:#44546f">처리한 것 ${done.length}건</summary><div style="display:flex;flex-direction:column;gap:10px;margin-top:10px">${done.map(x=>row(x,'done')).join('')}</div></details>`:'');
+  aiUpdateBadge();
+}
+// 카드에 'AI · 통화' 표시
+const _aiContractBadge=contractBadgeHtml;
+contractBadgeHtml=function(card){return (card&&card.ai&&card.ai.source==='call'?'<span class="card-ai-badge" title="통화에서 등록">AI · 통화</span>':'')+_aiContractBadge(card);};
+// 카드 상세창에 출처 상자
+const _aiRenderContract=renderContractSection;
+renderContractSection=function(card){_aiRenderContract(card);const box=document.getElementById('modal-contract-section');if(!box||!card||!card.ai)return;
+  const a=card.ai;box.insertAdjacentHTML('afterbegin',`<div style="border:1px solid #ddd3ff;background:#f8f5ff;border-radius:10px;padding:12px 14px;margin-bottom:12px;font-size:13px;line-height:1.55;display:flex;flex-direction:column;gap:5px">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><span class="card-ai-badge">AI · 통화에서 등록</span><span style="font-size:12px;color:#626f86">${esc(aiTime(a.registeredAt))} 확인 · 처리번호 ${esc(a.processId)} #${esc(a.itemId)}</span></div>
+    ${a.evidence?`<div>근거: “${esc(a.evidence)}”</div>`:''}
+    <div style="display:flex;gap:12px;flex-wrap:wrap">${a.link?`<a href="${esc(a.link)}" target="_blank" rel="noopener">▶ 원본 통화</a>`:''}<a href="#card=${esc(card.id)}" onclick="event.preventDefault();navigator.clipboard&&navigator.clipboard.writeText(location.origin+location.pathname+'#card=${esc(card.id)}');showToast('🔗','카드 바로가기 링크를 복사했어요.',2000)">🔗 이 카드 링크 복사</a></div></div>`);};
+// #card=카드ID 바로가기: 로그인·동기화 뒤 지금 위치를 찾아 열기
+let aiHashTries=0;
+function aiOpenHash(){
+  const m=/#card=([\w-]+)/.exec(location.hash||'');if(!m)return;
+  const id=decodeURIComponent(m[1]);const hit=aiFindCard(id);
+  if(hit){aiHashTries=0;history.replaceState(null,'',location.pathname+location.search);openBoard(hit.board.id);setTimeout(()=>openModal(hit.card.id,hit.col.id),200);return;}
+  if(aiHashTries++<6){setTimeout(aiOpenHash,2500);return;}   // 동기화가 끝날 때까지 잠깐 기다림
+  aiHashTries=0;history.replaceState(null,'',location.pathname+location.search);
+  showToast('⚠️','그 카드를 찾을 수 없어요. 삭제됐거나 아직 이 기기에 동기화되지 않았어요.',5000);
+}
+window.addEventListener('hashchange',()=>{aiHashTries=0;aiOpenHash();});
+setTimeout(aiOpenHash,1500);
+setTimeout(()=>{if((state.aiConfig||{}).folderId&&aiSignedIn())aiLoad().then(aiUpdateBadge);},4000);
+// 테스트판 샘플 (가짜 데이터): 할 일 있는 통화 1, 할 일 없는 통화 1, 분석 실패 1
+function aiSampleResults(){return [
+ {schemaVersion:3,processId:'sample_call_1006_0912',resultVersion:1,generatedAt:'2026-10-06T09:41:20+09:00',
+  source:{type:'call',link:'https://drive.google.com/',callAt:'2026-10-06T09:12:00+09:00',phone:'010-0000-0000',counterpart:'김○○'},
+  analysis:{status:'done',error:null},items:[
+   {itemId:'1',area:'보험',type:'상대 요청',title:'김○○/자고/본인 — 자동차보험 갱신 견적 보내기',desc:'타사 견적과 비교해서 보내 달라는 요청.',due:'2026-10-16',dueRaw:'다음 주 금요일까지',evidence:'다음 주 금요일까지 견적 좀 보내 주세요.',checklist:['타사 견적 비교','블랙박스 할인 확인'],relatedCards:[],schedule:null},
+   {itemId:'2',area:'보험',type:'상대 요청',title:'김○○ 배우자 실손 보장 내용 정리해서 보내기',desc:'',due:'',dueRaw:'이번 주 안에',dueReason:"'이번 주 안에'는 정확한 날짜가 아님",evidence:'와이프 실손도 이번 주 안에 한번 봐 주실래요?',checklist:[],relatedCards:[],schedule:null},
+   {itemId:'3',area:'보험',type:'일정',title:'박○○ 고객 상담',evidence:'목요일 오후 2시에 사무실로 갈게요.',relatedCards:[],schedule:{status:'registered',start:'2026-10-08T14:00:00+09:00',link:'https://calendar.google.com/'}}]},
+ {schemaVersion:3,processId:'sample_call_1006_1010',resultVersion:1,source:{type:'call',callAt:'2026-10-06T10:10:00+09:00'},analysis:{status:'done',error:null},items:[]},
+ {schemaVersion:3,processId:'sample_call_1006_1102',resultVersion:1,source:{type:'call',callAt:'2026-10-06T11:02:00+09:00'},analysis:{status:'failed',error:'음성 인식 실패'},items:[]}
+];}
 </script>
 </body>
 </html>
