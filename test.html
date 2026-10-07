@@ -8335,7 +8335,7 @@ async function aiItems(){
 }
 async function aiUpdateBadge(){
   const b=document.getElementById('ai-badge');if(!b)return;
-  try{const n=(await aiItems()).filter(x=>!x.reg&&x.st!=='excluded'&&x.st!=='later').length;b.textContent=n;b.style.display=n?'':'none';}catch(e){}
+  try{if(aiNeedLogin&&aiAutoOn()){b.textContent='!';b.title='읽기 권한을 다시 연결해 주세요';b.style.display='';return;}b.title='';const n=(await aiItems()).filter(x=>!x.reg&&x.st!=='excluded'&&x.st!=='later').length;b.textContent=n;b.style.display=n?'':'none';}catch(e){}
 }
 function aiSetStatus(key,st){state.aiInbox=state.aiInbox||{};state.aiInbox[key]=`${st}|${new Date().toISOString()}|${/Mobi/i.test(navigator.userAgent)?'폰':'PC'}`;}
 function aiListOptions(){
@@ -8350,8 +8350,14 @@ async function aiRegister(cid){
   let col=null;(state.boards||[]).forEach(b=>(b.columns||[]).forEach(c=>{if(c.id===colId)col=c;}));
   if(!col){showToast('⚠️','넣을 리스트를 골라 주세요.',3000);return;}
   localStorage.setItem('ai_last_col',colId);
+  const card=aiMakeCard(x,col,false);
+  showToast('✅',`「${card.title}」 카드를 만들었어요 → ${col.title}`,3000);
+  try{renderCurrentView();}catch(e){}
+  renderAiInbox();
+}
+function aiMakeCard(x,col,auto){
   const it=x.it,r=x.r,src=r.source||{};
-  const card=mkCard(it.title||'(제목 없음)');card.id=cid;
+  const card=mkCard(it.title||'(제목 없음)');card.id=x.cid;
   const lines=[];if(it.desc)lines.push(esc(it.desc));
   if(it.evidence)lines.push(`<i>근거: “${esc(it.evidence)}”</i>`);
   if(!it.due&&it.dueRaw)lines.push(`기한 원문: “${esc(it.dueRaw)}”${it.dueReason?' — '+esc(it.dueReason):''}`);
@@ -8360,12 +8366,42 @@ async function aiRegister(cid){
   if(/^\d{4}-\d{2}-\d{2}$/.test(it.due||''))card.due=it.due;
   if(src.phone)card.phone=src.phone;
   card.checklist=(it.checklist||[]).map(t=>({id:uid(),text:String(t),checked:false,due:''}));
-  card.ai={source:'call',processId:r.processId,itemId:String(it.itemId),resultVersion:Number(r.resultVersion||1),driveFileId:src.driveFileId||'',link:src.link||'',evidence:it.evidence||'',callAt:src.callAt||'',counterpart:src.counterpart||'',registeredAt:new Date().toISOString()};
+  card.ai={source:'call',processId:r.processId,itemId:String(it.itemId),resultVersion:Number(r.resultVersion||1),driveFileId:src.driveFileId||'',link:src.link||'',evidence:it.evidence||'',callAt:src.callAt||'',counterpart:src.counterpart||'',registeredAt:new Date().toISOString(),auto:!!auto};
   col.cards.push(card);aiSetStatus(x.key,'registered');saveState();
-  showToast('✅',`「${card.title}」 카드를 만들었어요 → ${col.title}`,3000);
-  try{renderCurrentView();}catch(e){}
-  renderAiInbox();
+  return card;
 }
+// ── 자동 등록: 새 할 일을 '📥 통화에서 온 할 일' 리스트에 바로 카드로 ──
+const AI_AUTO_TITLE='📥 통화에서 온 할 일';
+const aiAutoOn=()=>(state.aiConfig||{}).auto!==false;
+function aiAutoCol(){
+  const cfg=state.aiConfig||{};let hit=null;
+  (state.boards||[]).forEach(b=>(b.columns||[]).forEach(c=>{if(c.id===cfg.autoColId)hit=c;}));
+  if(hit)return hit;
+  (state.boards||[]).forEach(b=>(b.columns||[]).forEach(c=>{if(!hit&&c.title===AI_AUTO_TITLE)hit=c;}));
+  if(!hit){const b=(state.boards||[])[0];if(!b)return null;b.columns=b.columns||[];
+    hit={id:uid(),title:AI_AUTO_TITLE,cards:[],sortMode:'reg',color:'none',collapsed:false};b.columns.unshift(hit);}
+  state.aiConfig=Object.assign({},cfg,{autoColId:hit.id});
+  return hit;
+}
+let aiAutoBusy=false,aiNeedLogin=false;
+async function aiAutoRun(){
+  if(aiAutoBusy||aiSample||!aiAutoOn()||!(state.aiConfig||{}).folderId)return;
+  if(!aiSignedIn()){aiNeedLogin=true;aiUpdateBadge();return;}   // 권한이 끝났으면 조용히 기다림 (창을 멋대로 띄우지 않음)
+  aiAutoBusy=true;
+  try{
+    await aiLoad();if(aiLoadErr){if(aiLoadErr==='login')aiNeedLogin=true;return;}
+    aiNeedLogin=false;
+    const todo=(await aiItems()).filter(x=>!x.reg&&!x.st);   // 제외·나중에·등록·삭제한 것은 건드리지 않음
+    if(!todo.length)return;
+    const col=aiAutoCol();if(!col)return;
+    todo.forEach(x=>{if(!aiFindCard(x.cid))aiMakeCard(x,col,true);});
+    saveState();try{renderCurrentView();}catch(e){}
+    showToast('📞',`통화에서 온 할 일 ${todo.length}건을 「${col.title}」에 넣었어요.`,4000);
+    if(document.getElementById('ai-overlay').classList.contains('open'))renderAiInbox();
+  }catch(e){}finally{aiAutoBusy=false;aiUpdateBadge();}
+}
+function aiToggleAuto(){state.aiConfig=Object.assign({},state.aiConfig||{},{auto:!aiAutoOn()});saveState();renderAiInbox();if(aiAutoOn())aiAutoRun();}
+setInterval(aiAutoRun,10*60*1000);
 function aiMark(key,st){aiSetStatus(key,st);saveState();renderAiInbox();}
 function aiUndo(key){if(state.aiInbox)delete state.aiInbox[key];saveState();renderAiInbox();}
 async function aiSaveFolder(){
@@ -8374,7 +8410,7 @@ async function aiSaveFolder(){
   if(!/^[\w-]{10,}$/.test(v)){showToast('⚠️','폴더 ID(또는 폴더 링크)를 넣어 주세요.',3000);return;}
   state.aiConfig=Object.assign({},state.aiConfig||{},{folderId:v});saveState();aiResults=[];await aiRefresh();
 }
-async function aiConnect(){try{await aiGetToken(true);await aiRefresh();}catch(e){showToast('⚠️',e.message,4000);}}
+async function aiConnect(){try{await aiGetToken(true);aiNeedLogin=false;await aiRefresh();if(aiAutoOn())await aiAutoRun();}catch(e){showToast('⚠️',e.message,4000);}}
 async function aiRefresh(){aiLoading=true;renderAiInbox();try{await aiLoad();}finally{aiLoading=false;}renderAiInbox();aiUpdateBadge();}
 function openAiInbox(){
   try{if(document.getElementById('modal-overlay').classList.contains('open'))closeModal();}catch(e){}
@@ -8395,6 +8431,8 @@ async function renderAiInbox(){
     <div style="display:flex;gap:6px;flex-wrap:wrap"><input id="ai-folder" value="${esc(cfg.folderId||'')}" placeholder="폴더 ID 또는 드라이브 폴더 링크" style="flex:1 1 260px;font:inherit;font-size:13.5px;min-height:40px;border:1px solid #c1c7d0;border-radius:8px;padding:0 10px">
       <button type="button" class="ai-btn" onclick="aiSaveFolder()">저장</button>
       <button type="button" class="ai-btn go" onclick="aiConnect()">${aiSignedIn()?'다시 읽기':'읽기 권한 연결'}</button></div>
+    <label style="display:flex;gap:8px;align-items:center;font-size:13px;cursor:pointer;padding:4px 0"><input type="checkbox" ${aiAutoOn()?'checked':''} onchange="aiToggleAuto()" style="width:18px;height:18px"> <b>자동 등록</b> <span style="color:#5e6c84">— 앱이 열려 있으면 10분마다 확인해서 「${AI_AUTO_TITLE}」 리스트에 카드로 넣어요</span></label>
+    ${aiNeedLogin&&aiAutoOn()?'<div style="font-size:12.5px;color:#bf2600;font-weight:700">읽기 권한이 끝나서 자동 등록이 멈췄어요. [읽기 권한 연결]을 눌러 주세요.</div>':''}
     <div style="font-size:12px;color:#5e6c84">처음 한 번 구글 창에서 "드라이브 파일 보기" 권한을 허용해 주세요. 앱은 이 폴더의 결과 파일만 읽어요.${typeof MWL_TEST!=='undefined'?` · <a href="#" onclick="event.preventDefault();aiSample=!aiSample;aiRefresh()">${aiSample?'샘플 끄기':'샘플로 보기'}</a>`:''}</div></div>`;
   if(aiLoading){p.innerHTML=head+setup+'<div class="ai-card">불러오는 중…</div>';return;}
   let msg='';
@@ -8442,7 +8480,7 @@ async function renderAiInbox(){
 }
 // 카드에 'AI · 통화' 표시
 const _aiContractBadge=contractBadgeHtml;
-contractBadgeHtml=function(card){return (card&&card.ai&&card.ai.source==='call'?'<span class="card-ai-badge" title="통화에서 등록">AI · 통화</span>':'')+_aiContractBadge(card);};
+contractBadgeHtml=function(card){return (card&&card.ai&&card.ai.source==='call'?`<span class="card-ai-badge" title="통화에서 등록">${card.ai.auto?'AI · 자동':'AI · 통화'}</span>`:'')+_aiContractBadge(card);};
 // 카드 상세창에 출처 상자
 const _aiRenderContract=renderContractSection;
 renderContractSection=function(card){_aiRenderContract(card);const box=document.getElementById('modal-contract-section');if(!box||!card||!card.ai)return;
@@ -8462,7 +8500,7 @@ function aiOpenHash(){
 }
 window.addEventListener('hashchange',()=>{aiHashTries=0;aiOpenHash();});
 setTimeout(aiOpenHash,1500);
-setTimeout(()=>{if((state.aiConfig||{}).folderId&&aiSignedIn())aiLoad().then(aiUpdateBadge);},4000);
+setTimeout(()=>{if(aiAutoOn())aiAutoRun();else if((state.aiConfig||{}).folderId&&aiSignedIn())aiLoad().then(aiUpdateBadge);},5000);
 // 테스트판 샘플 (가짜 데이터): 할 일 있는 통화 1, 할 일 없는 통화 1, 분석 실패 1
 function aiSampleResults(){return [
  {schemaVersion:3,processId:'sample_call_1006_0912',resultVersion:1,generatedAt:'2026-10-06T09:41:20+09:00',
