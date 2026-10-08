@@ -8077,17 +8077,46 @@ const CT_SUB={'장기':'실손·건강·운전자·재물 등','자동차 DB':'D
 const ctCat=c=>c==='자동차'?'자동차 DB':c==='일반'?'일반 DB':c;   // 예전 '일반' → '일반 DB'
 const ctWon=n=>Math.round(Number(n)||0).toLocaleString('ko-KR');
 const ctMD=d=>d?Number(d.slice(5,7))+'/'+Number(d.slice(8,10)):'';
-let ctEditing=false,ctDraft=null;
+let ctEditing=false,ctDraft=null,ajDraft=null;   // ajDraft: 해지·감액 입력 중
+const ctAdj=card=>Array.isArray(card&&card.adjust)?card.adjust:[];
 
 function contractBadgeHtml(card){
-  const c=card&&card.contract;if(!c||!c.date)return '';
-  return `<span class="card-contract-badge" title="계약 확정 ${esc(c.date)} · ${esc(c.product||'')} ${ctWon(c.amount)}원">✓ ${esc(ctCat(c.cat)||'')} ${ctMD(c.date)}</span>`;
+  const c=card&&card.contract;const aj=ctAdj(card);
+  const ajB=aj.length?`<span class="card-contract-badge" style="background:#ffebe6;color:#ae2a19" title="${aj.map(a=>a.kind+' '+a.date+' −'+ctWon(a.amount)+'원').join(' / ')}">${aj.some(a=>a.kind==='해지')?'해지':'감액'} ${ctMD(aj[aj.length-1].date)}</span>`:'';
+  if(!c||!c.date)return ajB;
+  return `<span class="card-contract-badge" title="계약 확정 ${esc(c.date)} · ${esc(c.product||'')} ${ctWon(c.amount)}원">✓ ${esc(ctCat(c.cat)||'')} ${ctMD(c.date)}</span>`+ajB;
 }
 
 function renderContractSection(card){
   const box=document.getElementById('modal-contract-section');if(!box)return;
   if(!card){box.innerHTML='';return;}
   const c=card.contract;
+  if(ajDraft){
+    const d=ajDraft,prods=CT_PRODUCTS[d.cat]||[];
+    box.innerHTML=`<form class="ct-box ct-form" style="border-color:#c9372c;background:#fff8f7" onsubmit="event.preventDefault();ajSave()">
+      <div class="ct-h" style="color:#ae2a19">해지 · 감액 기록 <span style="font-size:12px;font-weight:500;color:#7a8794">매출에서 빠져요</span></div>
+      <div class="ct-f"><div class="ct-lab">종류</div>
+        <div class="ct-cats" style="grid-template-columns:repeat(2,minmax(0,1fr))">${['해지','감액'].map(k=>`<button type="button" class="ct-cat${k===d.kind?' on':''}" style="${k===d.kind?'background:#c9372c;border-color:#c9372c':''}" onclick="ajPick('kind','${k}')">${k}</button>`).join('')}</div></div>
+      <div class="ct-f"><div class="ct-lab">구분</div>
+        <div class="ct-cats">${CT_CATS.map(k=>`<button type="button" class="ct-cat${k===d.cat?' on':''}" style="${k===d.cat?'background:#c9372c;border-color:#c9372c':''}" onclick="ajPick('cat','${k}')">${k}</button>`).join('')}</div></div>
+      <div class="ct-grid">
+        <label class="ct-f"><span class="ct-lab">${d.kind}일</span><input class="ct-in" type="date" id="aj-date" value="${esc(d.date)}" required></label>
+        <label class="ct-f"><span class="ct-lab">상품</span><select class="ct-in" id="aj-product">${prods.map(p=>`<option${p===d.product?' selected':''}>${esc(p)}</option>`).join('')}</select></label>
+        <label class="ct-f"><span class="ct-lab">${d.kind==='감액'?'줄어든 금액':'빠지는 '+(CT_UNIT[d.cat]||'보험료')}</span><span class="ct-money"><input class="ct-in" type="text" id="aj-amount" inputmode="numeric" value="${d.amount?ctWon(d.amount):''}" placeholder="${d.kind==='감액'?'예: 14,290':'54,290'}" oninput="this.value=this.value.replace(/[^0-9]/g,'').replace(/\\B(?=(\\d{3})+(?!\\d))/g,',')"><span>원</span></span></label>
+        <label class="ct-f"><span class="ct-lab">메모</span><input class="ct-in" type="text" id="aj-memo" value="${esc(d.memo||'')}"></label>
+      </div>
+      <div class="ct-acts">
+        <button type="button" class="ct-btn" onclick="ajCancel()">취소</button>
+        <button type="submit" class="ct-btn go" style="background:#c9372c;border-color:#c9372c">저장</button>
+      </div></form>`;
+    return;
+  }
+  const ajList=ctAdj(card).length?`<div style="display:flex;flex-direction:column;gap:4px;border-top:1px solid #dfe7e2;padding-top:8px">${ctAdj(card).map(a=>`<div style="display:flex;gap:10px;align-items:center;font-size:13px;flex-wrap:wrap">
+      <span style="font-size:11.5px;font-weight:800;padding:2px 8px;border-radius:4px;background:#ffebe6;color:#ae2a19">${esc(a.kind)}</span>
+      <span style="color:#44546f">${esc(a.date)}</span><span style="color:#44546f">${esc(a.cat)} · ${esc(a.product||'')}</span>
+      <b style="color:#ae2a19">−${ctWon(a.amount)}원</b>${a.memo?`<span style="color:#7a8794">${esc(a.memo)}</span>`:''}
+      <button type="button" class="ct-btn" style="margin-left:auto;min-height:28px;height:28px;padding:0 10px;font-size:12px" onclick="ajRemove('${a.id}')">지우기</button></div>`).join('')}</div>`:'';
+  const ajBtns=`<span style="display:flex;gap:6px"><button type="button" class="ct-btn" style="min-height:30px;height:30px;padding:0 12px;font-size:12.5px;color:#ae2a19;border-color:#f1c4bd" onclick="ajEdit('해지')">해지</button><button type="button" class="ct-btn" style="min-height:30px;height:30px;padding:0 12px;font-size:12.5px;color:#ae2a19;border-color:#f1c4bd" onclick="ajEdit('감액')">감액</button></span>`;
   if(ctEditing){
     const d=ctDraft;
     const prods=CT_PRODUCTS[d.cat]||[];
@@ -8116,10 +8145,11 @@ function renderContractSection(card){
       </div>
       <div class="ct-vals"><div><small>구분</small><b>${esc(ctCat(c.cat))}</b></div><div><small>상품</small><b>${esc(c.product||'-')}</b></div><div><small>${CT_UNIT[ctCat(c.cat)]||'보험료'}</small><b>${ctWon(c.amount)}원</b></div></div>
       ${c.memo?`<div style="font-size:13px;color:#44546f">${esc(c.memo)}</div>`:''}
-      <a href="#" onclick="event.preventDefault();openSales()" style="font-size:12.5px">매출 화면에서 보기 →</a></div>`;
+      ${ajList}
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><a href="#" onclick="event.preventDefault();openSales()" style="font-size:12.5px">매출 화면에서 보기 →</a><span style="margin-left:auto"></span>${ajBtns}</div></div>`;
     return;
   }
-  box.innerHTML=`<div class="ct-box ct-empty"><div style="flex:1 1 240px;font-size:13px;color:#44546f;line-height:1.5">계약이 확정되면 눌러 주세요. 확정일과 보험료를 적으면 <b>매출 화면</b>에 모여요.</div><button type="button" class="ct-btn go" onclick="ctEdit()">✓ 계약 확정</button></div>`;
+  box.innerHTML=`<div class="ct-box ct-empty"><div style="flex:1 1 240px;font-size:13px;color:#44546f;line-height:1.5">계약이 확정되면 눌러 주세요. 확정일과 보험료를 적으면 <b>매출 화면</b>에 모여요.</div><button type="button" class="ct-btn go" onclick="ctEdit()">✓ 계약 확정</button><div style="flex-basis:100%;display:flex;align-items:center;gap:8px;font-size:12.5px;color:#7a8794">${ajList?'':'예전 계약이 해지·감액됐나요?'}<span style="margin-left:auto"></span>${ajBtns}</div>${ajList?`<div style="flex-basis:100%">${ajList}</div>`:''}</div>`;
 }
 function ctGuessCat(card){
   const t=(card.title||'')+' '+(document.getElementById('modal-col-label')||{}).textContent;
@@ -8129,7 +8159,7 @@ function ctGuessCat(card){
   return '장기';
 }
 function ctEdit(){
-  const card=getActiveCard();if(!card)return;
+  const card=getActiveCard();if(!card)return;ajDraft=null;
   const c=card.contract||{};
   const cat=c.cat?ctCat(c.cat):ctGuessCat(card);
   ctDraft={cat,product:c.product||CT_PRODUCTS[cat][0],date:c.date||localDateStr(new Date()),amount:c.amount||0,memo:c.memo||''};
@@ -8159,9 +8189,33 @@ async function ctRemove(){
   delete card.contract;saveState();try{refreshCard(card.id,activeColId);}catch(e){}
   renderContractSection(card);
 }
+function ajEdit(kind){
+  const card=getActiveCard();if(!card)return;const c=card.contract||{};
+  const cat=c.cat?ctCat(c.cat):ctGuessCat(card);
+  ajDraft={kind,cat,product:(c.product&&CT_PRODUCTS[cat].includes(c.product))?c.product:CT_PRODUCTS[cat][0],date:localDateStr(new Date()),amount:kind==='해지'?(Number(c.amount)||0):0,memo:''};
+  ctEditing=false;renderContractSection(card);
+}
+function ajRead(){const g=id=>document.getElementById(id);if(!ajDraft||!g('aj-date'))return;
+  ajDraft.date=g('aj-date').value;ajDraft.product=g('aj-product').value;ajDraft.amount=Number((g('aj-amount').value||'').replace(/[^0-9]/g,''))||0;ajDraft.memo=g('aj-memo').value.trim();}
+function ajPick(k,v){ajRead();ajDraft[k]=v;if(k==='cat'&&!CT_PRODUCTS[v].includes(ajDraft.product))ajDraft.product=CT_PRODUCTS[v][0];renderContractSection(getActiveCard());}
+function ajCancel(){ajDraft=null;renderContractSection(getActiveCard());}
+function ajSave(){
+  const card=getActiveCard();if(!card)return;ajRead();const d=ajDraft;
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(d.date||'')){showToast('⚠️',d.kind+'일을 넣어 주세요.',3000);return;}
+  if(!(d.amount>0)){showToast('⚠️','금액을 넣어 주세요.',3000);return;}
+  card.adjust=ctAdj(card).concat([{id:uid(),kind:d.kind,cat:d.cat,product:d.product,date:d.date,amount:d.amount,memo:d.memo}]);
+  ajDraft=null;saveState();try{refreshCard(card.id,activeColId);}catch(e){}
+  renderContractSection(card);showToast('✅',`${d.kind} −${ctWon(d.amount)}원을 기록했어요 (${ctMD(d.date)})`,2500);
+}
+async function ajRemove(id){
+  const card=getActiveCard();if(!card)return;
+  const ok=await confirm2('해지·감액 지우기','이 기록을 지울까요?\n매출 화면에서도 빠져요.','지우기');if(!ok)return;
+  card.adjust=ctAdj(card).filter(a=>a.id!==id);if(!card.adjust.length)delete card.adjust;
+  saveState();try{refreshCard(card.id,activeColId);}catch(e){}renderContractSection(card);
+}
 // 다른 카드를 열면 쓰던 양식은 닫습니다
 const _ctOpenModal=openModal;
-openModal=function(cardId,colId){ctEditing=false;ctDraft=null;return _ctOpenModal(cardId,colId);};
+openModal=function(cardId,colId){ctEditing=false;ctDraft=null;ajDraft=null;return _ctOpenModal(cardId,colId);};
 
 
 // ── 홈(첫 화면) 매출 요약: 이번 달 · 올해, 네 구분 따로. 누르면 매출 화면
@@ -8175,10 +8229,11 @@ function renderHomeSales(){
   const all=slAll();
   const tile=k=>{
     const mo=all.filter(x=>x.c.cat===k&&x.c.date>=mFrom&&x.c.date<=mTo),yr=all.filter(x=>x.c.cat===k&&x.c.date.startsWith(String(y)));
+    const neg=mo.filter(x=>x.adj).reduce((s,x)=>s+(Number(x.c.amount)||0),0);
     const sum=a=>a.reduce((s,x)=>s+(Number(x.c.amount)||0),0);
     return `<button type="button" class="hs-tile" onclick="slCat='${k}';slPeriod='month';openSales()">
       <span class="hs-name">${k}</span><span class="hs-amt">${ctWon(sum(mo))}<small>원</small></span>
-      <span class="hs-sub">이번 달 ${mo.length}건 · 올해 ${ctWon(sum(yr))}원</span></button>`;
+      <span class="hs-sub">이번 달 ${mo.filter(x=>!x.adj).length}건${neg?` · <b style="color:#ae2a19">${ctWon(neg)}</b>`:''} · 올해 ${ctWon(sum(yr))}원</span></button>`;
   };
   // 평소에는 버튼만. 누를 때만 금액을 펼쳐 보여 줌 (앱을 다시 열면 다시 접힘)
   box.innerHTML=`<div class="hs-head"><button type="button" class="hs-toggle" onclick="hsOpen=!hsOpen;renderHomeSales()">💰 매출 ${hsOpen?'접기 ▴':'보기 ▾'}</button>${hsOpen?`<a href="#" onclick="event.preventDefault();slPeriod='month';openSales()">매출 화면 →</a>`:''}</div>
@@ -8193,7 +8248,9 @@ let slPeriod='year',slCat='장기',slFrom='',slTo='';
 function slAll(){
   const out=[];
   (state.boards||[]).forEach(b=>(b.columns||[]).forEach(col=>(col.cards||[]).forEach(card=>{
-    const c0=card.contract;if(!c0||!c0.date)return;const c=Object.assign({},c0,{cat:ctCat(c0.cat)});if(CT_CATS.includes(c.cat))out.push({c,card,board:b,col});
+    const c0=card.contract;
+    if(c0&&c0.date){const c=Object.assign({},c0,{cat:ctCat(c0.cat),kind:'신규'});if(CT_CATS.includes(c.cat))out.push({c,card,board:b,col});}
+    ctAdj(card).forEach(a=>{if(!a.date)return;const c={cat:ctCat(a.cat),product:a.product,date:a.date,amount:-(Number(a.amount)||0),memo:a.memo,kind:a.kind};if(CT_CATS.includes(c.cat))out.push({c,card,board:b,col,adj:1});});
   })));
   return out;
 }
@@ -8225,24 +8282,25 @@ function renderSales(){
   const pills=[['year','올해'],['month','이번 달'],['last','지난달'],['custom','직접 지정']].map(([k,t])=>`<button type="button" class="sl-pill${k===slPeriod?' on':''}" onclick="slSet('p','${k}')">${t}</button>`).join('');
   const sub=CT_SUB;
   const cats=CT_CATS.map(k=>{const rs=sel.filter(x=>x.c.cat===k);return `<button type="button" class="sl-cat${k===slCat?' on':''}" onclick="slSet('c','${k}')">
-    <span style="display:flex;gap:8px;align-items:center;width:100%"><b style="font-size:15px">${k}</b><span style="font-size:11.5px;color:#5e6c84">${sub[k]}</span><span style="margin-left:auto;font-size:12px;color:#44546f;font-weight:700">${rs.length}건</span></span>
-    <span style="font-size:24px;font-weight:800">${ctWon(sum(rs))}<span style="font-size:13px">원</span></span>
-    <span style="font-size:12px;color:#5e6c84">${CT_UNIT[k]} 합계</span></button>`;}).join('');
+    <span style="display:flex;gap:8px;align-items:center;width:100%"><b style="font-size:15px">${k}</b><span style="font-size:11.5px;color:#5e6c84">${sub[k]}</span><span style="margin-left:auto;font-size:12px;color:#44546f;font-weight:700">${rs.filter(x=>!x.adj).length}건</span></span>
+    <span style="font-size:24px;font-weight:800;${sum(rs)<0?'color:#ae2a19':''}">${ctWon(sum(rs))}<span style="font-size:13px">원</span></span>
+    ${rs.some(x=>x.adj)?`<span style="font-size:12px;color:#44546f">신규 +${ctWon(sum(rs.filter(x=>!x.adj)))} · <b style="color:#ae2a19">해지·감액 ${ctWon(sum(rs.filter(x=>x.adj)))}</b></span>`:''}
+    <span style="font-size:12px;color:#5e6c84">${CT_UNIT[k]} 순합계</span></button>`;}).join('');
   const mine=sel.filter(x=>x.c.cat===slCat);
   const Y=Number(from.slice(0,4));
   const months=[];for(let m=1;m<=12;m++){const key=`${Y}-${String(m).padStart(2,'0')}`;
     const v=sum(all.filter(x=>x.c.cat===slCat&&x.c.date.startsWith(key)));
     const mEnd=localDateStr(new Date(Y,m,0));months.push({m,v,on:!(mEnd<from||`${key}-01`>to)});}
-  const max=Math.max(1,...months.map(x=>x.v));
-  const bars=months.map(x=>`<div class="sl-bar" title="${x.m}월 ${slCat} ${ctWon(x.v)}원"><span>${x.v?(x.v/10000).toFixed(1):''}</span><i style="height:${Math.round(x.v/max*150)}px;background:${x.on?'#0052cc':'#b3c7ee'}"></i></div>`).join('');
-  const tm={};mine.forEach(x=>{const p=x.c.product||'(상품 없음)';tm[p]=tm[p]||{n:0,s:0};tm[p].n++;tm[p].s+=Number(x.c.amount)||0;});
+  const max=Math.max(1,...months.map(x=>Math.abs(x.v)));
+  const bars=months.map(x=>`<div class="sl-bar" title="${x.m}월 ${slCat} ${ctWon(x.v)}원"><span>${x.v?(x.v/10000).toFixed(1):''}</span><i style="height:${Math.round(Math.abs(x.v)/max*150)}px;background:${x.v<0?(x.on?'#c9372c':'#f1c4bd'):(x.on?'#0052cc':'#b3c7ee')}"></i></div>`).join('');
+  const tm={};mine.forEach(x=>{const p=x.c.product||'(상품 없음)';tm[p]=tm[p]||{n:0,s:0};if(!x.adj)tm[p].n++;tm[p].s+=Number(x.c.amount)||0;});
   const tl=Object.entries(tm).sort((a,b)=>b[1].s-a[1].s),tmax=Math.max(1,...tl.map(t=>t[1].s));
   const types=tl.length?tl.map(([p,t])=>`<div style="display:flex;flex-direction:column;gap:4px"><div style="display:flex;gap:8px;font-size:13px"><b style="flex:1">${esc(p)}</b><span style="color:#44546f">${t.n}건</span><b>${ctWon(t.s)}원</b></div><div style="height:8px;background:#f1f2f4;border-radius:4px"><div style="height:8px;width:${Math.max(2,Math.round(t.s/tmax*100))}%;background:#0052cc;border-radius:4px"></div></div></div>`).join(''):'<div style="font-size:13px;color:#5e6c84">이 기간에 확정된 계약이 없어요</div>';
-  const rows=mine.slice().sort((a,b)=>b.c.date.localeCompare(a.c.date)).map((x,i)=>`<tr class="go" data-i="${i}" title="카드 열기"><td style="white-space:nowrap">${esc(x.c.date)}</td><td><b>${esc(x.card.title)}</b><div style="font-size:11.5px;color:#5e6c84">${esc(x.board.title)} › ${esc(x.col.title)}</div></td><td>${esc(x.c.product||'')}</td><td style="text-align:right;font-weight:700;white-space:nowrap">${ctWon(x.c.amount)}원</td></tr>`).join('');
+  const rows=mine.slice().sort((a,b)=>b.c.date.localeCompare(a.c.date)).map((x,i)=>`<tr class="go" data-i="${i}" title="카드 열기"><td style="white-space:nowrap">${esc(x.c.date)}</td><td><b>${esc(x.card.title)}</b><div style="font-size:11.5px;color:#5e6c84">${esc(x.board.title)} › ${esc(x.col.title)}</div></td><td>${x.adj?`<span style="font-size:11px;font-weight:800;padding:1px 6px;border-radius:4px;background:#ffebe6;color:#ae2a19;margin-right:4px">${esc(x.c.kind)}</span>`:''}${esc(x.c.product||'')}</td><td style="text-align:right;font-weight:700;white-space:nowrap;${x.adj?'color:#ae2a19':''}">${ctWon(x.c.amount)}원</td></tr>`).join('');
   window.__slRows=mine.slice().sort((a,b)=>b.c.date.localeCompare(a.c.date));
   panel.innerHTML=`<button id="sales-close" type="button" onclick="closeSales()" aria-label="닫기">✕</button>
     <div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;padding-right:44px">
-      <div><div style="font-size:22px;font-weight:800">💰 매출</div><div style="font-size:12.5px;color:#5e6c84;margin-top:4px">계약 확정일 기준 · ${esc(label)} · 장기/자동차/일반 따로 집계</div></div>
+      <div><div style="font-size:22px;font-weight:800">💰 매출</div><div style="font-size:12.5px;color:#5e6c84;margin-top:4px">계약 확정일 · 해지·감액일 기준 · ${esc(label)} · 장기/자동차/일반 따로 집계</div></div>
       <div style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">${pills}</div></div>
     ${slPeriod==='custom'?`<div class="sl-card" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:13px"><label>시작일 <input type="date" id="sl-from" value="${from}" onchange="slDates()" style="font:inherit;min-height:36px;border:1px solid #c1c7d0;border-radius:8px;padding:0 8px"></label> ~ <label>끝일 <input type="date" id="sl-to" value="${to}" onchange="slDates()" style="font:inherit;min-height:36px;border:1px solid #c1c7d0;border-radius:8px;padding:0 8px"></label></div>`:''}
     <div class="sl-cats">${cats}</div>
@@ -8254,7 +8312,7 @@ function renderSales(){
     </div>
     <div class="sl-card"><div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap"><div style="font-size:15px;font-weight:800">${slCat} 계약 목록 <span style="font-size:12px;color:#5e6c84;font-weight:400">${mine.length}건 · 누르면 카드가 열려요</span></div>
       <button type="button" class="ct-btn" style="margin-left:auto;min-height:36px;font-size:12.5px" onclick="slExport()">엑셀(CSV)로 내보내기</button></div>
-      <div style="overflow-x:auto">${mine.length?`<table class="sl-table"><thead><tr><th>확정일</th><th>카드</th><th>상품</th><th style="text-align:right">${CT_UNIT[slCat]}</th></tr></thead><tbody id="sl-tbody">${rows}</tbody></table>`:'<div style="font-size:13px;color:#5e6c84;padding:8px 0">이 기간에 확정된 계약이 없어요</div>'}</div></div>`;
+      <div style="overflow-x:auto">${mine.length?`<table class="sl-table"><thead><tr><th>날짜</th><th>카드</th><th>상품</th><th style="text-align:right">${CT_UNIT[slCat]}</th></tr></thead><tbody id="sl-tbody">${rows}</tbody></table>`:'<div style="font-size:13px;color:#5e6c84;padding:8px 0">이 기간에 확정된 계약이 없어요</div>'}</div></div>`;
   const tb=document.getElementById('sl-tbody');
   if(tb)tb.addEventListener('click',e=>{const tr=e.target.closest('tr[data-i]');if(!tr)return;const x=window.__slRows[Number(tr.dataset.i)];if(!x)return;
     closeSales();openBoard(x.board.id);setTimeout(()=>openModal(x.card.id,x.col.id),200);});
@@ -8263,8 +8321,8 @@ function slExport(){
   const [from,to]=slRange();
   const rows=slAll().filter(x=>x.c.date>=from&&x.c.date<=to).sort((a,b)=>a.c.date.localeCompare(b.c.date));
   const q=s=>'"'+String(s==null?'':s).replace(/"/g,'""')+'"';
-  const lines=[['확정일','구분','상품','보험료(원)','카드 제목','보드','리스트','메모'].map(q).join(',')]
-    .concat(rows.map(x=>[x.c.date,x.c.cat,x.c.product,Number(x.c.amount)||0,x.card.title,x.board.title,x.col.title,x.c.memo||''].map(q).join(',')));
+  const lines=[['날짜','종류','구분','상품','보험료(원)','카드 제목','보드','리스트','메모'].map(q).join(',')]
+    .concat(rows.map(x=>[x.c.date,x.c.kind||'신규',x.c.cat,x.c.product,Number(x.c.amount)||0,x.card.title,x.board.title,x.col.title,x.c.memo||''].map(q).join(',')));
   const blob=new Blob(['﻿'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`매출_${from}_${to}.csv`;
   document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);
