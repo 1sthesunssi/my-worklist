@@ -8191,6 +8191,14 @@ async function aiMergeInto(cid){
   try{renderCurrentView();}catch(e){}
   renderAiInbox();
 }
+// 번호 추측: 이름 칸이 휴대폰·전화번호 자체이거나, 이번에 불러온 구글 연락처에 같은 이름이 딱 1명 있을 때만
+function aiGuessPhone(src){
+  const names=[src.counterpart,src.roomName].map(v=>String(v||'').replace(/[\u2066-\u2069]/g,'').trim()).filter(Boolean);
+  for(const n of names){const d=n.replace(/[^0-9]/g,'');if(/^0\d{8,10}$/.test(d)&&d.length>=n.replace(/[\s\-().+]/g,'').length-1)return d;}
+  if(typeof contactsCache!=='undefined'&&Array.isArray(contactsCache))
+    for(const n of names){const m=contactsCache.filter(c=>c.name===n&&c.phone);if(m.length===1)return m[0].phone;}
+  return '';
+}
 function aiMakeCard(x,col,auto){
   const it=x.it,r=x.r,src=r.source||{};
   const card=mkCard(it.title||'(제목 없음)');card.id=x.cid;
@@ -8198,7 +8206,7 @@ function aiMakeCard(x,col,auto){
   if(!it.due&&it.dueRaw)lines.push(`기한 원문: “${esc(it.dueRaw)}”${it.dueReason?' — '+esc(it.dueReason):''}`);
   card.desc=lines.join('<br>');
   if(/^\d{4}-\d{2}-\d{2}$/.test(it.due||''))card.due=it.due;
-  if(src.phone)card.phone=src.phone;
+  card.phone=src.phone||aiGuessPhone(src)||card.phone;   // 문자·카톡도 번호를 알 수 있으면 📞
   card.checklist=(it.checklist||[]).map(t=>({id:uid(),text:String(t),checked:false,due:''}));
   card.ai=Object.assign(aiMeta(r,it),{processId:r.processId,itemId:String(it.itemId),resultVersion:Number(r.resultVersion||1),registeredAt:new Date().toISOString(),auto:!!auto,snap:aiSnap(it)});
   col.cards.push(card);aiSetStatus(x.key,'registered');saveState();
@@ -8411,13 +8419,11 @@ async function renderAiInbox(){
     +(done.length?`<details><summary style="cursor:pointer;font-size:13px;color:#44546f">처리한 것 ${done.length}건</summary><div style="display:flex;flex-direction:column;gap:10px;margin-top:10px">${done.map(x=>row(x,'done')).join('')}</div></details>`:'');
   aiUpdateBadge();
 }
-// 카드 앞면: 출처 표시(통·톡·문) + 종류 + 확인 필요 / 분석 바뀜
+// 카드 앞면: 출처 표시(통·톡·문) + 분석 바뀜 / 철회됨 — 통화·카톡·문자 모두 같은 모양
 const _aiContractBadge=contractBadgeHtml;
 contractBadgeHtml=function(card){const a=card&&card.ai;let h='';
   if(a&&a.source){const i=aiSrcInfo(a.source);
     h=`<span class="card-ai-dot" style="background:${i.bg};color:${i.fg}" title="${esc(i.name)}에서 ${a.auto?'자동 등록':'등록'}">${i.dot}</span>`;
-    if(a.source!=='call'&&a.category)h+=aiCatTag(a.category,true);
-    if(a.needsSourceReview)h+=`<span class="card-ai-cat" style="background:#fff7d6;color:#7f5f01" title="${esc((a.reviewReasons||[]).map(k=>AI_RR[k]||k).join(', ')||'원문 확인 필요')}">확인</span>`;
     if(a.pending)h+=`<span class="card-ai-cat" style="background:#fff4e5;color:#a54800" title="분석이 바뀌었어요 — 카드를 열어 확인">분석 바뀜</span>`;
     if(a.withdrawn)h+=`<span class="card-ai-cat" style="background:#f1f2f4;color:#626f86" title="분석에서 철회된 할 일">철회됨</span>`;}
   return h+_aiContractBadge(card);};
