@@ -7968,6 +7968,7 @@ function slExport(){
 .ai-btn.go{border-color:#0052cc;background:#0052cc;color:#fff;font-weight:800}
 .ai-sel{font:inherit;font-size:13px;min-height:40px;border:1px solid #c1c7d0;border-radius:8px;padding:0 8px;max-width:230px;background:#fff}
 .card-ai-dot{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;flex:0 0 18px;border-radius:50%;background:#7c5cdb;color:#fff;font-size:10.5px;font-weight:800;line-height:1;letter-spacing:0}
+.card-ai-cat{display:inline-flex;align-items:center;font-size:10.5px;font-weight:800;padding:1px 6px;border-radius:5px;white-space:nowrap;line-height:16px}
 .card-ai-badge{font-size:11px;font-weight:800;color:#4c1d95;background:#ede7ff;padding:2px 7px;border-radius:6px;white-space:nowrap}
 </style>
 <div id="ai-overlay" onclick="if(event.target===this)closeAiInbox()"><div id="ai-panel" role="dialog" aria-label="AI 접수함"></div></div>
@@ -8004,27 +8005,72 @@ async function aiCardId(p,i){const k=JSON.stringify([String(p),String(i)]);if(ai
   const h=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(k));
   return aiIdCache[k]='ai_'+[...new Uint8Array(h)].map(b=>b.toString(16).padStart(2,'0')).join('').slice(0,20);}
 function aiValidResult(j){return j&&j.schemaVersion===3&&typeof j.processId==='string'&&j.processId&&Array.isArray(j.items)&&!(j.analysis&&j.analysis.transcriptSource==='synthetic_fixture'&&typeof MWL_TEST==='undefined');}   // 진짜 앱은 가상 시험 자료를 건너뜀
+// ── 출처(통화·카톡·문자) ──
+const AI_SRC={
+  call:{dot:'통',name:'통화',list:'📥 통화에서 온 할 일',bg:'#7c5cdb',fg:'#fff',link:'▶ 원본 통화 듣기'},
+  kakao:{dot:'톡',name:'카톡',list:'💬 카톡에서 온 할 일',bg:'#fac775',fg:'#633806',link:'▶ 원본 대화 보기'},
+  sms:{dot:'문',name:'문자',list:'✉️ 문자에서 온 할 일',bg:'#22a06b',fg:'#fff',link:'▶ 원본 문자 보기'}};
+const aiType=r=>{const t=((r&&r.source)||{}).type||'call';return AI_SRC[t]?t:'unknown';};
+const aiSrcInfo=t=>AI_SRC[t]||{dot:'?',name:'알 수 없는 출처',bg:'#8590a2',fg:'#fff',link:'▶ 원본'};
+const AI_CAT={'보상 요청':['#ffeceb','#ae2e24'],'업무 요청':['#dcfff1','#216e4e'],'보험 문의':['#e9f2ff','#0055cc'],'약속·일정':['#f3f0ff','#5e4db2'],'기타':['#f1f2f4','#44546f']};
+const aiCatTag=(c,small)=>{if(!c)return '';const k=AI_CAT[c]||AI_CAT['기타'];return `<span class="${small?'card-ai-cat':'ai-tag'}" style="background:${k[0]};color:${k[1]}">${esc(c)}</span>`;};
+const AI_RR={truncated:'잘린 알림',photo:'사진 확인 필요',file:'파일 확인 필요',my_messages_missing:'내 답장 없음'};
+const aiExpired=u=>!!(u&&new Date(u)<new Date());
+const aiCanon=v=>Array.isArray(v)?'['+v.map(aiCanon).join(',')+']':(v&&typeof v==='object')?'{'+Object.keys(v).sort().map(k=>JSON.stringify(k)+':'+aiCanon(v[k])).join(',')+'}':JSON.stringify(v===undefined?null:v);
+let aiConflicts=[];const aiFileCache={};
+// 결과 파일 저장소(이 기기 브라우저, IndexedDB): 앱을 닫았다 열어도 바뀌지 않은 파일은 다시 받지 않음. 없거나 막혀 있으면 그냥 매번 받음
+const aiIdb=(()=>{let p=null;const name='mwl-ai-files'+(typeof MWL_TEST!=='undefined'?'-test':'');
+  const open=()=>p||(p=new Promise((res,rej)=>{try{const r=indexedDB.open(name,1);r.onupgradeneeded=()=>r.result.createObjectStore('f');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);}catch(e){rej(e);}}));
+  return {
+    all:async()=>{try{const db=await open();return await new Promise(res=>{const m={};const q=db.transaction('f').objectStore('f').openCursor();q.onsuccess=()=>{const c=q.result;if(c){m[c.key]=c.value;c.continue();}else res(m);};q.onerror=()=>res(m);});}catch(e){return {};}},
+    putMany:async o=>{try{const db=await open();await new Promise(res=>{const t=db.transaction('f','readwrite'),st=t.objectStore('f');Object.keys(o).forEach(k=>st.put(o[k],k));t.oncomplete=res;t.onerror=res;t.onabort=res;});}catch(e){}},
+    drop:async ks=>{try{const db=await open();await new Promise(res=>{const t=db.transaction('f','readwrite'),st=t.objectStore('f');ks.forEach(k=>st.delete(k));t.oncomplete=res;t.onerror=res;t.onabort=res;});}catch(e){}}};})();
+let aiIdbLoaded=false;
+// 같은 processId 는 resultVersion 이 가장 큰 판만. 같은 판인데 내용이 다른 파일이 있으면 고르지 않고 '충돌'로 보류
+function aiPickVersions(out){
+  const by={};out.forEach(r=>(by[r.processId]=by[r.processId]||[]).push(r));
+  const results=[],conflicts=[];
+  Object.keys(by).forEach(p=>{
+    const rs=by[p],top=Math.max(...rs.map(r=>Number(r.resultVersion||1)));
+    const tops=rs.filter(r=>Number(r.resultVersion||1)===top);
+    const sig=r=>{const c=Object.assign({},r);delete c._file;return aiCanon(c);};
+    const g={};tops.forEach(r=>{(g[sig(r)]=g[sig(r)]||[]).push((r._file&&r._file.name)||'(이름 없음)');});
+    if(Object.keys(g).length>1)conflicts.push({processId:p,resultVersion:top,type:aiType(tops[0]),files:tops.map(r=>(r._file&&r._file.name)||'(이름 없음)'),groups:Object.values(g)});
+    else results.push(tops[0]);
+  });
+  return {results,conflicts};
+}
 async function aiLoad(){
-  if(aiSample){aiResults=aiSampleResults();aiLoadedAt=Date.now();aiLoadErr='';return;}
+  if(aiSample){const pk=aiPickVersions(aiSampleResults());aiResults=pk.results;aiConflicts=pk.conflicts;aiLoadedAt=Date.now();aiLoadErr='';return;}
   const fid=(state.aiConfig||{}).folderId;
   if(!fid){aiLoadErr='folder';return;}
   aiLoading=true;
   try{
     const q=encodeURIComponent(`'${fid}' in parents and trashed=false`);
-    const list=await (await aiApi(`files?q=${q}&fields=files(id,name,mimeType,modifiedTime)&pageSize=200&orderBy=modifiedTime desc`)).json();
-    const files=(list.files||[]).filter(f=>/\.json$/i.test(f.name)||f.mimeType==='application/json');
+    let files=[],tok='';
+    do{   // 200개 제한 없이 다음 쪽까지
+      const l=await (await aiApi(`files?q=${q}&fields=nextPageToken,files(id,name,mimeType,modifiedTime)&pageSize=1000&orderBy=modifiedTime desc${tok?'&pageToken='+encodeURIComponent(tok):''}`)).json();
+      files=files.concat(l.files||[]);tok=l.nextPageToken||'';
+    }while(tok&&files.length<20000);
+    files=files.filter(f=>/\.json$/i.test(f.name)||f.mimeType==='application/json');
+    if(!aiIdbLoaded){Object.assign(aiFileCache,await aiIdb.all());aiIdbLoaded=true;}
+    const need=files.filter(f=>{const c=aiFileCache[f.id];return !(c&&c.mt===f.modifiedTime);});   // 바뀌지 않은 파일은 다시 받지 않음
+    const fresh={};let next=0;
+    const worker=async()=>{while(next<need.length){const f=need[next++];let j=null;
+      try{j=JSON.parse(await (await aiApi(`files/${f.id}?alt=media`)).text());}catch(e){if(e&&e.message==='login')throw e;j=null;}
+      aiFileCache[f.id]=fresh[f.id]={mt:f.modifiedTime,j};}};
+    await Promise.all(Array.from({length:Math.min(8,need.length)},worker));   // 8개씩 동시에
+    if(Object.keys(fresh).length)aiIdb.putMany(fresh);
+    const live=new Set(files.map(f=>f.id)),gone=Object.keys(aiFileCache).filter(k=>!live.has(k));   // 폴더에서 빠진 파일은 저장소에서도 지움
+    if(gone.length){gone.forEach(k=>delete aiFileCache[k]);aiIdb.drop(gone);}
     const out=[];
-    for(const f of files){
-      try{const j=JSON.parse(await (await aiApi(`files/${f.id}?alt=media`)).text());if(aiValidResult(j))out.push(Object.assign(j,{_file:f}));}catch(e){}
-    }
-    // 같은 processId 가 여러 판이면 resultVersion 이 가장 큰 것만
-    const best={};out.forEach(r=>{const v=Number(r.resultVersion||1);if(!best[r.processId]||v>Number(best[r.processId].resultVersion||1))best[r.processId]=r;});
-    aiResults=Object.values(best);aiLoadedAt=Date.now();aiLoadErr='';
-    aiBackfill();
+    for(const f of files){const j=(aiFileCache[f.id]||{}).j;if(aiValidResult(j))out.push(Object.assign({},j,{_file:f}));}
+    const pk=aiPickVersions(out);aiResults=pk.results;aiConflicts=pk.conflicts;aiLoadedAt=Date.now();aiLoadErr='';
+    aiSyncCards();
   }catch(e){aiLoadErr=e.message==='login'?'login':String(e.message||e);}
   finally{aiLoading=false;}
 }
-// 이미 등록한 카드: 새 판(resultVersion↑)의 '출처 정보'만 빈칸 채우기 (제목·내용·기한·체크리스트는 그대로)
+// 이미 등록한 카드: 원본 표시 정리 (옛 통화 카드)
 function aiCleanDesc(){
   let n=0;
   (state.boards||[]).forEach(b=>(b.columns||[]).forEach(c=>(c.cards||[]).forEach(k=>{
@@ -8037,36 +8083,80 @@ function aiCleanDesc(){
   if(n){saveState();try{renderCurrentView();}catch(e){}}
 }
 setTimeout(aiCleanDesc,6000);
-function aiBackfill(){
-  const byP={};aiResults.forEach(r=>byP[r.processId]=r);let n=0;
+// 카드에 넣는 '출처 정보' (내용 아님) — 새 판이 오면 이것만 자동으로 바뀜
+function aiMeta(r,it){
+  const s=r.source||{},msgs={};(s.messages||[]).forEach(m=>{if(m&&m.id)msgs[m.id]=m;});
+  return {source:aiType(r),link:s.link||'',driveFileId:s.driveFileId||'',counterpart:s.counterpart||'',callAt:s.callAt||'',startedAt:s.startedAt||'',endedAt:s.endedAt||'',
+    retentionUntil:s.retentionUntil||'',coverage:s.coverage||null,category:it.category||'',evidence:it.evidence||'',
+    evidenceMsgs:(it.evidenceMessageIds||[]).map(id=>msgs[id]).filter(Boolean).map(m=>({at:m.at||null,receivedAt:m.receivedAt||null,from:m.from||'',kind:m.kind||''})),
+    needsSourceReview:!!it.needsSourceReview,reviewReasons:Array.isArray(it.reviewReasons)?it.reviewReasons:[]};
+}
+// 카드 '내용'의 기준값 — 분석이 바뀌었는지 비교할 때만 씀
+function aiSnap(it){return {title:it.title||'(제목 없음)',desc:it.desc||'',due:/^\d{4}-\d{2}-\d{2}$/.test(it.due||'')?it.due:'',checklist:(it.checklist||[]).map(String)};}
+function aiDiff(snap,it){const s=aiSnap(it),p={};['title','desc','due','checklist'].forEach(f=>{if(aiCanon(s[f])!==aiCanon(snap[f]))p[f]=s[f];});return p;}
+// 새 판(resultVersion↑): 출처 정보만 자동 반영. 제목·설명·기한·체크리스트는 덮어쓰지 않고 '바뀐 분석'으로만 남김. 완료·위치·메모는 안 건드림
+function aiSyncCards(){
+  const byP={};aiResults.forEach(r=>byP[r.processId]=r);let n=0,ch=0;
   (state.boards||[]).forEach(b=>(b.columns||[]).forEach(c=>(c.cards||[]).forEach(k=>{
-    const a=k.ai;if(!a||a.source!=='call')return;const r=byP[a.processId];if(!r)return;
+    const a=k.ai;if(!a||!a.processId)return;const r=byP[a.processId];if(!r)return;
     const v=Number(r.resultVersion||1);if(v<=Number(a.resultVersion||1))return;
+    const it=(r.items||[]).find(i=>String(i.itemId)===String(a.itemId));
     const src=r.source||{};
-    if(src.link&&!a.link)a.link=src.link;
-    if(src.driveFileId&&!a.driveFileId)a.driveFileId=src.driveFileId;
-    if(src.counterpart&&!a.counterpart)a.counterpart=src.counterpart;
+    if(it){const m=aiMeta(r,it);['link','driveFileId','counterpart','callAt','startedAt','endedAt','retentionUntil'].forEach(f=>{if(!m[f]&&a[f])delete m[f];});Object.assign(a,m);}   // 새 판에 빈 값이면 있던 원본 정보는 지우지 않음
+    else a.missing=true;
     if(src.phone&&!k.phone)k.phone=src.phone;
+    if(it&&it.withdrawn){a.withdrawn=true;delete a.pending;}
+    else if(it){delete a.withdrawn;delete a.missing;
+      if(!a.snap)a.snap=aiSnap(it);   // 예전 카드: 이번 판을 기준으로
+      else{const p=aiDiff(a.snap,it);if(Object.keys(p).length){a.pending=Object.assign({ver:v},p);ch++;}else delete a.pending;}}
     a.resultVersion=v;a.updatedFrom=new Date().toISOString();n++;})));
-  if(n){saveState();try{renderCurrentView();}catch(e){}showToast('🔗',`등록한 카드 ${n}장에 원본 링크·상대 정보를 채웠어요.`,3500);}
+  if(n){saveState();try{renderCurrentView();}catch(e){}
+    if(ch)showToast('🔁',`분석이 바뀐 카드 ${ch}장 — 카드를 열면 [반영]할 수 있어요.`,4500);}
+}
+function aiApplyPending(id,apply){
+  const hit=aiFindCard(id);if(!hit||!hit.card.ai||!hit.card.ai.pending)return;
+  const k=hit.card,a=k.ai,p=Object.assign({},a.pending);delete p.ver;
+  if(apply){
+    if('title' in p)k.title=p.title;
+    if('due' in p)k.due=p.due;
+    if('desc' in p)k.desc=esc(p.desc);
+    if('checklist' in p){const have=new Set((k.checklist||[]).map(x=>x.text));p.checklist.forEach(t=>{if(!have.has(t))(k.checklist=k.checklist||[]).push({id:uid(),text:t,checked:false,due:''});});}   // 있던 항목·체크는 그대로, 새 항목만 추가
+  }
+  a.snap=Object.assign({},a.snap||{},p);delete a.pending;saveState();
+  try{renderCurrentView();}catch(e){}
+  try{openModal(k.id,hit.col.id);}catch(e){}
+  showToast(apply?'✅':'👌',apply?'바뀐 분석을 카드에 반영했어요.':'지금 카드 내용을 그대로 둘게요.',2500);
 }
 function aiFindCard(id){let hit=null;(state.boards||[]).forEach(b=>(b.columns||[]).forEach(c=>(c.cards||[]).forEach(k=>{if(k.id===id)hit={card:k,board:b,col:c};})));return hit;}
+const aiStOf=key=>String((state.aiInbox||{})[key]||'').split('|')[0];
 async function aiItems(){
   const out=[];
   for(const r of aiResults){
     if(!r.analysis||r.analysis.status!=='done')continue;
+    const t=aiType(r),src=r.source||{};
     for(const it of r.items){
       if(it.withdrawn)continue;
-      const cid=await aiCardId(r.processId,it.itemId),key=cid.slice(3);
-      const st=String((state.aiInbox||{})[key]||'').split('|')[0];
-      out.push({r,it,cid,key,st,reg:!!aiFindCard(cid)||st==='registered'||st==='deleted'});
+      const cid=await aiCardId(r.processId,it.itemId),key=cid.slice(3),st=aiStOf(key);
+      let hold='',olds=[];
+      if(t==='unknown')hold='unknown';
+      else if(t!=='call'&&src.isGroup!==false)hold='group';   // 1:1로 확인된 대화만 등록
+      else{
+        for(const o of (it.replaces||[])){const oc=await aiCardId(r.processId,o),os=aiStOf(oc.slice(3));if(aiFindCard(oc)||os==='registered'||os==='merged')olds.push(oc);}
+        if(olds.length)hold='replace';   // 이미 카드가 된 항목을 대신하는 새 항목 → 자동 등록하지 않음
+      }
+      out.push({r,it,cid,key,st,t,hold,olds,reg:!!aiFindCard(cid)||st==='registered'||st==='deleted'||st==='merged'});
     }
   }
   return out;
 }
 async function aiUpdateBadge(){
   const b=document.getElementById('ai-badge');if(!b)return;
-  try{if(aiNeedLogin&&aiAutoOn()){b.textContent='!';b.title='읽기 권한을 다시 연결해 주세요';b.style.display='';return;}b.title='';const ac=aiAutoOn()?aiFindAutoCol():null;const n=ac?(ac.col.cards||[]).filter(k=>!k.done).length:(await aiItems()).filter(x=>!x.reg&&x.st!=='excluded'&&x.st!=='later').length;b.textContent=n;b.style.display=n?'':'none';}catch(e){}
+  try{if(aiNeedLogin&&aiAutoOn()){b.textContent='!';b.title='읽기 권한을 다시 연결해 주세요';b.style.display='';return;}b.title='';
+    const all=await aiItems();const holds=all.filter(x=>!x.reg&&x.hold&&x.st!=='excluded').length+aiConflicts.length;
+    let n;
+    if(aiAutoOn()){n=0;['call','kakao','sms'].forEach(t=>{const c=aiFindAutoColFor(t);if(c)n+=(c.col.cards||[]).filter(k=>!k.done).length;});}
+    else n=all.filter(x=>!x.reg&&!x.hold&&x.st!=='excluded'&&x.st!=='later').length;
+    n+=holds;b.textContent=n;b.style.display=n?'':'none';if(holds)b.title=`확인할 항목 ${holds}건`;}catch(e){}
 }
 function aiSetStatus(key,st){state.aiInbox=state.aiInbox||{};state.aiInbox[key]=`${st}|${new Date().toISOString()}|${/Mobi/i.test(navigator.userAgent)?'폰':'PC'}`;}
 function aiListOptions(){
@@ -8076,6 +8166,7 @@ function aiListOptions(){
 }
 async function aiRegister(cid){
   const all=await aiItems();const x=all.find(y=>y.cid===cid);if(!x)return;
+  if(x.hold==='group'||x.hold==='unknown'){showToast('⚠️',x.hold==='group'?'1:1 대화로 확인된 것만 카드로 만들어요.':'출처를 알 수 없어 카드로 만들지 않아요.',3500);return;}
   if(aiFindCard(cid)){showToast('ℹ️','이미 카드로 등록돼 있어요.',2500);return renderAiInbox();}
   const sel=document.getElementById('sel-'+cid);const colId=sel&&sel.value;
   let col=null;(state.boards||[]).forEach(b=>(b.columns||[]).forEach(c=>{if(c.id===colId)col=c;}));
@@ -8083,6 +8174,20 @@ async function aiRegister(cid){
   localStorage.setItem('ai_last_col',colId);
   const card=aiMakeCard(x,col,false);
   showToast('✅',`「${card.title}」 카드를 만들었어요 → ${col.title}`,3000);
+  try{renderCurrentView();}catch(e){}
+  renderAiInbox();
+}
+// 대체 항목을 새 카드 대신 기존 카드에 '바뀐 분석'으로 붙이기 (사용자가 카드에서 [반영]을 눌러야 내용이 바뀜)
+async function aiMergeInto(cid){
+  const x=(await aiItems()).find(y=>y.cid===cid);if(!x||!x.olds.length)return;
+  const hit=aiFindCard(x.olds[0]);
+  if(!hit){showToast('⚠️','기존 카드를 찾을 수 없어요. 새 카드로 등록하거나 제외해 주세요.',3500);return;}
+  const a=hit.card.ai=hit.card.ai||{};if(!a.snap)a.snap={title:hit.card.title,desc:'',due:hit.card.due||'',checklist:(hit.card.checklist||[]).map(c=>c.text)};
+  const p=aiDiff(a.snap,x.it);
+  if(Object.keys(p).length)a.pending=Object.assign({ver:Number(x.r.resultVersion||1),fromItem:String(x.it.itemId)},p);
+  Object.assign(a,aiMeta(x.r,x.it));delete a.withdrawn;
+  aiSetStatus(x.key,'merged');saveState();
+  showToast('🔁',Object.keys(p).length?`「${hit.card.title}」 카드에 바뀐 내용을 붙였어요. 카드에서 [반영]을 눌러 주세요.`:'바뀐 내용이 없어 기존 카드를 그대로 뒀어요.',4000);
   try{renderCurrentView();}catch(e){}
   renderAiInbox();
 }
@@ -8095,11 +8200,11 @@ function aiMakeCard(x,col,auto){
   if(/^\d{4}-\d{2}-\d{2}$/.test(it.due||''))card.due=it.due;
   if(src.phone)card.phone=src.phone;
   card.checklist=(it.checklist||[]).map(t=>({id:uid(),text:String(t),checked:false,due:''}));
-  card.ai={source:'call',processId:r.processId,itemId:String(it.itemId),resultVersion:Number(r.resultVersion||1),driveFileId:src.driveFileId||'',link:src.link||'',evidence:it.evidence||'',callAt:src.callAt||'',counterpart:src.counterpart||'',registeredAt:new Date().toISOString(),auto:!!auto};
+  card.ai=Object.assign(aiMeta(r,it),{processId:r.processId,itemId:String(it.itemId),resultVersion:Number(r.resultVersion||1),registeredAt:new Date().toISOString(),auto:!!auto,snap:aiSnap(it)});
   col.cards.push(card);aiSetStatus(x.key,'registered');saveState();
   return card;
 }
-// ── 자동 등록: 새 할 일을 '📥 통화에서 온 할 일' 리스트에 바로 카드로 ──
+// ── 자동 등록: 출처별 리스트 (통화 📥 / 카톡 💬 / 문자 ✉️) ──
 const AI_AUTO_TITLE='📥 통화에서 온 할 일';
 const aiAutoOn=()=>(state.aiConfig||{}).auto!==false;
 function aiAutoCol(){
@@ -8112,6 +8217,32 @@ function aiAutoCol(){
   state.aiConfig=Object.assign({},cfg,{autoColId:hit.id});
   return hit;
 }
+// 카톡·문자 리스트: 통화 리스트가 있는 보드("통화.카톡.문자")에, 통화 리스트 바로 옆에 처음 한 번 만들고 번호로 기억
+function aiAutoColFor(t){
+  if(t==='call')return aiAutoCol();
+  if(!AI_SRC[t])return null;
+  const home0=aiAutoCol();if(!home0)return null;
+  const cfg=state.aiConfig||{},ids=Object.assign({},cfg.autoColIds||{});let hit=null,home=null;
+  (state.boards||[]).forEach(b=>(b.columns||[]).forEach(c=>{if(c.id===ids[t])hit=c;if(c.id===cfg.autoColId)home=b;}));
+  if(!hit&&home)(home.columns||[]).forEach(c=>{if(!hit&&c.title===AI_SRC[t].list)hit=c;});
+  if(!hit){
+    const b=home||(state.boards||[])[0];b.columns=b.columns||[];
+    hit={id:uid(),title:AI_SRC[t].list,cards:[],sortMode:'reg',color:'none',collapsed:false};
+    // 순서는 항상 통화 → 카톡 → 문자 (먼저 들어온 쪽과 상관없이)
+    const ord=['call','kakao','sms'],idOf={call:cfg.autoColId,kakao:ids.kakao,sms:ids.sms},me=ord.indexOf(t);
+    const pos=k=>b.columns.findIndex(c=>c.id===idOf[k]);
+    let at=-1;ord.slice(0,me).forEach(k=>{const p=pos(k);if(p>at)at=p;});
+    if(at<0){const nx=ord.slice(me+1).map(pos).filter(p=>p>=0);at=nx.length?Math.min(...nx)-1:-1;}
+    b.columns.splice(at+1,0,hit);
+  }
+  ids[t]=hit.id;state.aiConfig=Object.assign({},state.aiConfig||{},{autoColIds:ids});
+  return hit;
+}
+function aiFindAutoColFor(t){
+  if(t==='call')return aiFindAutoCol();
+  const id=((state.aiConfig||{}).autoColIds||{})[t];if(!id)return null;let hit=null;
+  (state.boards||[]).forEach(b=>(b.columns||[]).forEach(c=>{if(!hit&&c.id===id)hit={board:b,col:c};}));return hit;
+}
 let aiAutoBusy=false,aiNeedLogin=false;
 async function aiAutoRun(){
   if(aiAutoBusy||aiSample||!aiAutoOn()||!(state.aiConfig||{}).folderId)return;
@@ -8120,12 +8251,13 @@ async function aiAutoRun(){
   try{
     await aiLoad();if(aiLoadErr){if(aiLoadErr==='login')aiNeedLogin=true;return;}
     aiNeedLogin=false;
-    const todo=(await aiItems()).filter(x=>!x.reg&&!x.st);   // 제외·나중에·등록·삭제한 것은 건드리지 않음
+    const todo=(await aiItems()).filter(x=>!x.reg&&!x.st&&!x.hold);   // 제외·나중에·등록·삭제·보류한 것은 건드리지 않음
     if(!todo.length)return;
-    const col=aiAutoCol();if(!col)return;
-    todo.forEach(x=>{if(!aiFindCard(x.cid))aiMakeCard(x,col,true);});
+    const cnt={};
+    todo.forEach(x=>{if(aiFindCard(x.cid))return;const col=aiAutoColFor(x.t);if(!col)return;aiMakeCard(x,col,true);cnt[x.t]=(cnt[x.t]||0)+1;});
     saveState();try{renderCurrentView();}catch(e){}
-    showToast('📞',`통화에서 온 할 일 ${todo.length}건을 「${col.title}」에 넣었어요.`,4000);
+    const msg=Object.keys(cnt).map(t=>`${AI_SRC[t].name} ${cnt[t]}건`).join(' · ');
+    if(msg)showToast('📥',`${msg}을 카드로 넣었어요.`,4000);
     if(document.getElementById('ai-overlay').classList.contains('open'))renderAiInbox();
   }catch(e){}finally{aiAutoBusy=false;aiUpdateBadge();}
 }
@@ -8167,17 +8299,30 @@ function closeAiInbox(){document.getElementById('ai-overlay').classList.remove('
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('ai-overlay').classList.contains('open'))closeAiInbox();});
 const aiMD=d=>{if(!d)return '';const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(d);return m?`${+m[2]}/${+m[3]}`:'';};
 const aiTime=d=>{const t=d?new Date(d):null;return t&&!isNaN(t)?`${t.getMonth()+1}/${t.getDate()} ${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}`:'';};
+// 근거 메시지 시각·보낸 사람 (발송 시각을 모르면 '수신' 시각으로, 둘 다 없으면 '시각 모름')
+function aiMsgLine(m,who){const t=m.at?aiTime(m.at):m.receivedAt?aiTime(m.receivedAt)+' 수신':'시각 모름';
+  return `${t} ${m.from==='me'?'나':esc(who||'상대')}${m.kind&&m.kind!=='text'?' ('+({photo:'사진',file:'파일'}[m.kind]||esc(m.kind))+')':''}`;}
+function aiEvHead(r,it){const s=r.source||{};if(aiType(r)==='call')return `${esc(aiTime(s.callAt))} ${esc(s.counterpart||'')}`;
+  const msgs={};(s.messages||[]).forEach(m=>{if(m&&m.id)msgs[m.id]=m;});
+  const ev=(it.evidenceMessageIds||[]).map(id=>msgs[id]).filter(Boolean);
+  return ev.length?ev.map(m=>aiMsgLine(m,s.counterpart)).join(' · '):esc(s.counterpart||'');}
+function aiSrcLink(t,s){if(aiExpired(s.retentionUntil))return '<span style="font-size:12.5px;color:#8590a2">원본 보관 기간 종료</span>';
+  const i=aiSrcInfo(t);return s.link?`<a href="${esc(s.link)}" target="_blank" rel="noopener" style="font-size:12.5px">${i.link}</a>`:`<span style="font-size:12.5px;color:#8590a2">${i.link}: 아직 연결 전</span>`;}
+function aiCoverTag(t,s){const c=s.coverage;if(t==='call'||!c)return '';const via=Array.isArray(c.via)?c.via:[];
+  const parts=[];if(via.length===1&&via[0]==='notification')parts.push('알림만 수집');if(c.includesMyMessages===false)parts.push('내 답장 없음');if(c.complete===false&&!parts.length)parts.push('일부만 수집');
+  return parts.length?`<span class="ai-tag g">${parts.join(' · ')}</span>`:'';}
 async function renderAiInbox(){
   const p=document.getElementById('ai-panel');if(!p)return;
   const cfg=state.aiConfig||{};
+  const home=aiFindAutoCol();
   const head=`<button type="button" onclick="closeAiInbox()" aria-label="닫기" style="position:absolute;top:12px;right:12px;width:38px;height:38px;border-radius:50%;border:0;background:rgba(9,30,66,.08);font-size:18px;cursor:pointer">✕</button>
-    <div style="padding-right:44px"><div style="font-size:21px;font-weight:800">📞 AI 접수함</div><div style="font-size:12.5px;color:#5e6c84;margin-top:3px">${aiAutoOn()?`새 할 일은 「${AI_AUTO_TITLE}」 리스트로 바로 들어가요 · <a href="#" onclick="event.preventDefault();closeAiInbox();aiGoList(true)">리스트로 가기 →</a>`:'통화에서 찾은 할 일 · 확인한 것만 카드가 돼요'}</div></div>`;
+    <div style="padding-right:44px"><div style="font-size:21px;font-weight:800">📥 AI 접수함</div><div style="font-size:12.5px;color:#5e6c84;margin-top:3px">${aiAutoOn()?`새 할 일은 ${home?`「${esc(home.board.title)}」 보드의 `:''}통화·카톡·문자 리스트로 바로 들어가요 · <a href="#" onclick="event.preventDefault();closeAiInbox();aiGoList(true)">리스트로 가기 →</a>`:'통화·카톡·문자에서 찾은 할 일 · 확인한 것만 카드가 돼요'}</div></div>`;
   const setup=`<div class="ai-card" style="gap:8px">
     <div style="font-size:13px;font-weight:800">결과 폴더 연결</div>
     <div style="display:flex;gap:6px;flex-wrap:wrap"><input id="ai-folder" value="${esc(cfg.folderId||'')}" placeholder="폴더 ID 또는 드라이브 폴더 링크" style="flex:1 1 260px;font:inherit;font-size:13.5px;min-height:40px;border:1px solid #c1c7d0;border-radius:8px;padding:0 10px">
       <button type="button" class="ai-btn" onclick="aiSaveFolder()">저장</button>
       <button type="button" class="ai-btn go" onclick="aiConnect()">${aiSignedIn()?'다시 읽기':'읽기 권한 연결'}</button></div>
-    <label style="display:flex;gap:8px;align-items:center;font-size:13px;cursor:pointer;padding:4px 0"><input type="checkbox" ${aiAutoOn()?'checked':''} onchange="aiToggleAuto()" style="width:18px;height:18px"> <b>자동 등록</b> <span style="color:#5e6c84">— 앱이 열려 있으면 10분마다 확인해서 「${AI_AUTO_TITLE}」 리스트에 카드로 넣어요</span></label>
+    <label style="display:flex;gap:8px;align-items:center;font-size:13px;cursor:pointer;padding:4px 0"><input type="checkbox" ${aiAutoOn()?'checked':''} onchange="aiToggleAuto()" style="width:18px;height:18px"> <b>자동 등록</b> <span style="color:#5e6c84">— 앱이 열려 있으면 10분마다 확인해서 출처별 리스트에 카드로 넣어요</span></label>
     ${aiNeedLogin&&aiAutoOn()?'<div style="font-size:12.5px;color:#bf2600;font-weight:700">읽기 권한이 끝나서 자동 등록이 멈췄어요. [읽기 권한 연결]을 눌러 주세요.</div>':''}
     <div style="font-size:12px;color:#5e6c84">처음 한 번 구글 창에서 "드라이브 파일 보기" 권한을 허용해 주세요. 앱은 이 폴더의 결과 파일만 읽어요.${typeof MWL_TEST!=='undefined'?` · <a href="#" onclick="event.preventDefault();aiSample=!aiSample;aiRefresh()">${aiSample?'샘플 끄기':'샘플로 보기'}</a>`:''}</div></div>`;
   if(aiLoading){p.innerHTML=head+setup+'<div class="ai-card">불러오는 중…</div>';return;}
@@ -8188,52 +8333,89 @@ async function renderAiInbox(){
     else if(aiLoadErr)msg='불러오지 못했어요: '+esc(aiLoadErr);
   }
   const items=await aiItems();
-  const open=items.filter(x=>!x.reg&&x.st!=='excluded'&&x.st!=='later');
+  const open=items.filter(x=>!x.reg&&!x.hold&&x.st!=='excluded'&&x.st!=='later');
+  const holds=items.filter(x=>!x.reg&&x.hold&&x.st!=='excluded'&&x.st!=='later');
   const later=items.filter(x=>!x.reg&&x.st==='later');
   const done=items.filter(x=>x.reg||x.st==='excluded');
   const failed=aiResults.filter(r=>!r.analysis||r.analysis.status!=='done');
   const noWork=aiResults.filter(r=>r.analysis&&r.analysis.status==='done'&&!r.items.length);
-  const sched=[];aiResults.forEach(r=>(r.items||[]).forEach(it=>{if(it.schedule)sched.push({r,it});}));
+  const sched=[];aiResults.forEach(r=>(r.items||[]).forEach(it=>{if(it.schedule&&!it.withdrawn)sched.push({r,it});}));
   const opts=aiListOptions();
-  const row=(x,mode)=>{const it=x.it,r=x.r,src=r.source||{};
+  const HOLD={replace:'이미 카드가 된 할 일을 고친 새 분석이에요. 카드가 두 장 되지 않게 자동 등록하지 않았어요.',group:'1:1 대화로 확인되지 않아 카드로 만들지 않아요.',unknown:'출처를 알 수 없는 결과라 카드로 만들지 않아요.'};
+  const row=(x,mode)=>{const it=x.it,r=x.r,src=r.source||{},inf=aiSrcInfo(x.t);
     const due=it.due?`<span class="ai-tag" style="background:#fff4e5;color:#974f0c">기한 ${aiMD(it.due)}</span>`:`<span class="ai-tag g">기한 확인 필요</span>`;
+    const rr=(it.needsSourceReview?(it.reviewReasons&&it.reviewReasons.length?it.reviewReasons:['원문 확인 필요']):[]).map(k=>`<span class="ai-tag" style="background:#fff7d6;color:#7f5f01">${esc(AI_RR[k]||k)}</span>`).join('');
     const rel=(it.relatedCards||[]).map(c=>`<a href="#card=${encodeURIComponent(c.cardId)}" onclick="closeAiInbox()" style="font-weight:700">${esc(c.title||c.cardId)}</a> <span style="color:#626f86;font-size:12px">${esc([c.board,c.list].filter(Boolean).join(' › '))}${c.reason?' · '+esc(c.reason):''}</span>`).join('<br>');
-    const acts=mode==='open'||mode==='later'?`<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-left:auto">
+    let acts;
+    if(mode==='hold'){
+      const old=x.olds[0]?aiFindCard(x.olds[0]):null;
+      acts=`<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-left:auto">
+        ${x.hold==='replace'?`${old?`<button type="button" class="ai-btn go" onclick="aiMergeInto('${x.cid}')">기존 카드에 붙이기</button>`:''}<select id="sel-${x.cid}" class="ai-sel" aria-label="넣을 리스트">${opts}</select><button type="button" class="ai-btn" onclick="aiRegister('${x.cid}')">새 카드로 등록</button>`:''}
+        <button type="button" class="ai-btn" onclick="aiMark('${x.key}','excluded')">제외</button></div>`;
+    }else if(mode==='open'||mode==='later')acts=`<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-left:auto">
         <select id="sel-${x.cid}" class="ai-sel" aria-label="넣을 리스트">${opts}</select>
         ${mode==='open'?`<button type="button" class="ai-btn" onclick="aiMark('${x.key}','later')">나중에</button>`:''}
         <button type="button" class="ai-btn" onclick="aiMark('${x.key}','excluded')">제외</button>
-        <button type="button" class="ai-btn go" onclick="aiRegister('${x.cid}')">등록</button></div>`
-      :`<div style="margin-left:auto;display:flex;gap:8px;align-items:center;font-size:13px">${x.reg?`<a href="#card=${x.cid}" onclick="closeAiInbox()" style="font-weight:700;color:#216e4e">✓ 카드 열기</a>`:'<span style="color:#626f86">제외함</span>'}${!aiFindCard(x.cid)?`<button type="button" class="ai-btn" style="min-height:34px" onclick="aiUndo('${x.key}')">되돌리기</button>`:''}</div>`;
-    return `<div class="ai-card"${mode==='done'?' style="opacity:.75"':''}>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center"><span class="ai-tag">AI · 통화</span>${it.area?`<span class="ai-tag g">${esc(it.area)}</span>`:''}${it.type?`<span class="ai-tag g">${esc(it.type)}</span>`:''}${due}</div>
+        <button type="button" class="ai-btn go" onclick="aiRegister('${x.cid}')">등록</button></div>`;
+    else acts=`<div style="margin-left:auto;display:flex;gap:8px;align-items:center;font-size:13px">${aiFindCard(x.cid)?`<a href="#card=${x.cid}" onclick="closeAiInbox()" style="font-weight:700;color:#216e4e">✓ 카드 열기</a>`:x.st==='merged'?'<span style="color:#626f86">기존 카드에 붙임</span>':x.reg?'<span style="color:#626f86">등록했다가 지움</span>':'<span style="color:#626f86">제외함</span>'}${!aiFindCard(x.cid)?`<button type="button" class="ai-btn" style="min-height:34px" onclick="aiUndo('${x.key}')">되돌리기</button>`:''}</div>`;
+    const holdNote=mode==='hold'?`<div style="font-size:12.5px;color:#974f0c;font-weight:700">${HOLD[x.hold]||''}${x.hold==='replace'&&x.olds[0]&&aiFindCard(x.olds[0])?` 기존 카드: <a href="#card=${x.olds[0]}" onclick="closeAiInbox()">${esc(aiFindCard(x.olds[0]).card.title)}</a>`:''}</div>`:'';
+    return `<div class="ai-card"${mode==='done'?' style="opacity:.75"':mode==='hold'?' style="border-color:#f5cd47"':''}>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center"><span class="ai-tag" style="background:${inf.bg};color:${inf.fg}">AI · ${esc(inf.name)}</span>${aiCatTag(it.category)}${it.area?`<span class="ai-tag g">${esc(it.area)}</span>`:''}${it.type?`<span class="ai-tag g">${esc(it.type)}</span>`:''}${due}${rr}${aiCoverTag(x.t,src)}</div>
+      ${holdNote}
       <div style="font-size:15px;font-weight:800;line-height:1.4">${esc(it.title||'(제목 없음)')}</div>
       ${it.desc?`<div style="font-size:13px;color:#44546f">${esc(it.desc)}</div>`:''}
-      ${it.evidence?`<blockquote class="ai-q"><span style="display:block;font-size:11.5px;font-weight:700;color:#626f86">근거 · ${esc(aiTime(src.callAt))} ${esc(src.counterpart||'')}</span>“${esc(it.evidence)}”${!it.due&&it.dueRaw?`<span style="display:block;font-size:12px;color:#974f0c;margin-top:3px">원문 “${esc(it.dueRaw)}”${it.dueReason?' — '+esc(it.dueReason):''}</span>`:''}</blockquote>`:''}
+      ${it.evidence?`<blockquote class="ai-q"><span style="display:block;font-size:11.5px;font-weight:700;color:#626f86">근거 · ${aiEvHead(r,it)}</span>“${esc(it.evidence)}”${!it.due&&it.dueRaw?`<span style="display:block;font-size:12px;color:#974f0c;margin-top:3px">원문 “${esc(it.dueRaw)}”${it.dueReason?' — '+esc(it.dueReason):''}</span>`:''}${it.due&&it.dueBasis?`<span style="display:block;font-size:12px;color:#626f86;margin-top:3px">기한 근거: ${esc(it.dueBasis)}</span>`:''}</blockquote>`:''}
       ${rel?`<div style="font-size:13px"><div style="font-size:12px;font-weight:700;color:#44546f">관련 있어 보이는 기존 카드</div>${rel}</div>`:''}
-      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;border-top:1px solid #ebecf0;padding-top:9px">${src.link?`<a href="${esc(src.link)}" target="_blank" rel="noopener" style="font-size:12.5px">▶ 원본 통화 듣기</a>`:'<span style="font-size:12.5px;color:#8590a2">▶ 원본 통화: 아직 연결 전</span>'}${acts}</div></div>`;};
-  const schedHtml=sched.length?`<div class="ai-card"><div style="font-size:14px;font-weight:800">통화에서 나온 일정</div>${sched.map(({r,it})=>{const s=it.schedule;
-      const st=s.status==='registered'?`<b style="color:#216e4e">✓ 캘린더 등록됨</b>`:s.status==='failed'?`<b style="color:#bf2600">등록 실패</b>`:`<b style="color:#974f0c">확인 필요</b>`;
-      return `<div style="font-size:13px;line-height:1.6">${st} · ${esc(aiTime(s.start)||it.dueRaw||'')} ${esc(it.title||'')}${s.userChanged?` <span style="color:#626f86">(직접 ${s.userChanged==='deleted'?'삭제':'수정'}함)</span>`:''}${s.link?` · <a href="${esc(s.link)}" target="_blank" rel="noopener">일정 열기</a>`:''}</div>`;}).join('')}</div>`:'';
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;border-top:1px solid #ebecf0;padding-top:9px">${aiSrcLink(x.t,src)}${acts}</div></div>`;};
+  const schedHtml=sched.length?`<div class="ai-card"><div style="font-size:14px;font-weight:800">대화에서 나온 일정</div>${sched.map(({r,it})=>{const s=it.schedule;
+      const st=s.status==='registered'?`<b style="color:#216e4e">✓ 캘린더 등록됨</b>`:s.status==='failed'?`<b style="color:#bf2600">등록 실패</b>`:s.status==='needs_review'?`<b style="color:#974f0c">확인 필요 · 캘린더에 안 넣음</b>`:`<b style="color:#974f0c">확인 필요</b>`;
+      return `<div style="font-size:13px;line-height:1.6">${st} · ${aiSrcInfo(aiType(r)).dot} · ${esc(aiTime(s.start)||it.dueRaw||'')} ${esc(it.title||'')}${s.reason?` <span style="color:#626f86">(${esc(s.reason)})</span>`:''}${s.userChanged?` <span style="color:#626f86">(직접 ${s.userChanged==='deleted'?'삭제':'수정'}함)</span>`:''}${s.link?` · <a href="${esc(s.link)}" target="_blank" rel="noopener">일정 열기</a>`:''}</div>`;}).join('')}</div>`:'';
+  const cnt=t=>aiResults.filter(r=>aiType(r)===t).length;
   const report=`<div class="ai-card" style="flex-direction:row;flex-wrap:wrap;gap:14px;font-size:13px">
-    <span>읽은 통화 <b>${aiResults.length}</b></span><span>할 일 있음 <b>${aiResults.filter(r=>r.items&&r.items.length).length}</b></span><span>할 일 없음 <b>${noWork.length}</b></span><span style="color:#bf2600">분석 실패 <b>${failed.length}</b></span>
+    <span>읽은 결과 <b>${aiResults.length}</b> <span style="color:#626f86">(통화 ${cnt('call')} · 카톡 ${cnt('kakao')} · 문자 ${cnt('sms')}${cnt('unknown')?' · 기타 '+cnt('unknown'):''})</span></span><span>할 일 있음 <b>${aiResults.filter(r=>r.items&&r.items.length).length}</b></span><span>할 일 없음 <b>${noWork.length}</b></span><span style="color:#bf2600">분석 실패 <b>${failed.length}</b></span>${aiConflicts.length?`<span style="color:#bf2600">판 충돌 <b>${aiConflicts.length}</b></span>`:''}
     <span style="margin-left:auto;color:#5e6c84">${aiLoadedAt?'불러온 시각 '+aiTime(new Date(aiLoadedAt).toISOString()):''}${aiSample?' · 샘플':''}</span></div>`;
-  p.innerHTML=head+setup+(msg?`<div class="ai-card" style="color:#974f0c">${msg}</div>`:'')+report
+  const conflictHtml=aiConflicts.length?`<div class="ai-card" style="border-color:#f87168"><div style="font-size:14px;font-weight:800;color:#ae2e24">판이 겹친 결과 — 등록 보류</div><div style="font-size:12.5px;color:#44546f">같은 처리번호·같은 판인데 내용이 다른 파일이 있어요. 어느 쪽도 고르지 않고 멈춰 뒀어요. 분석 담당(Codex)에게 알려 주세요.</div>${aiConflicts.map(c=>`<div style="font-size:13px">${aiSrcInfo(c.type).dot} · 처리번호 <b>${esc(c.processId)}</b> · ${c.resultVersion}판 <div style="color:#44546f;padding-left:12px">${(c.groups||[c.files]).map((g,i)=>`내용 ${String.fromCharCode(65+i)}: ${g.map(esc).join(', ')}${g.length>1?' <span style="color:#626f86">(같은 내용)</span>':''}`).join('<br>')}</div></div>`).join('')}</div>`:'';
+  p.innerHTML=head+setup+(msg?`<div class="ai-card" style="color:#974f0c">${msg}</div>`:'')+report+conflictHtml
+    +(holds.length?`<div style="font-size:13px;font-weight:800;color:#974f0c;margin-top:4px">확인이 필요한 항목 ${holds.length}건</div>`+holds.map(x=>row(x,'hold')).join(''):'')
     +(open.length?open.map(x=>row(x,'open')).join(''):'<div class="ai-card" style="color:#5e6c84">새로 확인할 할 일이 없어요.</div>')
     +schedHtml
     +(later.length?`<button type="button" class="ai-btn" onclick="aiShowLater=!aiShowLater;renderAiInbox()">나중에 ${later.length}건 ${aiShowLater?'접기':'보기'}</button>${aiShowLater?later.map(x=>row(x,'later')).join(''):''}`:'')
     +(done.length?`<details><summary style="cursor:pointer;font-size:13px;color:#44546f">처리한 것 ${done.length}건</summary><div style="display:flex;flex-direction:column;gap:10px;margin-top:10px">${done.map(x=>row(x,'done')).join('')}</div></details>`:'');
   aiUpdateBadge();
 }
-// 카드에 'AI · 통화' 표시
+// 카드 앞면: 출처 표시(통·톡·문) + 종류 + 확인 필요 / 분석 바뀜
 const _aiContractBadge=contractBadgeHtml;
-contractBadgeHtml=function(card){return (card&&card.ai&&card.ai.source==='call'?`<span class="card-ai-dot" title="${card.ai.auto?'통화에서 자동 등록':'통화에서 등록'}">통</span>`:'')+_aiContractBadge(card);};
-// 카드 상세창에 출처 상자
+contractBadgeHtml=function(card){const a=card&&card.ai;let h='';
+  if(a&&a.source){const i=aiSrcInfo(a.source);
+    h=`<span class="card-ai-dot" style="background:${i.bg};color:${i.fg}" title="${esc(i.name)}에서 ${a.auto?'자동 등록':'등록'}">${i.dot}</span>`;
+    if(a.source!=='call'&&a.category)h+=aiCatTag(a.category,true);
+    if(a.needsSourceReview)h+=`<span class="card-ai-cat" style="background:#fff7d6;color:#7f5f01" title="${esc((a.reviewReasons||[]).map(k=>AI_RR[k]||k).join(', ')||'원문 확인 필요')}">확인</span>`;
+    if(a.pending)h+=`<span class="card-ai-cat" style="background:#fff4e5;color:#a54800" title="분석이 바뀌었어요 — 카드를 열어 확인">분석 바뀜</span>`;
+    if(a.withdrawn)h+=`<span class="card-ai-cat" style="background:#f1f2f4;color:#626f86" title="분석에서 철회된 할 일">철회됨</span>`;}
+  return h+_aiContractBadge(card);};
+// 카드 상세창: 출처 상자
 const _aiRenderContract=renderContractSection;
 renderContractSection=function(card){_aiRenderContract(card);const box=document.getElementById('modal-contract-section');if(!box||!card||!card.ai)return;
-  const a=card.ai;box.insertAdjacentHTML('afterbegin',`<div style="border:1px solid #ddd3ff;background:#f8f5ff;border-radius:10px;padding:12px 14px;margin-bottom:12px;font-size:13px;line-height:1.55;display:flex;flex-direction:column;gap:5px">
-    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><span class="card-ai-badge">AI · 통화에서 등록</span><span style="font-size:12px;color:#626f86">${esc(aiTime(a.registeredAt))} 확인 · 처리번호 ${esc(a.processId)} #${esc(a.itemId)}</span></div>
-    ${a.counterpart?`<div>상대: ${esc(a.counterpart)}</div>`:''}${a.evidence?`<div>근거: “${esc(a.evidence)}”</div>`:''}
-    <div style="display:flex;gap:12px;flex-wrap:wrap">${a.link?`<a href="${esc(a.link)}" target="_blank" rel="noopener">▶ 원본 통화 듣기</a>`:'<span style="color:#8590a2">▶ 원본 통화: 아직 연결 전</span>'}<a href="#card=${esc(card.id)}" onclick="event.preventDefault();navigator.clipboard&&navigator.clipboard.writeText(location.origin+location.pathname+'#card=${esc(card.id)}');showToast('🔗','카드 바로가기 링크를 복사했어요.',2000)">🔗 이 카드 링크 복사</a></div></div>`);};
+  const a=card.ai,t=a.source||'call',i=aiSrcInfo(t);
+  const when=t==='call'?aiTime(a.callAt):[aiTime(a.startedAt),aiTime(a.endedAt)].filter(Boolean).join(' ~ ');
+  const ev=(a.evidenceMsgs||[]).map(m=>aiMsgLine(m,a.counterpart)).join(' · ');
+  const rr=a.needsSourceReview?((a.reviewReasons||[]).map(k=>AI_RR[k]||k).join(', ')||'원문 확인 필요'):'';
+  const cv=a.coverage&&t!=='call'?aiCoverTag(t,{coverage:a.coverage}):'';
+  const p=a.pending;
+  const pend=p?`<div style="border:1px solid #f5cd47;background:#fffbea;border-radius:8px;padding:9px 11px;display:flex;flex-direction:column;gap:4px">
+      <b style="color:#7f5f01">분석이 바뀌었어요 (${esc(String(p.ver||''))}판)${p.fromItem?' — 새 분석 #'+esc(p.fromItem):''}</b>
+      ${'title' in p?`<div>제목: ${esc(card.title)} → <b>${esc(p.title)}</b></div>`:''}
+      ${'due' in p?`<div>기한: ${esc(aiMD(card.due)||'없음')} → <b>${esc(aiMD(p.due)||'없음')}</b></div>`:''}
+      ${'desc' in p?`<div>설명: <b>${esc(p.desc||'(비움)')}</b></div>`:''}
+      ${'checklist' in p?`<div>체크리스트: <b>${esc(p.checklist.join(', ')||'(없음)')}</b> <span style="color:#626f86">(새 항목만 추가, 기존 체크는 그대로)</span></div>`:''}
+      <div style="display:flex;gap:6px;margin-top:4px"><button type="button" class="ai-btn go" style="min-height:34px" onclick="aiApplyPending('${esc(card.id)}',true)">반영</button><button type="button" class="ai-btn" style="min-height:34px" onclick="aiApplyPending('${esc(card.id)}',false)">지금대로 두기</button></div></div>`:'';
+  box.insertAdjacentHTML('afterbegin',`<div style="border:1px solid #ddd3ff;background:#f8f5ff;border-radius:10px;padding:12px 14px;margin-bottom:12px;font-size:13px;line-height:1.55;display:flex;flex-direction:column;gap:5px">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><span class="card-ai-badge" style="background:${i.bg};color:${i.fg}">AI · ${esc(i.name)}에서 등록</span>${aiCatTag(a.category)}${cv}<span style="font-size:12px;color:#626f86">${esc(aiTime(a.registeredAt))} 확인 · 처리번호 ${esc(a.processId)} #${esc(a.itemId)}</span></div>
+    ${a.withdrawn?'<div style="color:#626f86;font-weight:700">분석에서 철회된 할 일이에요. 카드는 지우지 않았어요.</div>':''}
+    ${pend}
+    ${a.counterpart?`<div>상대: ${esc(a.counterpart)}${when?` · ${esc(when)}`:''}</div>`:''}${a.evidence?`<div>근거: “${esc(a.evidence)}”${ev?` <span style="color:#626f86">(${ev})</span>`:''}</div>`:''}
+    ${rr?`<div style="color:#7f5f01;font-weight:700">확인 필요: ${esc(rr)}</div>`:''}
+    <div style="display:flex;gap:12px;flex-wrap:wrap">${aiSrcLink(t,a)}<a href="#card=${esc(card.id)}" onclick="event.preventDefault();navigator.clipboard&&navigator.clipboard.writeText(location.origin+location.pathname+'#card=${esc(card.id)}');showToast('🔗','카드 바로가기 링크를 복사했어요.',2000)">🔗 이 카드 링크 복사</a></div></div>`);};
 // #card=카드ID 바로가기: 로그인·동기화 뒤 지금 위치를 찾아 열기
 let aiHashTries=0;
 function aiOpenHash(){

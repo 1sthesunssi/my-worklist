@@ -8475,7 +8475,8 @@ function aiSyncCards(){
     const v=Number(r.resultVersion||1);if(v<=Number(a.resultVersion||1))return;
     const it=(r.items||[]).find(i=>String(i.itemId)===String(a.itemId));
     const src=r.source||{};
-    if(it)Object.assign(a,aiMeta(r,it));else a.missing=true;
+    if(it){const m=aiMeta(r,it);['link','driveFileId','counterpart','callAt','startedAt','endedAt','retentionUntil'].forEach(f=>{if(!m[f]&&a[f])delete m[f];});Object.assign(a,m);}   // 새 판에 빈 값이면 있던 원본 정보는 지우지 않음
+    else a.missing=true;
     if(src.phone&&!k.phone)k.phone=src.phone;
     if(it&&it.withdrawn){a.withdrawn=true;delete a.pending;}
     else if(it){delete a.withdrawn;delete a.missing;
