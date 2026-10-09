@@ -8586,8 +8586,11 @@ function aiAutoColFor(t){
   if(!hit){
     const b=home||(state.boards||[])[0];b.columns=b.columns||[];
     hit={id:uid(),title:AI_SRC[t].list,cards:[],sortMode:'reg',color:'none',collapsed:false};
-    const mine=new Set([cfg.autoColId,ids.call,ids.kakao,ids.sms].filter(Boolean));let at=-1;
-    b.columns.forEach((c,i)=>{if(mine.has(c.id))at=i;});
+    // 순서는 항상 통화 → 카톡 → 문자 (먼저 들어온 쪽과 상관없이)
+    const ord=['call','kakao','sms'],idOf={call:cfg.autoColId,kakao:ids.kakao,sms:ids.sms},me=ord.indexOf(t);
+    const pos=k=>b.columns.findIndex(c=>c.id===idOf[k]);
+    let at=-1;ord.slice(0,me).forEach(k=>{const p=pos(k);if(p>at)at=p;});
+    if(at<0){const nx=ord.slice(me+1).map(pos).filter(p=>p>=0);at=nx.length?Math.min(...nx)-1:-1;}
     b.columns.splice(at+1,0,hit);
   }
   ids[t]=hit.id;state.aiConfig=Object.assign({},state.aiConfig||{},{autoColIds:ids});
