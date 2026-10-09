@@ -1467,7 +1467,7 @@ body{font-family:'NanumSquare',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-
     <button class="hdr-btn icon-only" id="undo-btn" onclick="undoLast()" title="실행취소 (Ctrl+Z)" disabled>↩</button>
     <button class="hdr-btn" id="myday-btn" onclick="openMyDay()">나의 하루<span id="myday-badge" class="hdr-badge" style="display:none"></span></button>
     <button class="hdr-btn" id="planner-btn" onclick="openPlanner()">✍️ 플래너</button>
-    <button class="hdr-btn" id="ai-btn" onclick="aiGoList()" title="할 일이 남은 보드(통화 → 카톡 → 문자)로 가기 · 다 보면 접수함">📥 고객 할 일<span id="ai-badge" class="hdr-badge" style="display:none"></span></button>
+    <button class="hdr-btn" id="ai-btn" onclick="aiGoList()" title="할 일이 남은 리스트(통화 → 카톡 → 문자)로 가기 · 다 보면 접수함">📥 고객 할 일<span id="ai-badge" class="hdr-badge" style="display:none"></span></button>
     <button class="hdr-btn" id="sales-btn" onclick="openSales()">💰 매출</button>
     <button class="hdr-btn" onclick="openCalendar()">캘린더</button>
     <div id="sync-status" onclick="openSyncModal()" title="기기 연동 (구글 드라이브)" style="cursor:pointer"><div id="sync-dot"></div><span id="sync-text">연결 안 됨</span></div>
@@ -8217,38 +8217,41 @@ function aiAutoCol(){
   state.aiConfig=Object.assign({},cfg,{autoColId:hit.id});
   return hit;
 }
-// 카톡·문자: 출처별 보드 (📞 통화 / 💬 카톡 / ✉️ 문자). 처음 한 번 통화 보드 바로 뒤에 만들고, 그 안의 리스트를 번호로 기억
-const AI_BOARD={kakao:{title:'💬 카톡',find:/^(카톡|카카오톡)$/},sms:{title:'✉️ 문자',find:/^문자$/}};   // 이름이 딱 그 이름인 보드만 (이모지·띄어쓰기 무시)
+// 출처별 리스트: 한 보드(📥 고객 할 일) 안에 📞 통화 → 💬 카톡 → ✉️ 문자
+const AI_HOME_TITLE='📥 고객 할 일';
+const AI_COL_TITLE={call:'📞 통화',kakao:'💬 카톡',sms:'✉️ 문자'};
+function aiHomeBoard(){const id=(state.aiConfig||{}).autoColId;return (state.boards||[]).find(b=>(b.columns||[]).some(c=>c.id===id))||null;}
+function aiOrderCols(home){   // 통화→카톡→문자 리스트를 보드 맨 앞에 차례로 (나머지 리스트는 그 뒤에 그대로)
+  const cfg=state.aiConfig||{},ids=Object.assign({},cfg.autoColIds||{},{call:cfg.autoColId});
+  const mine=['call','kakao','sms'].map(t=>home.columns.find(c=>c.id===ids[t])).filter(Boolean);
+  home.columns=mine.concat(home.columns.filter(c=>!mine.includes(c)));
+}
 function aiAutoColFor(t){
   if(t==='call')return aiAutoCol();
   if(!AI_SRC[t])return null;
-  const home0=aiAutoCol();if(!home0)return null;
-  const cfg=state.aiConfig||{},ids=Object.assign({},cfg.autoColIds||{});let hit=null,hitB=null,home=null;
-  (state.boards||[]).forEach(b=>(b.columns||[]).forEach(c=>{if(c.id===ids[t]){hit=c;hitB=b;}if(c.id===cfg.autoColId)home=b;}));
-  const bs=state.boards;
-  const place=nb=>{   // 순서: 통화 보드 → 카톡 보드 → 문자 보드
-    const ord=['call','kakao','sms'],me=ord.indexOf(t),bi=k=>{if(k==='call')return bs.indexOf(home);const id=ids[k];return id?bs.findIndex(b=>(b.columns||[]).some(c=>c.id===id)):-1;};
-    let at=-1;ord.slice(0,me).forEach(k=>{const p=bi(k);if(p>at)at=p;});
-    if(at<0){const nx=ord.slice(me+1).map(bi).filter(p=>p>=0);at=nx.length?Math.min(...nx)-1:-1;}
-    bs.splice(at+1,0,nb);};
-  const newBoard=()=>{const nb=mkBoard(AI_BOARD[t].title,home?home.bgIdx||0:0);place(nb);return nb;};
-  if(hit&&home&&hitB===home){   // 예전 방식(통화 보드 안의 리스트)이면 카드째 새 보드로 옮김
-    home.columns.splice(home.columns.indexOf(hit),1);const nb=newBoard();hit.title='할 일';nb.columns.push(hit);hitB=nb;}
-  if(!hit){
-    let b=bs.find(x=>x!==home&&AI_BOARD[t].find.test(String(x.title||'').replace(/[^\p{L}\p{N}]/gu,'')));   // 실장님이 미리 만든 "카톡"/"문자" 보드가 있으면 그걸 씀
-    if(!b)b=newBoard();
-    b.columns=b.columns||[];hit=b.columns[0];
-    if(!hit){hit={id:uid(),title:'할 일',cards:[],sortMode:'reg',color:'none',collapsed:false};b.columns.push(hit);}
-  }
+  if(!aiAutoCol())return null;
+  const home=aiHomeBoard();if(!home)return null;
+  const ids=Object.assign({},(state.aiConfig||{}).autoColIds||{});let hit=null,hitB=null;
+  (state.boards||[]).forEach(b=>(b.columns||[]).forEach(c=>{if(c.id===ids[t]){hit=c;hitB=b;}}));
+  if(hit&&hitB!==home){   // 예전 방식(따로 보드)이면 카드째 이 보드로 옮기고, 그래서 텅 빈 보드는 지움
+    hitB.columns.splice(hitB.columns.indexOf(hit),1);hit.title=AI_COL_TITLE[t];home.columns.push(hit);
+    if(!hitB.columns.length)state.boards=state.boards.filter(b=>b!==hitB);}
+  if(!hit){hit={id:uid(),title:AI_COL_TITLE[t],cards:[],sortMode:'reg',color:'none',collapsed:false};home.columns.push(hit);}
   ids[t]=hit.id;state.aiConfig=Object.assign({},state.aiConfig||{},{autoColIds:ids});
+  aiOrderCols(home);
   return hit;
 }
-// 예전 방식(통화 보드 안에 카톡·문자 리스트)이면 앱을 열 때 한 번 카드째 각 보드로 옮김
+// 앱을 열 때 한 번: 따로 있던 카톡·문자 보드를 '📥 고객 할 일' 보드의 리스트로 모음
 function aiMigrateBoards(){
-  const cfg=state.aiConfig||{},ids=cfg.autoColIds||{};let home=null;
-  (state.boards||[]).forEach(b=>(b.columns||[]).forEach(c=>{if(c.id===cfg.autoColId)home=b;}));if(!home)return;
-  let moved=0;['kakao','sms'].forEach(t=>{if(ids[t]&&(home.columns||[]).some(c=>c.id===ids[t])){aiAutoColFor(t);moved++;}});
-  if(moved){saveState();try{renderCurrentView();}catch(e){}showToast('📥','카톡·문자 할 일을 각각 보드로 옮겼어요.',3500);}
+  const cfg=state.aiConfig||{};if(cfg.layout==='one')return;
+  const home=aiHomeBoard();if(!home)return;
+  const wasOn=activeBoardId;
+  Object.keys(cfg.autoColIds||{}).forEach(t=>{if(AI_SRC[t])aiAutoColFor(t);});
+  const callCol=home.columns.find(c=>c.id===cfg.autoColId);if(callCol&&callCol.title===AI_AUTO_TITLE)callCol.title=AI_COL_TITLE.call;
+  home.title=AI_HOME_TITLE;aiOrderCols(home);
+  state.aiConfig=Object.assign({},state.aiConfig||{},{layout:'one'});saveState();
+  try{if(wasOn&&!state.boards.some(b=>b.id===wasOn))openBoard(home.id);else renderCurrentView();}catch(e){}
+  showToast('📥','통화·카톡·문자를 「📥 고객 할 일」 보드 한 곳에 리스트로 모았어요.',3500);
 }
 setTimeout(()=>{try{aiMigrateBoards();}catch(e){}},6500);
 function aiFindAutoColFor(t){
@@ -8290,24 +8293,26 @@ async function aiRefresh(){aiLoading=true;renderAiInbox();try{await aiLoad();}fi
 function aiFindAutoCol(){const id=(state.aiConfig||{}).autoColId;let hit=null;
   (state.boards||[]).forEach(b=>(b.columns||[]).forEach(c=>{if(!hit&&(c.id===id||(!id&&c.title===AI_AUTO_TITLE)))hit={board:b,col:c};}));return hit;}
 // 헤더 버튼: 할 일이 남은 출처 보드(통화 → 카톡 → 문자)로 바로 이동. 지금 그 보드를 보고 있으면 다음 보드로, 다 봤으면 접수함
+let aiGoLast=null;   // 버튼을 누를 때마다 할 일 남은 리스트(통화 → 카톡 → 문자)로 차례로
 function aiGoList(force){
   const cfg=state.aiConfig||{};
   const spots=aiAutoOn()?['call','kakao','sms'].map(t=>{const h=aiFindAutoColFor(t);return h?Object.assign({t,n:(h.col.cards||[]).filter(k=>!k.done).length},h):null;}).filter(Boolean):[];
   if(!spots.length||!cfg.folderId||aiNeedLogin){openAiInbox();return;}
   const work=spots.filter(x=>x.n>0);
+  const onHome=document.getElementById('board-screen').style.display!=='none'&&spots.some(x=>x.board.id===activeBoardId);
   let go;
   if(force)go=work[0]||spots[0];
-  else{const cur=typeof activeBoardId!=='undefined'&&document.getElementById('board-screen').style.display!=='none'?activeBoardId:null;
-    const ci=work.findIndex(x=>x.board.id===cur);
-    if(!work.length){openAiInbox();return;}
-    if(ci<0)go=work[0];else if(ci<work.length-1)go=work[ci+1];else{openAiInbox();return;}}
+  else{if(!work.length){aiGoLast=null;openAiInbox();return;}
+    const ci=onHome?work.findIndex(x=>x.t===aiGoLast):-1;
+    if(ci<work.length-1)go=work[ci+1];else{aiGoLast=null;openAiInbox();return;}}
+  aiGoLast=go.t;
   try{if(document.getElementById('modal-overlay').classList.contains('open'))closeModal();}catch(e){}
-  openBoard(go.board.id);
+  if(!onHome||activeBoardId!==go.board.id)openBoard(go.board.id);
   const el=()=>document.querySelector(`[data-col-id="${go.col.id}"]`);
   setTimeout(()=>{const e=el();if(!e)return;e.scrollIntoView({behavior:'smooth',inline:'start',block:'nearest'});
     e.style.transition='box-shadow .3s';e.style.boxShadow='0 0 0 3px #7c5cdb';setTimeout(()=>{e.style.boxShadow='';},1600);},250);
   const rest=work.filter(x=>x!==go);
-  if(rest.length)showToast(aiSrcInfo(go.t).dot,`${aiSrcInfo(go.t).name} ${go.n}건 · 남은 곳: ${rest.map(x=>aiSrcInfo(x.t).name+' '+x.n).join(', ')} — 버튼을 한 번 더 누르면 다음 보드로 가요`,4000);
+  if(rest.length)showToast(aiSrcInfo(go.t).dot,`${aiSrcInfo(go.t).name} ${go.n}건 · 남은 곳: ${rest.map(x=>aiSrcInfo(x.t).name+' '+x.n).join(', ')} — 버튼을 한 번 더 누르면 다음 리스트로 가요`,4000);
   aiUpdateBadge();
 }
 setInterval(aiUpdateBadge,30000);
