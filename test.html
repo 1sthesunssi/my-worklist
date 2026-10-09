@@ -8391,6 +8391,14 @@ const AI_RR={truncated:'잘린 알림',photo:'사진 확인 필요',file:'파일
 const aiExpired=u=>!!(u&&new Date(u)<new Date());
 const aiCanon=v=>Array.isArray(v)?'['+v.map(aiCanon).join(',')+']':(v&&typeof v==='object')?'{'+Object.keys(v).sort().map(k=>JSON.stringify(k)+':'+aiCanon(v[k])).join(',')+'}':JSON.stringify(v===undefined?null:v);
 let aiConflicts=[];const aiFileCache={};
+// 결과 파일 저장소(이 기기 브라우저, IndexedDB): 앱을 닫았다 열어도 바뀌지 않은 파일은 다시 받지 않음. 없거나 막혀 있으면 그냥 매번 받음
+const aiIdb=(()=>{let p=null;const name='mwl-ai-files'+(typeof MWL_TEST!=='undefined'?'-test':'');
+  const open=()=>p||(p=new Promise((res,rej)=>{try{const r=indexedDB.open(name,1);r.onupgradeneeded=()=>r.result.createObjectStore('f');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);}catch(e){rej(e);}}));
+  return {
+    all:async()=>{try{const db=await open();return await new Promise(res=>{const m={};const q=db.transaction('f').objectStore('f').openCursor();q.onsuccess=()=>{const c=q.result;if(c){m[c.key]=c.value;c.continue();}else res(m);};q.onerror=()=>res(m);});}catch(e){return {};}},
+    putMany:async o=>{try{const db=await open();await new Promise(res=>{const t=db.transaction('f','readwrite'),st=t.objectStore('f');Object.keys(o).forEach(k=>st.put(o[k],k));t.oncomplete=res;t.onerror=res;t.onabort=res;});}catch(e){}},
+    drop:async ks=>{try{const db=await open();await new Promise(res=>{const t=db.transaction('f','readwrite'),st=t.objectStore('f');ks.forEach(k=>st.delete(k));t.oncomplete=res;t.onerror=res;t.onabort=res;});}catch(e){}}};})();
+let aiIdbLoaded=false;
 // 같은 processId 는 resultVersion 이 가장 큰 판만. 같은 판인데 내용이 다른 파일이 있으면 고르지 않고 '충돌'로 보류
 function aiPickVersions(out){
   const by={};out.forEach(r=>(by[r.processId]=by[r.processId]||[]).push(r));
@@ -8399,7 +8407,8 @@ function aiPickVersions(out){
     const rs=by[p],top=Math.max(...rs.map(r=>Number(r.resultVersion||1)));
     const tops=rs.filter(r=>Number(r.resultVersion||1)===top);
     const sig=r=>{const c=Object.assign({},r);delete c._file;return aiCanon(c);};
-    if(new Set(tops.map(sig)).size>1)conflicts.push({processId:p,resultVersion:top,type:aiType(tops[0]),files:tops.map(r=>(r._file&&r._file.name)||'(이름 없음)')});
+    const g={};tops.forEach(r=>{(g[sig(r)]=g[sig(r)]||[]).push((r._file&&r._file.name)||'(이름 없음)');});
+    if(Object.keys(g).length>1)conflicts.push({processId:p,resultVersion:top,type:aiType(tops[0]),files:tops.map(r=>(r._file&&r._file.name)||'(이름 없음)'),groups:Object.values(g)});
     else results.push(tops[0]);
   });
   return {results,conflicts};
@@ -8417,13 +8426,18 @@ async function aiLoad(){
       files=files.concat(l.files||[]);tok=l.nextPageToken||'';
     }while(tok&&files.length<20000);
     files=files.filter(f=>/\.json$/i.test(f.name)||f.mimeType==='application/json');
+    if(!aiIdbLoaded){Object.assign(aiFileCache,await aiIdb.all());aiIdbLoaded=true;}
+    const need=files.filter(f=>{const c=aiFileCache[f.id];return !(c&&c.mt===f.modifiedTime);});   // 바뀌지 않은 파일은 다시 받지 않음
+    const fresh={};let next=0;
+    const worker=async()=>{while(next<need.length){const f=need[next++];let j=null;
+      try{j=JSON.parse(await (await aiApi(`files/${f.id}?alt=media`)).text());}catch(e){if(e&&e.message==='login')throw e;j=null;}
+      aiFileCache[f.id]=fresh[f.id]={mt:f.modifiedTime,j};}};
+    await Promise.all(Array.from({length:Math.min(8,need.length)},worker));   // 8개씩 동시에
+    if(Object.keys(fresh).length)aiIdb.putMany(fresh);
+    const live=new Set(files.map(f=>f.id)),gone=Object.keys(aiFileCache).filter(k=>!live.has(k));   // 폴더에서 빠진 파일은 저장소에서도 지움
+    if(gone.length){gone.forEach(k=>delete aiFileCache[k]);aiIdb.drop(gone);}
     const out=[];
-    for(const f of files){
-      let j=null;const c=aiFileCache[f.id];
-      if(c&&c.mt===f.modifiedTime)j=c.j;   // 바뀌지 않은 파일은 다시 받지 않음
-      else{try{j=JSON.parse(await (await aiApi(`files/${f.id}?alt=media`)).text());}catch(e){j=null;}aiFileCache[f.id]={mt:f.modifiedTime,j};}
-      if(aiValidResult(j))out.push(Object.assign({},j,{_file:f}));
-    }
+    for(const f of files){const j=(aiFileCache[f.id]||{}).j;if(aiValidResult(j))out.push(Object.assign({},j,{_file:f}));}
     const pk=aiPickVersions(out);aiResults=pk.results;aiConflicts=pk.conflicts;aiLoadedAt=Date.now();aiLoadErr='';
     aiSyncCards();
   }catch(e){aiLoadErr=e.message==='login'?'login':String(e.message||e);}
@@ -8732,7 +8746,7 @@ async function renderAiInbox(){
   const report=`<div class="ai-card" style="flex-direction:row;flex-wrap:wrap;gap:14px;font-size:13px">
     <span>읽은 결과 <b>${aiResults.length}</b> <span style="color:#626f86">(통화 ${cnt('call')} · 카톡 ${cnt('kakao')} · 문자 ${cnt('sms')}${cnt('unknown')?' · 기타 '+cnt('unknown'):''})</span></span><span>할 일 있음 <b>${aiResults.filter(r=>r.items&&r.items.length).length}</b></span><span>할 일 없음 <b>${noWork.length}</b></span><span style="color:#bf2600">분석 실패 <b>${failed.length}</b></span>${aiConflicts.length?`<span style="color:#bf2600">판 충돌 <b>${aiConflicts.length}</b></span>`:''}
     <span style="margin-left:auto;color:#5e6c84">${aiLoadedAt?'불러온 시각 '+aiTime(new Date(aiLoadedAt).toISOString()):''}${aiSample?' · 샘플':''}</span></div>`;
-  const conflictHtml=aiConflicts.length?`<div class="ai-card" style="border-color:#f87168"><div style="font-size:14px;font-weight:800;color:#ae2e24">판이 겹친 결과 — 등록 보류</div><div style="font-size:12.5px;color:#44546f">같은 처리번호·같은 판인데 내용이 다른 파일이 있어요. 어느 쪽도 고르지 않고 멈춰 뒀어요. 분석 담당(Codex)에게 알려 주세요.</div>${aiConflicts.map(c=>`<div style="font-size:13px">${aiSrcInfo(c.type).dot} · 처리번호 <b>${esc(c.processId)}</b> · ${c.resultVersion}판 · 파일 ${c.files.map(esc).join(', ')}</div>`).join('')}</div>`:'';
+  const conflictHtml=aiConflicts.length?`<div class="ai-card" style="border-color:#f87168"><div style="font-size:14px;font-weight:800;color:#ae2e24">판이 겹친 결과 — 등록 보류</div><div style="font-size:12.5px;color:#44546f">같은 처리번호·같은 판인데 내용이 다른 파일이 있어요. 어느 쪽도 고르지 않고 멈춰 뒀어요. 분석 담당(Codex)에게 알려 주세요.</div>${aiConflicts.map(c=>`<div style="font-size:13px">${aiSrcInfo(c.type).dot} · 처리번호 <b>${esc(c.processId)}</b> · ${c.resultVersion}판 <div style="color:#44546f;padding-left:12px">${(c.groups||[c.files]).map((g,i)=>`내용 ${String.fromCharCode(65+i)}: ${g.map(esc).join(', ')}${g.length>1?' <span style="color:#626f86">(같은 내용)</span>':''}`).join('<br>')}</div></div>`).join('')}</div>`:'';
   p.innerHTML=head+setup+(msg?`<div class="ai-card" style="color:#974f0c">${msg}</div>`:'')+report+conflictHtml
     +(holds.length?`<div style="font-size:13px;font-weight:800;color:#974f0c;margin-top:4px">확인이 필요한 항목 ${holds.length}건</div>`+holds.map(x=>row(x,'hold')).join(''):'')
     +(open.length?open.map(x=>row(x,'open')).join(''):'<div class="ai-card" style="color:#5e6c84">새로 확인할 할 일이 없어요.</div>')
