@@ -8619,7 +8619,7 @@ function aiMigrateBoards(){
   const cfg=state.aiConfig||{};if(cfg.layout==='one')return;
   const home=aiHomeBoard();if(!home)return;
   const wasOn=activeBoardId;
-  Object.keys(cfg.autoColIds||{}).forEach(t=>{if(AI_SRC[t])aiAutoColFor(t);});
+  ['kakao','sms'].forEach(t=>aiAutoColFor(t));   // 카드가 아직 없어도 세 리스트를 미리 만들어 둠
   const callCol=home.columns.find(c=>c.id===cfg.autoColId);if(callCol&&callCol.title===AI_AUTO_TITLE)callCol.title=AI_COL_TITLE.call;
   home.title=AI_HOME_TITLE;aiOrderCols(home);
   state.aiConfig=Object.assign({},state.aiConfig||{},{layout:'one'});saveState();
