@@ -8623,18 +8623,36 @@ function aiAutoColFor(t){
   return hit;
 }
 // 앱을 열 때 한 번: 따로 있던 카톡·문자 보드를 '📥 고객 할 일' 보드의 리스트로 모음
-function aiMigrateBoards(){
-  const cfg=state.aiConfig||{};if(cfg.layout==='one')return;
+function aiMigrateBoards(){   // 열 때·자동 등록 때마다: 카톡·문자 리스트가 다른 보드로 빠져 있으면 다시 모음 (예전 화면이 나눠 놔도 스스로 고침)
+  const cfg=state.aiConfig||{};
   const home=aiHomeBoard();if(!home)return;
-  const wasOn=activeBoardId;
+  const out=['kakao','sms'].some(t=>{const h=aiFindAutoColFor(t);return !h||h.board!==home;});
+  if(cfg.layout==='one'&&!out)return;
+  const wasOn=activeBoardId,first=cfg.layout!=='one';
   ['kakao','sms'].forEach(t=>aiAutoColFor(t));   // 카드가 아직 없어도 세 리스트를 미리 만들어 둠
   const callCol=home.columns.find(c=>c.id===cfg.autoColId);if(callCol&&callCol.title===AI_AUTO_TITLE)callCol.title=AI_COL_TITLE.call;
-  home.title=AI_HOME_TITLE;aiOrderCols(home);
+  if(first)home.title=AI_HOME_TITLE;
+  aiOrderCols(home);
   state.aiConfig=Object.assign({},state.aiConfig||{},{layout:'one'});saveState();
   try{if(wasOn&&!state.boards.some(b=>b.id===wasOn))openBoard(home.id);else renderCurrentView();}catch(e){}
-  showToast('📥','통화·카톡·문자를 「📥 고객 할 일」 보드 한 곳에 리스트로 모았어요.',3500);
+  showToast('📥','통화·카톡·문자를 「'+home.title+'」 보드 한 곳에 리스트로 모았어요.',3500);
 }
 setTimeout(()=>{try{aiMigrateBoards();}catch(e){}},6500);
+// ── 새 버전 확인: 오래 열어 둔 화면이 예전 코드로 자료를 되돌리지 않게, 새 버전이 올라오면 스스로 새로 고침 ──
+const APP_BUILD='20261011a';   // ※ 앱을 고쳐 올릴 때마다 바꿀 것
+async function checkNewBuild(){
+  try{
+    if(document.hidden)return;
+    const t=await (await fetch(location.pathname+'?build='+Date.now(),{cache:'no-store'})).text();
+    const m=t.match(/const APP_BUILD='([^']+)'/);if(!m||m[1]===APP_BUILD)return;
+    const ae=document.activeElement||{};
+    const busy=(typeof dsDirty!=='undefined'&&dsDirty)||document.querySelector('#modal-overlay.open,#ai-overlay.open')||/INPUT|TEXTAREA|SELECT/.test(ae.tagName||'')||ae.isContentEditable;
+    if(busy){showToast('🔄','새 버전이 나왔어요. 하던 일을 마치면 새로 고침 해 주세요.',5000);return;}
+    location.reload();
+  }catch(e){}
+}
+setInterval(checkNewBuild,10*60*1000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkNewBuild();});
 function aiFindAutoColFor(t){
   if(t==='call')return aiFindAutoCol();
   const id=((state.aiConfig||{}).autoColIds||{})[t];if(!id)return null;let hit=null;
@@ -8643,6 +8661,7 @@ function aiFindAutoColFor(t){
 let aiAutoBusy=false,aiNeedLogin=false;
 async function aiAutoRun(){
   if(aiAutoBusy||aiSample||!aiAutoOn()||!(state.aiConfig||{}).folderId)return;
+  try{aiMigrateBoards();}catch(e){}
   if(!aiSignedIn()){aiToken=localStorage.getItem('ai_ro_token')||null;aiTokenExp=Number(localStorage.getItem('ai_ro_token_exp')||0);}   // 다른 탭에서 새로 받은 권한이 있으면 그걸 씀
   if(!aiSignedIn()&&document.visibilityState==='visible'){try{await withTimeout(aiGetToken(false),15000,'login');}catch(e){}}   // 한 번 허용한 권한이면 조용히 다시 받기
   if(!aiSignedIn()){aiNeedLogin=true;aiUpdateBadge();return;}   // 그래도 안 되면 [읽기 권한 연결]을 기다림
