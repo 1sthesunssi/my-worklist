@@ -3800,8 +3800,10 @@ function toggleMovePanel(){
   if(panel.style.display!=='none'){panel.style.display='none';return;}
   const b=getBoard();if(!b)return;
   const otherCols=b.columns.filter(c=>c.id!==activeColId);
-  if(!otherCols.length){showToast('ℹ️','이동할 다른 리스트가 없어요.',2000);return;}
+  const otherBoards=state.boards.filter(x=>x.id!==b.id&&(x.columns||[]).length);
+  if(!otherCols.length&&!otherBoards.length){showToast('ℹ️','이동할 다른 리스트가 없어요.',2000);return;}
   panel.innerHTML='';
+  if(otherCols.length&&otherBoards.length){const l=document.createElement('div');l.style.cssText='font-size:11px;font-weight:700;color:#626f86;margin:2px 0 4px';l.textContent='이 보드';panel.appendChild(l);}
   otherCols.forEach(col=>{
     const btn=document.createElement('button');
     btn.className='sb-btn';
@@ -3823,6 +3825,26 @@ function toggleMovePanel(){
       showToast('↔️',`"${toCol.title}"으로 이동했어요!`,2500);
     });
     panel.appendChild(btn);
+  });
+  otherBoards.forEach(ob=>{   // 다른 보드: 이름을 누르면 그 보드의 리스트가 펼쳐짐 → 고르면 바로 그 리스트로
+    const head=document.createElement('button');head.className='sb-btn';
+    head.style.cssText='font-size:12px;padding:6px 10px;margin:6px 0 3px;background:#f1f2f4;font-weight:700;text-align:left';
+    head.textContent='▸ '+ob.title;
+    const box=document.createElement('div');box.style.cssText='display:none;padding-left:10px';
+    head.addEventListener('click',()=>{const open=box.style.display!=='none';box.style.display=open?'none':'block';head.textContent=(open?'▸ ':'▾ ')+ob.title;});
+    ob.columns.forEach(col=>{
+      const btn=document.createElement('button');btn.className='sb-btn';
+      btn.style.cssText='font-size:12px;padding:6px 10px;margin-bottom:3px;background:#e8eaf0';
+      btn.textContent='→ '+col.title;
+      btn.addEventListener('click',()=>{
+        const fromCol=b.columns.find(c=>c.id===activeColId);const idx=fromCol?fromCol.cards.findIndex(c=>c.id===activeCardId):-1;if(idx===-1)return;
+        const[card]=fromCol.cards.splice(idx,1);col.cards.push(card);
+        panel.style.display='none';closeModal();saveState();renderBoard();
+        showToast('📦',`「${ob.title}」 › 「${col.title}」로 옮겼어요.`,2500);
+      });
+      box.appendChild(btn);
+    });
+    panel.appendChild(head);panel.appendChild(box);
   });
   panel.style.display='block';
 }
@@ -4802,10 +4824,24 @@ function showBoardDropBar(){
   bar.classList.add('visible');
 }
 function hideBoardDropBar(){document.getElementById('board-drop-bar').classList.remove('visible');}
+// 다른 보드의 리스트 고르기 (리스트가 1개면 바로)
+function pickColumn(board,cb){
+  const cols=board.columns||[];if(!cols.length)return;if(cols.length===1){cb(cols[0]);return;}
+  let ov=document.getElementById('col-pick-overlay');if(ov)ov.remove();
+  ov=document.createElement('div');ov.id='col-pick-overlay';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(9,30,66,.45);z-index:3000;display:flex;align-items:center;justify-content:center;padding:16px';
+  ov.innerHTML=`<div style="background:#fff;border-radius:12px;padding:16px;width:300px;max-width:100%;max-height:80vh;overflow:auto;box-shadow:0 8px 30px rgba(0,0,0,.25)"><div style="font-weight:800;margin-bottom:10px;color:#172b4d">📦 「${esc(board.title)}」 어느 리스트로?</div>${cols.map(c=>`<button type="button" data-col="${c.id}" style="display:flex;justify-content:space-between;gap:8px;width:100%;text-align:left;padding:9px 12px;margin-bottom:6px;border:1px solid #dfe1e6;border-radius:8px;background:#f7f8f9;color:#172b4d;cursor:pointer;font-size:14px"><span>${esc(c.title)}</span><span style="color:#8590a2;font-size:12px">${(c.cards||[]).length}</span></button>`).join('')}<button type="button" data-cancel style="margin-top:4px;padding:7px 12px;border:none;background:none;color:#626f86;cursor:pointer;font-size:13px">취소</button></div>`;
+  ov.addEventListener('click',e=>{const b=e.target.closest('button');if(e.target===ov||(b&&b.hasAttribute('data-cancel'))){ov.remove();return;}
+    if(b&&b.dataset.col){const col=cols.find(c=>c.id===b.dataset.col);ov.remove();if(col)cb(col);}});
+  document.body.appendChild(ov);
+}
 function moveCardToBoard(targetBoardId){
-  if(!dragCardId)return;const srcBoard=getBoard();const tgtBoard=state.boards.find(b=>b.id===targetBoardId);if(!srcBoard||!tgtBoard||!tgtBoard.columns.length)return;
-  const srcCol=srcBoard.columns.find(c=>c.id===dragFromColId);if(!srcCol)return;const idx=srcCol.cards.findIndex(c=>c.id===dragCardId);if(idx===-1)return;
-  const[card]=srcCol.cards.splice(idx,1);tgtBoard.columns[0].cards.push(card);dragCardId=null;dragFromColId=null;hideBoardDropBar();saveState();renderBoard();
+  if(!dragCardId)return;const cardId=dragCardId,fromColId=dragFromColId;dragCardId=null;dragFromColId=null;hideBoardDropBar();
+  const srcBoard=getBoard();const tgtBoard=state.boards.find(b=>b.id===targetBoardId);if(!srcBoard||!tgtBoard||!(tgtBoard.columns||[]).length)return;
+  pickColumn(tgtBoard,col=>{
+    const srcCol=srcBoard.columns.find(c=>c.id===fromColId);if(!srcCol)return;const idx=srcCol.cards.findIndex(c=>c.id===cardId);if(idx===-1)return;
+    const[card]=srcCol.cards.splice(idx,1);col.cards.push(card);saveState();renderBoard();
+    showToast('📦',`「${tgtBoard.title}」 › 「${col.title}」로 옮겼어요.`,2500);});
 }
 function moveColumnToBoard(colId,targetBoardId){
   const srcBoard=getBoard();const tgtBoard=state.boards.find(b=>b.id===targetBoardId);
@@ -8266,7 +8302,7 @@ function aiMigrateBoards(){   // 열 때·자동 등록 때마다: 카톡·문�
 }
 setTimeout(()=>{try{aiMigrateBoards();}catch(e){}},6500);
 // ── 새 버전 확인: 오래 열어 둔 화면이 예전 코드로 자료를 되돌리지 않게, 새 버전이 올라오면 스스로 새로 고침 ──
-const APP_BUILD='20261011a';   // ※ 앱을 고쳐 올릴 때마다 바꿀 것
+const APP_BUILD='20261012a';   // ※ 앱을 고쳐 올릴 때마다 바꿀 것
 async function checkNewBuild(){
   try{
     if(document.hidden)return;
