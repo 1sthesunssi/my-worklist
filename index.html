@@ -1350,7 +1350,9 @@ body{font-family:'NanumSquare',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-
 .wv-seg{display:inline-flex;background:rgba(255,255,255,.45);border:1px solid rgba(255,255,255,.7);border-radius:8px;padding:2px;gap:2px}
 .wv-seg button{border:none;background:none;font-family:inherit;font-size:13px;font-weight:700;color:var(--muted);padding:3px 10px;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;transition:background .15s,color .15s}
 .wv-seg button:hover{color:var(--text);background:rgba(255,255,255,.55)}
-.wv-seg button.on{background:#fff;color:var(--text);box-shadow:0 1px 3px rgba(9,30,66,.18)}
+.wv-seg button.on{background:#1f3b73;color:#fff;box-shadow:0 1px 4px rgba(9,30,66,.35)}
+.wv-seg button.on:hover{background:#1f3b73;color:#fff}
+.wv-seg button:not(.on){opacity:.75}
 .wv-seg svg{width:14px;height:14px;flex-shrink:0}
 #board-bar.alt-view .only-board-view{display:none!important}
 #board-alt{display:none;flex:1;min-width:0;overflow:auto;padding:16px}
@@ -1515,7 +1517,7 @@ body{font-family:'NanumSquare',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-
     </div>
   </div>
   <div id="toolbar-divider" class="only-board-view"></div>
-  <div class="wv-seg only-board-view" id="cv-seg" title="지금 보고 있는 방식이 하얗게 표시돼요">
+  <div class="wv-seg only-board-view" id="cv-seg" title="지금 보고 있는 방식이 진하게 표시돼요">
     <button data-cv="full" onclick="setCompactView(false)" title="카드를 펼쳐서 보기">☰ 전체</button>
     <button data-cv="compact" onclick="setCompactView(true)" title="카드를 한 줄로 압축해서 보기">▤ 간편</button>
   </div>
@@ -8337,7 +8339,7 @@ function aiMigrateBoards(){   // 열 때·자동 등록 때마다: 카톡·문�
 }
 setTimeout(()=>{try{aiMigrateBoards();}catch(e){}},6500);
 // ── 새 버전 확인: 오래 열어 둔 화면이 예전 코드로 자료를 되돌리지 않게, 새 버전이 올라오면 스스로 새로 고침 ──
-const APP_BUILD='20261013b';   // ※ 앱을 고쳐 올릴 때마다 바꿀 것
+const APP_BUILD='20261013c';   // ※ 앱을 고쳐 올릴 때마다 바꿀 것
 async function checkNewBuild(){
   try{
     if(document.hidden)return;
