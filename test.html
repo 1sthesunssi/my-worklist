@@ -631,14 +631,13 @@ body{font-family:'NanumSquare',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-
 #board.compact .card-actions{display:none!important}
 #board.compact .card-star-btn{top:50%;transform:translateY(-50%);right:6px}
 #board.compact .card-star-btn:hover{transform:translateY(-50%) scale(1.2)}
-/* 간편보기에서만 보이는 "폭 넓히기" 버튼 — 제목이 잘리는 리스트만 그때그때 넓게 볼 수 있게 */
-.col-widen-btn{display:none}
-#board.compact .col-widen-btn{display:inline-flex;align-items:center;background:none;border:none;cursor:pointer;color:var(--muted);font-size:14px;padding:2px 6px;border-radius:4px;flex-shrink:0;line-height:1;transition:background .15s,color .15s}
-/* id(#board)가 포함된 위 규칙이 .column.collapsed .col-widen-btn(클래스만)보다 늘 이겨서, 접힌 상태에서 숨기려면 여기서도 #board 를 붙여야 함 */
-#board.compact .column.collapsed .col-widen-btn{display:none}
-#board.compact .col-widen-btn:hover{background:rgba(0,0,0,.08)}
-#board.compact .col-widen-btn.active{color:#fff;background:#f97316;border-radius:10px}
-#board.compact .col-widen-btn.active:hover{background:#ea580c}
+/* "폭 넓히기" 버튼 — 전체보기·간편보기 모두. 넓힌 상태는 모드별로 따로 기억(wideFull / wideCompact) */
+.col-widen-btn{display:inline-flex;align-items:center;background:none;border:none;cursor:pointer;color:var(--muted);font-size:14px;padding:2px 6px;border-radius:4px;flex-shrink:0;line-height:1;transition:background .15s,color .15s}
+#board .column.collapsed .col-widen-btn{display:none}
+#board .col-widen-btn:hover{background:rgba(0,0,0,.08)}
+#board .col-widen-btn.active{color:#fff;background:#f97316;border-radius:10px}
+#board .col-widen-btn.active:hover{background:#ea580c}
+@media(min-width:641px){#board:not(.compact) .column.full-wide{width:440px;min-width:440px}}
 #board.compact .column.compact-wide{width:460px;min-width:460px}
 #board.compact .column.compact-wide .card-title{white-space:normal;overflow:visible;text-overflow:clip}
 
@@ -1517,7 +1516,10 @@ body{font-family:'NanumSquare',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-
     </div>
   </div>
   <div id="toolbar-divider" class="only-board-view"></div>
-  <button id="compact-view-btn" class="toolbar-btn only-board-view" onclick="toggleCompactView()" title="카드를 한 줄로 압축해서 보여줘요">▤ 간편보기</button>
+  <div class="wv-seg only-board-view" id="cv-seg" title="지금 보고 있는 방식이 하얗게 표시돼요">
+    <button data-cv="full" onclick="setCompactView(false)" title="카드를 펼쳐서 보기">☰ 전체</button>
+    <button data-cv="compact" onclick="setCompactView(true)" title="카드를 한 줄로 압축해서 보기">▤ 간편</button>
+  </div>
   <button class="hdr-btn" onclick="openPrintView()" style="margin-left:auto">🖨️ 인쇄</button>
   <div id="bg-picker-wrap" style="position:relative;margin-left:auto">
     <button id="bg-picker-btn">🎨 배경 변경</button>
@@ -4596,12 +4598,7 @@ function renderBoard(){
   const b=getBoard();if(!b)return;document.title=b.title;document.body.style.background=getBoardBg(b);
   const board=document.getElementById('board'),addCol=document.getElementById('add-col-container');
   board.classList.toggle('compact',!!b.compactView);
-  const cvBtn=document.getElementById('compact-view-btn');
-  if(cvBtn){
-    cvBtn.classList.toggle('active',!!b.compactView);
-    cvBtn.textContent=b.compactView?'☰ 전체보기':'▤ 간편보기';
-    cvBtn.title=b.compactView?'카드를 원래대로 펼쳐서 보여줘요':'카드를 한 줄로 압축해서 보여줘요';
-  }
+  document.querySelectorAll('#cv-seg button').forEach(x=>x.classList.toggle('on',(x.dataset.cv==='compact')===!!b.compactView));
   [...board.querySelectorAll('.column')].forEach(c=>c.remove());
   b.columns.forEach(col=>board.insertBefore(renderColumn(col),addCol));
   saveState();
@@ -4615,6 +4612,7 @@ function toggleCompactView(){
   b.compactView=!b.compactView;
   renderBoard();
 }
+function setCompactView(on){const b=getBoard();if(!b||!!b.compactView===!!on)return;b.compactView=!!on;renderBoard();}
 // ════════════════════════════
 //  보기 전환 — 보드 / 표 / 대시보드 (2026-09-23)
 //  보드마다 b.viewMode('board'|'table'|'dash')를 기억해요(간편보기처럼 기기 간 연동)
@@ -4864,7 +4862,8 @@ function reapplyCardVisibility(){
 // ════════════════════════════
 function renderColumn(col){
   col.color=col.color||'none';col.collapsed=col.collapsed||false;col.wideCompact=col.wideCompact||false;col.cards=col.cards||[];
-  const el=document.createElement('div');el.className='column'+(col.collapsed?' collapsed':'')+(col.wideCompact?' compact-wide':'');el.dataset.colId=col.id;
+  const cvOn=!!(getBoard()||{}).compactView,wideNow=cvOn?!!col.wideCompact:!!col.wideFull;
+  const el=document.createElement('div');el.className='column'+(col.collapsed?' collapsed':'')+(col.wideCompact?' compact-wide':'')+(col.wideFull?' full-wide':'');el.dataset.colId=col.id;
   const mode=col.sortMode||'reg';const hasColor=col.color&&col.color!=='none';
   const otherBoards=state.boards.filter(b=>b.id!==activeBoardId);
   const hdrStyle=hasColor?`background:${col.color}`:'';
@@ -4875,7 +4874,7 @@ function renderColumn(col){
     <span class="col-title">${esc(col.title)}</span>
     <input class="col-title-input" type="text" maxlength="100" value="${esc(col.title)}">
     <span class="col-count">${col.cards.length}</span>
-    <button class="col-widen-btn${col.wideCompact?' active':''}" title="${col.wideCompact?'간편보기 폭 좁게':'간편보기 폭 넓게 (제목 더 보기)'}">${col.wideCompact?'◀':'▶'}</button>
+    <button class="col-widen-btn${wideNow?' active':''}" title="${wideNow?'리스트 폭 좁게':'리스트 폭 넓게 (내용 더 보기)'}">${wideNow?'◀':'▶'}</button>
     <button class="col-collapse-btn" title="${col.collapsed?'펼치기':'접기'}">${col.collapsed?'▲':'▼'}</button>
     <button class="col-menu-btn">···</button>
     <div class="col-menu">
@@ -4967,7 +4966,7 @@ function renderColumn(col){
   ti.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();ti.blur();}if(e.key==='Escape'){ti.value=col.title;ti.blur();}});
 
   el.querySelector('.col-collapse-btn').addEventListener('click',e=>{e.stopPropagation();col.collapsed=!col.collapsed;saveState();renderBoard();});
-  el.querySelector('.col-widen-btn').addEventListener('click',e=>{e.stopPropagation();col.wideCompact=!col.wideCompact;saveState();renderBoard();});
+  el.querySelector('.col-widen-btn').addEventListener('click',e=>{e.stopPropagation();if(cvOn)col.wideCompact=!col.wideCompact;else col.wideFull=!col.wideFull;saveState();renderBoard();});
 
   const mb=el.querySelector('.col-menu-btn'),menu=el.querySelector('.col-menu');
   mb.addEventListener('click',e=>{e.stopPropagation();menu.classList.toggle('open');});
@@ -8711,7 +8710,7 @@ function aiMigrateBoards(){   // 열 때·자동 등록 때마다: 카톡·문�
 }
 setTimeout(()=>{try{aiMigrateBoards();}catch(e){}},6500);
 // ── 새 버전 확인: 오래 열어 둔 화면이 예전 코드로 자료를 되돌리지 않게, 새 버전이 올라오면 스스로 새로 고침 ──
-const APP_BUILD='20261013a';   // ※ 앱을 고쳐 올릴 때마다 바꿀 것
+const APP_BUILD='20261013b';   // ※ 앱을 고쳐 올릴 때마다 바꿀 것
 async function checkNewBuild(){
   try{
     if(document.hidden)return;
