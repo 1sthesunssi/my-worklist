@@ -7779,12 +7779,23 @@ const ctWon=n=>Math.round(Number(n)||0).toLocaleString('ko-KR');
 const ctMD=d=>d?Number(d.slice(5,7))+'/'+Number(d.slice(8,10)):'';
 let ctEditing=false,ctDraft=null,ajDraft=null;   // ajDraft: 해지·감액 입력 중
 const ctAdj=card=>Array.isArray(card&&card.adjust)?card.adjust:[];
+// 신규·갱신 (10/14) — 장기는 늘 신규. 자동차·일반은 저장된 값, 없으면 리스트·보드 이름으로 짐작, 그래도 모르면 '미정'
+const ctIsLong=cat=>ctCat(cat)==='장기';
+const ctBizGuess=t=>/갱신/.test(t||'')?'갱신':/신규/.test(t||'')?'신규':'';
+function ctBizOf(c,colTitle,boardTitle){
+  if(!c)return '';if(ctIsLong(c.cat))return '신규';
+  if(c.biz==='신규'||c.biz==='갱신')return c.biz;
+  return ctBizGuess(colTitle)||ctBizGuess(boardTitle)||'미정';
+}
+const ctBizStyle=b=>b==='갱신'?'background:#e9f2ff;color:#0055cc':b==='미정'?'background:#fff4e5;color:#a54800':'background:#dcfff1;color:#216e4e';
+function ctFindPlace(card){for(const b of (state.boards||[]))for(const col of (b.columns||[]))if((col.cards||[]).includes(card))return {b,col};return {};}
 
 function contractBadgeHtml(card){
   const c=card&&card.contract;const aj=ctAdj(card);
   const ajB=aj.length?`<span class="card-contract-badge" style="background:#ffebe6;color:#ae2a19" title="${aj.map(a=>a.kind+' '+a.date+' −'+ctWon(a.amount)+'원').join(' / ')}">${aj.some(a=>a.kind==='해지')?'해지':'감액'} ${ctMD(aj[aj.length-1].date)}</span>`:'';
   if(!c||!c.date)return ajB;
-  return `<span class="card-contract-badge" title="계약 확정 ${esc(c.date)} · ${esc(c.product||'')} ${ctWon(c.amount)}원">✓ ${esc(ctCat(c.cat)||'')} ${ctMD(c.date)}</span>`+ajB;
+  const p=ctFindPlace(card),bz=ctBizOf(c,p.col&&p.col.title,p.b&&p.b.title);
+  return `<span class="card-contract-badge" title="계약 확정 ${esc(c.date)} · ${esc(bz)} · ${esc(c.product||'')} ${ctWon(c.amount)}원">✓ ${esc(ctCat(c.cat)||'')}${ctIsLong(c.cat)?'':' · '+esc(bz)} ${ctMD(c.date)}</span>`+ajB;
 }
 
 function renderContractSection(card){
@@ -7824,6 +7835,8 @@ function renderContractSection(card){
       <div class="ct-h">계약 정보</div>
       <div class="ct-f"><div class="ct-lab">구분</div>
         <div class="ct-cats">${CT_CATS.map(k=>`<button type="button" class="ct-cat${k===d.cat?' on':''}" onclick="ctPickCat('${k}')">${k}</button>`).join('')}</div></div>
+      ${ctIsLong(d.cat)?`<div style="font-size:12.5px;color:#5e6c84">장기는 늘 <b>신규</b>로 기록돼요.</div>`:`<div class="ct-f"><div class="ct-lab">신규 · 갱신 <span style="color:#ae2a19">*꼭 골라 주세요</span></div>
+        <div class="ct-cats" style="grid-template-columns:repeat(2,minmax(0,1fr))">${['신규','갱신'].map(k=>`<button type="button" class="ct-cat${k===d.biz?' on':''}" onclick="ctPickBiz('${k}')">${k}</button>`).join('')}</div></div>`}
       <div class="ct-grid">
         <label class="ct-f"><span class="ct-lab">확정일</span><input class="ct-in" type="date" id="ct-date" value="${esc(d.date)}" required></label>
         <label class="ct-f"><span class="ct-lab">상품</span><select class="ct-in" id="ct-product">${prods.map(p=>`<option${p===d.product?' selected':''}>${esc(p)}</option>`).join('')}</select></label>
@@ -7843,7 +7856,7 @@ function renderContractSection(card){
         <span style="font-size:13px;color:#216e4e;font-weight:700">${esc(c.date)}</span>
         <span style="margin-left:auto;display:flex;gap:6px"><button type="button" class="ct-btn" style="min-height:36px;font-size:12.5px" onclick="ctEdit()">수정</button><button type="button" class="ct-btn" style="min-height:36px;font-size:12.5px" onclick="ctRemove()">계약 지우기</button></span>
       </div>
-      <div class="ct-vals"><div><small>구분</small><b>${esc(ctCat(c.cat))}</b></div><div><small>상품</small><b>${esc(c.product||'-')}</b></div><div><small>${CT_UNIT[ctCat(c.cat)]||'보험료'}</small><b>${ctWon(c.amount)}원</b></div></div>
+      <div class="ct-vals"><div><small>구분</small><b>${esc(ctCat(c.cat))}</b></div>${(()=>{const p=ctFindPlace(card),bz=ctBizOf(c,p.col&&p.col.title,p.b&&p.b.title);return `<div><small>신규·갱신</small><b>${bz==='미정'?'<span style="color:#a54800">미정 — 수정에서 골라 주세요</span>':esc(bz)}</b></div>`;})()}<div><small>상품</small><b>${esc(c.product||'-')}</b></div><div><small>${CT_UNIT[ctCat(c.cat)]||'보험료'}</small><b>${ctWon(c.amount)}원</b></div></div>
       ${c.memo?`<div style="font-size:13px;color:#44546f">${esc(c.memo)}</div>`:''}
       ${ajList}
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><a href="#" onclick="event.preventDefault();openSales()" style="font-size:12.5px">매출 화면에서 보기 →</a><span style="margin-left:auto"></span>${ajBtns}</div></div>`;
@@ -7862,7 +7875,8 @@ function ctEdit(){
   const card=getActiveCard();if(!card)return;ajDraft=null;
   const c=card.contract||{};
   const cat=c.cat?ctCat(c.cat):ctGuessCat(card);
-  ctDraft={cat,product:c.product||CT_PRODUCTS[cat][0],date:c.date||localDateStr(new Date()),amount:c.amount||0,memo:c.memo||''};
+  const p=ctFindPlace(card);let biz=(c.biz==='신규'||c.biz==='갱신')?c.biz:(ctBizGuess(p.col&&p.col.title)||ctBizGuess(p.b&&p.b.title));
+  ctDraft={cat,biz,product:c.product||CT_PRODUCTS[cat][0],date:c.date||localDateStr(new Date()),amount:c.amount||0,memo:c.memo||''};
   ctEditing=true;renderContractSection(card);
 }
 function ctReadForm(){
@@ -7872,16 +7886,19 @@ function ctReadForm(){
   ctDraft.amount=Number((g('ct-amount').value||'').replace(/[^0-9]/g,''))||0;ctDraft.memo=g('ct-memo').value.trim();
 }
 function ctPickCat(cat){ctReadForm();ctDraft.cat=cat;if(!CT_PRODUCTS[cat].includes(ctDraft.product))ctDraft.product=CT_PRODUCTS[cat][0];renderContractSection(getActiveCard());}
+function ctPickBiz(v){ctReadForm();ctDraft.biz=v;renderContractSection(getActiveCard());}
 function ctCancel(){ctEditing=false;ctDraft=null;renderContractSection(getActiveCard());}
 function ctSave(){
   const card=getActiveCard();if(!card)return;
   ctReadForm();const d=ctDraft;
   if(!/^\d{4}-\d{2}-\d{2}$/.test(d.date||'')){showToast('⚠️','확정일을 넣어 주세요.',3000);return;}
   if(!(d.amount>0)){showToast('⚠️','보험료를 넣어 주세요.',3000);return;}
-  card.contract={cat:d.cat,product:d.product,date:d.date,amount:d.amount,memo:d.memo};
+  const biz=ctIsLong(d.cat)?'신규':d.biz;
+  if(biz!=='신규'&&biz!=='갱신'){showToast('⚠️','신규인지 갱신인지 골라 주세요.',3000);return;}
+  card.contract={cat:d.cat,biz,product:d.product,date:d.date,amount:d.amount,memo:d.memo};
   ctEditing=false;ctDraft=null;
   saveState();try{refreshCard(card.id,activeColId);}catch(e){}
-  renderContractSection(card);showToast('✅',`${card.contract.cat} 계약을 기록했어요 (${ctMD(card.contract.date)})`,2500);
+  renderContractSection(card);showToast('✅',`${card.contract.cat} ${biz} 계약을 기록했어요 (${ctMD(card.contract.date)})`,2500);
 }
 async function ctRemove(){
   const card=getActiveCard();if(!card||!card.contract)return;
@@ -7944,12 +7961,12 @@ renderHome=function(){_ctRenderHome.apply(this,arguments);try{renderHomeSales();
 setTimeout(()=>{try{if(document.getElementById('home-screen').style.display!=='none')renderHomeSales();}catch(e){}},800);
 
 // ── 매출 화면
-let slPeriod='year',slCat='장기',slFrom='',slTo='';
+let slPeriod='year',slCat='장기',slFrom='',slTo='',slBiz='all';
 function slAll(){
   const out=[];
   (state.boards||[]).forEach(b=>(b.columns||[]).forEach(col=>(col.cards||[]).forEach(card=>{
     const c0=card.contract;
-    if(c0&&c0.date){const c=Object.assign({},c0,{cat:ctCat(c0.cat),kind:'신규'});if(CT_CATS.includes(c.cat))out.push({c,card,board:b,col});}
+    if(c0&&c0.date){const bz=ctBizOf(c0,col.title,b.title);const c=Object.assign({},c0,{cat:ctCat(c0.cat),biz:bz,kind:bz});if(CT_CATS.includes(c.cat))out.push({c,card,board:b,col});}
     ctAdj(card).forEach(a=>{if(!a.date)return;const c={cat:ctCat(a.cat),product:a.product,date:a.date,amount:-(Number(a.amount)||0),memo:a.memo,kind:a.kind};if(CT_CATS.includes(c.cat))out.push({c,card,board:b,col,adj:1});});
   })));
   return out;
@@ -7971,20 +7988,26 @@ function openSales(){
 }
 function closeSales(){document.getElementById('sales-overlay').classList.remove('open');}
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('sales-overlay').classList.contains('open'))closeSales();});
-function slSet(k,v){if(k==='p')slPeriod=v;if(k==='c')slCat=v;renderSales();}
+function slSet(k,v){if(k==='p')slPeriod=v;if(k==='c')slCat=v;if(k==='b')slBiz=v;renderSales();}
 function slDates(){slFrom=document.getElementById('sl-from').value;slTo=document.getElementById('sl-to').value;if(slFrom&&slTo&&slFrom>slTo){const x=slFrom;slFrom=slTo;slTo=x;}renderSales();}
 function renderSales(){
   const panel=document.getElementById('sales-panel');if(!panel)return;
   const [from,to,label]=slRange();
-  const all=slAll(),inR=d=>d>=from&&d<=to;
-  const sel=all.filter(x=>inR(x.c.date));
+  const all0=slAll(),inR=d=>d>=from&&d<=to;
+  const sel0=all0.filter(x=>inR(x.c.date));
+  const nUnk=sel0.filter(x=>x.c.biz==='미정').length;
+  if(slBiz==='미정'&&!nUnk)slBiz='all';
+  const bizOk=x=>slBiz==='all'||(!x.adj&&x.c.biz===slBiz);
+  const all=all0.filter(bizOk),sel=sel0.filter(bizOk);
+  const bizPills=[['all','전체'],['신규','신규'],['갱신','갱신']].concat(nUnk?[['미정',`미정 ${nUnk}`]]:[]).map(([k,t])=>`<button type="button" class="sl-pill${k===slBiz?' on':''}" onclick="slSet('b','${k}')">${t}</button>`).join('');
   const sum=a=>a.reduce((s,x)=>s+(Number(x.c.amount)||0),0);
   const pills=[['year','올해'],['month','이번 달'],['last','지난달'],['custom','직접 지정']].map(([k,t])=>`<button type="button" class="sl-pill${k===slPeriod?' on':''}" onclick="slSet('p','${k}')">${t}</button>`).join('');
   const sub=CT_SUB;
   const cats=CT_CATS.map(k=>{const rs=sel.filter(x=>x.c.cat===k);return `<button type="button" class="sl-cat${k===slCat?' on':''}" onclick="slSet('c','${k}')">
     <span style="display:flex;gap:8px;align-items:center;width:100%"><b style="font-size:15px">${k}</b><span style="font-size:11.5px;color:#5e6c84">${sub[k]}</span><span style="margin-left:auto;font-size:12px;color:#44546f;font-weight:700">${rs.filter(x=>!x.adj).length}건</span></span>
     <span style="font-size:24px;font-weight:800;${sum(rs)<0?'color:#ae2a19':''}">${ctWon(sum(rs))}<span style="font-size:13px">원</span></span>
-    ${rs.some(x=>x.adj)?`<span style="font-size:12px;color:#44546f">신규 +${ctWon(sum(rs.filter(x=>!x.adj)))} · <b style="color:#ae2a19">해지·감액 ${ctWon(sum(rs.filter(x=>x.adj)))}</b></span>`:''}
+    ${k==='장기'?'':(()=>{const r0=sel0.filter(x=>x.c.cat===k&&!x.adj),pt=b=>{const a=r0.filter(x=>x.c.biz===b);return a.length?`${b} ${a.length}건 ${ctWon(sum(a))}`:'';};return [pt('신규'),pt('갱신'),pt('미정')].filter(Boolean).length?`<span style="font-size:12px;color:#44546f">${[pt('신규'),pt('갱신'),pt('미정')].filter(Boolean).join(' · ')}</span>`:'';})()}
+    ${rs.some(x=>x.adj)?`<span style="font-size:12px;color:#ae2a19"><b>해지·감액 ${ctWon(sum(rs.filter(x=>x.adj)))}</b></span>`:''}
     <span style="font-size:12px;color:#5e6c84">${CT_UNIT[k]} 순합계</span></button>`;}).join('');
   const mine=sel.filter(x=>x.c.cat===slCat);
   const Y=Number(from.slice(0,4));
@@ -7996,13 +8019,15 @@ function renderSales(){
   const tm={};mine.forEach(x=>{const p=x.c.product||'(상품 없음)';tm[p]=tm[p]||{n:0,s:0};if(!x.adj)tm[p].n++;tm[p].s+=Number(x.c.amount)||0;});
   const tl=Object.entries(tm).sort((a,b)=>b[1].s-a[1].s),tmax=Math.max(1,...tl.map(t=>t[1].s));
   const types=tl.length?tl.map(([p,t])=>`<div style="display:flex;flex-direction:column;gap:4px"><div style="display:flex;gap:8px;font-size:13px"><b style="flex:1">${esc(p)}</b><span style="color:#44546f">${t.n}건</span><b>${ctWon(t.s)}원</b></div><div style="height:8px;background:#f1f2f4;border-radius:4px"><div style="height:8px;width:${Math.max(2,Math.round(t.s/tmax*100))}%;background:#0052cc;border-radius:4px"></div></div></div>`).join(''):'<div style="font-size:13px;color:#5e6c84">이 기간에 확정된 계약이 없어요</div>';
-  const rows=mine.slice().sort((a,b)=>b.c.date.localeCompare(a.c.date)).map((x,i)=>`<tr class="go" data-i="${i}" title="카드 열기"><td style="white-space:nowrap">${esc(x.c.date)}</td><td><b>${esc(x.card.title)}</b><div style="font-size:11.5px;color:#5e6c84">${esc(x.board.title)} › ${esc(x.col.title)}</div></td><td>${x.adj?`<span style="font-size:11px;font-weight:800;padding:1px 6px;border-radius:4px;background:#ffebe6;color:#ae2a19;margin-right:4px">${esc(x.c.kind)}</span>`:''}${esc(x.c.product||'')}</td><td style="text-align:right;font-weight:700;white-space:nowrap;${x.adj?'color:#ae2a19':''}">${ctWon(x.c.amount)}원</td></tr>`).join('');
+  const rows=mine.slice().sort((a,b)=>b.c.date.localeCompare(a.c.date)).map((x,i)=>`<tr class="go" data-i="${i}" title="카드 열기"><td style="white-space:nowrap">${esc(x.c.date)}</td><td><b>${esc(x.card.title)}</b><div style="font-size:11.5px;color:#5e6c84">${esc(x.board.title)} › ${esc(x.col.title)}</div></td><td style="white-space:nowrap"><span style="font-size:11px;font-weight:800;padding:1px 6px;border-radius:4px;${x.adj?'background:#ffebe6;color:#ae2a19':ctBizStyle(x.c.biz)}">${esc(x.c.kind)}</span></td><td>${esc(x.c.product||'')}</td><td style="text-align:right;font-weight:700;white-space:nowrap;${x.adj?'color:#ae2a19':''}">${ctWon(x.c.amount)}원</td></tr>`).join('');
   window.__slRows=mine.slice().sort((a,b)=>b.c.date.localeCompare(a.c.date));
   panel.innerHTML=`<button id="sales-close" type="button" onclick="closeSales()" aria-label="닫기">✕</button>
     <div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;padding-right:44px">
-      <div><div style="font-size:22px;font-weight:800">💰 매출</div><div style="font-size:12.5px;color:#5e6c84;margin-top:4px">계약 확정일 · 해지·감액일 기준 · ${esc(label)} · 장기/자동차/일반 따로 집계</div></div>
+      <div><div style="font-size:22px;font-weight:800">💰 매출</div><div style="font-size:12.5px;color:#5e6c84;margin-top:4px">계약 확정일 · 해지·감액일 기준 · ${esc(label)}${slBiz==='all'?'':' · '+esc(slBiz)+'만'} · 장기/자동차/일반 따로 집계</div></div>
       <div style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">${pills}</div></div>
     ${slPeriod==='custom'?`<div class="sl-card" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:13px"><label>시작일 <input type="date" id="sl-from" value="${from}" onchange="slDates()" style="font:inherit;min-height:36px;border:1px solid #c1c7d0;border-radius:8px;padding:0 8px"></label> ~ <label>끝일 <input type="date" id="sl-to" value="${to}" onchange="slDates()" style="font:inherit;min-height:36px;border:1px solid #c1c7d0;border-radius:8px;padding:0 8px"></label></div>`:''}
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-size:13px;font-weight:700;color:#44546f">신규 · 갱신</span>${bizPills}<span style="font-size:12px;color:#5e6c84">장기는 늘 신규 · 해지·감액은 '전체'에서만 보여요</span></div>
+    ${nUnk&&slBiz!=='미정'?`<div class="sl-card" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#fff7d6;border-color:#f5cd47;font-size:13px"><b style="color:#7f5f01">신규인지 갱신인지 모르는 계약이 ${nUnk}건 있어요</b><span style="color:#5e6c84">카드를 열고 계약 '수정'에서 골라 주세요</span><button type="button" class="ct-btn" style="margin-left:auto;min-height:32px;font-size:12.5px" onclick="slSet('b','미정')">미정만 보기</button></div>`:''}
     <div class="sl-cats">${cats}</div>
     <div style="font-size:12px;color:#5e6c84;margin-top:-6px">칸을 누르면 아래가 그 구분으로 바뀌어요. 구분끼리는 서로 더하지 않아요 (자동차 DB·BB, 일반 DB·타사도 따로).</div>
     <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start">
@@ -8012,7 +8037,7 @@ function renderSales(){
     </div>
     <div class="sl-card"><div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap"><div style="font-size:15px;font-weight:800">${slCat} 계약 목록 <span style="font-size:12px;color:#5e6c84;font-weight:400">${mine.length}건 · 누르면 카드가 열려요</span></div>
       <button type="button" class="ct-btn" style="margin-left:auto;min-height:36px;font-size:12.5px" onclick="slExport()">엑셀(CSV)로 내보내기</button></div>
-      <div style="overflow-x:auto">${mine.length?`<table class="sl-table"><thead><tr><th>날짜</th><th>카드</th><th>상품</th><th style="text-align:right">${CT_UNIT[slCat]}</th></tr></thead><tbody id="sl-tbody">${rows}</tbody></table>`:'<div style="font-size:13px;color:#5e6c84;padding:8px 0">이 기간에 확정된 계약이 없어요</div>'}</div></div>`;
+      <div style="overflow-x:auto">${mine.length?`<table class="sl-table"><thead><tr><th>날짜</th><th>카드</th><th>종류</th><th>상품</th><th style="text-align:right">${CT_UNIT[slCat]}</th></tr></thead><tbody id="sl-tbody">${rows}</tbody></table>`:'<div style="font-size:13px;color:#5e6c84;padding:8px 0">이 기간에 확정된 계약이 없어요</div>'}</div></div>`;
   const tb=document.getElementById('sl-tbody');
   if(tb)tb.addEventListener('click',e=>{const tr=e.target.closest('tr[data-i]');if(!tr)return;const x=window.__slRows[Number(tr.dataset.i)];if(!x)return;
     closeSales();openBoard(x.board.id);setTimeout(()=>openModal(x.card.id,x.col.id),200);});
@@ -8021,8 +8046,8 @@ function slExport(){
   const [from,to]=slRange();
   const rows=slAll().filter(x=>x.c.date>=from&&x.c.date<=to).sort((a,b)=>a.c.date.localeCompare(b.c.date));
   const q=s=>'"'+String(s==null?'':s).replace(/"/g,'""')+'"';
-  const lines=[['날짜','종류','구분','상품','보험료(원)','카드 제목','보드','리스트','메모'].map(q).join(',')]
-    .concat(rows.map(x=>[x.c.date,x.c.kind||'신규',x.c.cat,x.c.product,Number(x.c.amount)||0,x.card.title,x.board.title,x.col.title,x.c.memo||''].map(q).join(',')));
+  const lines=[['날짜','종류(신규·갱신·해지·감액)','구분','상품','보험료(원)','카드 제목','보드','리스트','메모'].map(q).join(',')]
+    .concat(rows.map(x=>[x.c.date,x.adj?x.c.kind:(x.c.biz||'미정'),x.c.cat,x.c.product,Number(x.c.amount)||0,x.card.title,x.board.title,x.col.title,x.c.memo||''].map(q).join(',')));
   const blob=new Blob(['﻿'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`매출_${from}_${to}.csv`;
   document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);
@@ -8339,7 +8364,7 @@ function aiMigrateBoards(){   // 열 때·자동 등록 때마다: 카톡·문�
 }
 setTimeout(()=>{try{aiMigrateBoards();}catch(e){}},6500);
 // ── 새 버전 확인: 오래 열어 둔 화면이 예전 코드로 자료를 되돌리지 않게, 새 버전이 올라오면 스스로 새로 고침 ──
-const APP_BUILD='20261013c';   // ※ 앱을 고쳐 올릴 때마다 바꿀 것
+const APP_BUILD='20261014a';   // ※ 앱을 고쳐 올릴 때마다 바꿀 것
 async function checkNewBuild(){
   try{
     if(document.hidden)return;
