@@ -626,7 +626,13 @@ body{font-family:'NanumSquare',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-
 #board.compact .card.search-hide{display:none}
 #board.compact .card-title-row{flex:1;min-width:0;align-items:center}
 #board.compact .card-title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px}
-#board.compact .card-meta{margin-top:0;flex-shrink:0;flex-wrap:nowrap}
+#board.compact .card-meta{margin-top:0;flex-shrink:1;min-width:0;flex-wrap:nowrap;overflow:hidden}
+#board.compact .card-title-row{flex:1 0 45%}
+.ccb-short{display:none}
+#board.compact .ccb-short{display:inline}
+#board.compact .ccb-full{display:none}
+#board.compact .card-meta>*{white-space:nowrap;flex-shrink:0}
+#board.compact .due-ic{display:none}
 #board.compact .card-labels,#board.compact .card-cl,#board.compact .card-attach-badge,#board.compact .card-start{display:none}
 #board.compact .card-actions{display:none!important}
 #board.compact .card-star-btn{top:50%;transform:translateY(-50%);right:6px}
@@ -4961,14 +4967,14 @@ function renderCard(card,colId){
     const due=new Date(card.due+'T00:00:00');
     const diff=Math.round((due-today0)/86400000);
     let cls,icon,dayStr;
-    if(diff<0){cls='overdue';icon='⚠️';dayStr=`+${Math.abs(diff)}일`;}
-    else if(diff===0){cls='today';icon='🔔';dayStr='오늘!';}
-    else if(diff<=3){cls='due-soon';icon='⏰';dayStr=`-${diff}일`;}
-    else if(diff<=14){cls='soon';icon='⏳';dayStr=`-${diff}일`;}
-    else if(diff<=30){cls='upcoming';icon='📆';dayStr=`-${diff}일`;}
-    else if(diff<=90){cls='normal';icon='🗓️';dayStr=`-${diff}일`;}
-    else{cls='faraway';icon='🗓️';dayStr=`-${diff}일`;}
-    dueBadge=`<span class="card-due ${cls}" title="마감: ${card.due}${card.recurring?' (반복)':''}">${icon} ${dayStr}${card.recurring?' 🔁':''}</span>`;
+    if(diff<0){cls='overdue';icon='⚠️';dayStr=`+${Math.abs(diff)}`;}
+    else if(diff===0){cls='today';icon='🔔';dayStr='오늘';}
+    else if(diff<=3){cls='due-soon';icon='⏰';dayStr=`-${diff}`;}
+    else if(diff<=14){cls='soon';icon='⏳';dayStr=`-${diff}`;}
+    else if(diff<=30){cls='upcoming';icon='📆';dayStr=`-${diff}`;}
+    else if(diff<=90){cls='normal';icon='🗓️';dayStr=`-${diff}`;}
+    else{cls='faraway';icon='🗓️';dayStr=`-${diff}`;}
+    dueBadge=`<span class="card-due ${cls}" title="마감: ${card.due}${card.recurring?' (반복)':''}"><span class="due-ic">${icon} </span>${dayStr}${card.recurring?'<span class="due-ic"> 🔁</span>':''}</span>`;
   }
   let clBadge='';if(!card.done&&card.checklist&&card.checklist.length){const d=card.checklist.filter(i=>i.checked).length,t=card.checklist.length;clBadge=`<span class="card-cl ${d===t?'all-done':''}">☑️ ${d}/${t}</span>`;}
   let attBadge='';if(card.attachments&&card.attachments.length)attBadge=`<span class="card-attach-badge">📎 ${card.attachments.length}</span>`;
@@ -7792,10 +7798,11 @@ function ctFindPlace(card){for(const b of (state.boards||[]))for(const col of (b
 
 function contractBadgeHtml(card){
   const c=card&&card.contract;const aj=ctAdj(card);
-  const ajB=aj.length?`<span class="card-contract-badge" style="background:#ffebe6;color:#ae2a19" title="${aj.map(a=>a.kind+' '+a.date+' −'+ctWon(a.amount)+'원').join(' / ')}">${aj.some(a=>a.kind==='해지')?'해지':'감액'} ${ctMD(aj[aj.length-1].date)}</span>`:'';
+  const ajB=aj.length?`<span class="card-contract-badge" style="background:#ffebe6;color:#ae2a19" title="${aj.map(a=>a.kind+' '+a.date+' −'+ctWon(a.amount)+'원').join(' / ')}">${aj.some(a=>a.kind==='해지')?'해지':'감액'}<span class="ccb-full"> ${ctMD(aj[aj.length-1].date)}</span></span>`:'';
   if(!c||!c.date)return ajB;
   const p=ctFindPlace(card),bz=ctBizOf(c,p.col&&p.col.title,p.b&&p.b.title);
-  return `<span class="card-contract-badge" title="계약 확정 ${esc(c.date)} · ${esc(bz)} · ${esc(c.product||'')} ${ctWon(c.amount)}원">✓ ${esc(ctCat(c.cat)||'')}${ctIsLong(c.cat)?'':' · '+esc(bz)} ${ctMD(c.date)}</span>`+ajB;
+  // 간편보기에서는 '✓갱'처럼 아주 짧게, 전체보기에서는 '✓ 일반 DB · 갱신 10/14' (10/14 제목이 가려지던 문제)
+  return `<span class="card-contract-badge" title="계약 확정 ${esc(c.date)} · ${esc(ctCat(c.cat)||'')} · ${esc(bz)} · ${esc(c.product||'')} ${ctWon(c.amount)}원"><span class="ccb-full">✓ ${esc(ctCat(c.cat)||'')}${ctIsLong(c.cat)?'':' · '+esc(bz)} ${ctMD(c.date)}</span><span class="ccb-short">✓${bz==='미정'?'?':esc(bz.slice(0,1))}</span></span>`+ajB;
 }
 
 function renderContractSection(card){
@@ -8364,7 +8371,7 @@ function aiMigrateBoards(){   // 열 때·자동 등록 때마다: 카톡·문�
 }
 setTimeout(()=>{try{aiMigrateBoards();}catch(e){}},6500);
 // ── 새 버전 확인: 오래 열어 둔 화면이 예전 코드로 자료를 되돌리지 않게, 새 버전이 올라오면 스스로 새로 고침 ──
-const APP_BUILD='20261014a';   // ※ 앱을 고쳐 올릴 때마다 바꿀 것
+const APP_BUILD='20261014b';   // ※ 앱을 고쳐 올릴 때마다 바꿀 것
 async function checkNewBuild(){
   try{
     if(document.hidden)return;
