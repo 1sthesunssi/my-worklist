@@ -8195,8 +8195,8 @@ function contractBadgeHtml(card){
   if(!c||!c.date)return ajB;
   const p=ctFindPlace(card),bz=ctBizOf(c,p.col&&p.col.title,p.b&&p.b.title);
   // 간편보기에서는 '✓갱'처럼 아주 짧게, 전체보기에서는 '✓ 일반 DB · 갱신 10/14' (10/14 제목이 가려지던 문제)
-  // (10/15) 완료 카드(연초록 바탕)와 구별되게 진한 색 바탕 + 흰 글씨: 신규=초록, 갱신=파랑, 미정=주황
-  const bzBg=bz==='갱신'?'#0c66e4':bz==='미정'?'#c25100':'#1f845a';
+  // (10/15) 완료 카드(연초록 바탕)와 구별되게 진한 파랑 + 흰 글씨. 신규·갱신은 같은 색(계약했다는 게 중요), 미정만 주황
+  const bzBg=bz==='미정'?'#c25100':'#0c66e4';
   return `<span class="card-contract-badge" style="background:${bzBg};color:#fff" title="계약 확정 ${esc(c.date)} · ${esc(ctCat(c.cat)||'')} · ${esc(bz)} · ${esc(c.product||'')} ${ctWon(c.amount)}원"><span class="ccb-full">✓ ${esc(ctCat(c.cat)||'')}${ctIsLong(c.cat)?'':' · '+esc(bz)} ${ctMD(c.date)}</span><span class="ccb-short">✓${bz==='미정'?'?':esc(bz.slice(0,1))}</span></span>`+ajB;
 }
 
@@ -8820,7 +8820,7 @@ function aiMigrateBoards(){   // 열 때·자동 등록 때마다: 카톡·문�
 }
 setTimeout(()=>{try{aiMigrateBoards();}catch(e){}},6500);
 // ── 새 버전 확인: 오래 열어 둔 화면이 예전 코드로 자료를 되돌리지 않게, 새 버전이 올라오면 스스로 새로 고침 ──
-const APP_BUILD='20261015f';   // ※ 앱을 고쳐 올릴 때마다 바꿀 것
+const APP_BUILD='20261015g';   // ※ 앱을 고쳐 올릴 때마다 바꿀 것
 async function checkNewBuild(){
   try{
     if(document.hidden)return;
