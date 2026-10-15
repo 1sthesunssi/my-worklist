@@ -631,6 +631,10 @@ body{font-family:'NanumSquare',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-
 .ccb-short{display:none}
 #board.compact .ccb-short{display:inline}
 #board.compact .ccb-full{display:none}
+.reg-day-sep{display:flex;align-items:center;gap:8px;font-size:11.5px;font-weight:800;color:#44546f;margin:8px 2px 4px;letter-spacing:.2px}
+.reg-day-sep::before,.reg-day-sep::after{content:'';height:1px;background:rgba(9,30,66,.18);flex:1}
+.reg-day-sep::before{flex:0 0 10px}
+#board.compact .reg-day-sep{margin:6px 2px 3px}
 #board.compact .card-meta>*{white-space:nowrap;flex-shrink:0}
 #board.compact .due-ic{display:none}
 #board.compact .card-labels,#board.compact .card-cl,#board.compact .card-attach-badge,#board.compact .card-start{display:none}
@@ -2727,8 +2731,18 @@ function isCardUpcoming(card){
   }
   return false;
 }
+// 카드가 언제 들어왔나 (ms) — 만든 시각, 없으면 자동 등록 시각, 그래도 없으면 0 (맨 아래 '날짜 모름')
+function cardRegAt(c){const n=Number(c&&c.createdAt)||0;if(n)return n;const r=c&&c.ai&&Date.parse(c.ai.registeredAt||'');return isNaN(r)||!r?0:r;}
+function cardRegLabel(ms){
+  if(!ms)return '날짜 모름';
+  const d=new Date(ms);d.setHours(0,0,0,0);const t=new Date();t.setHours(0,0,0,0);
+  const diff=Math.round((t-d)/86400000);
+  if(diff===0)return '오늘';if(diff===1)return '어제';
+  return `${d.getMonth()+1}월 ${d.getDate()}일 (${'일월화수목금토'[d.getDay()]})`+(d.getFullYear()!==t.getFullYear()?` · ${d.getFullYear()}`:'');
+}
 function sortedCards(col){
   const cards=[...col.cards],mode=col.sortMode||'reg';
+  if(mode==='newTop')return cards.sort((a,b)=>(cardRegAt(b)-cardRegAt(a)));
   if(mode==='nameA')return cards.sort((a,b)=>a.title.localeCompare(b.title,'ko'));
   if(mode==='nameD')return cards.sort((a,b)=>b.title.localeCompare(a.title,'ko'));
   if(mode==='due')return cards.sort((a,b)=>{if(!a.due&&!b.due)return 0;if(!a.due)return 1;if(!b.due)return-1;return a.due.localeCompare(b.due);});
@@ -4516,6 +4530,7 @@ function renderColumn(col){
     <div class="col-menu">
       <div class="col-menu-sec">정렬</div>
       <button class="cm-sort${mode==='reg'?' sort-active':''}" data-sort="reg">📋 등록순</button>
+      <button class="cm-sort${mode==='newTop'?' sort-active':''}" data-sort="newTop">🆕 최신 등록 맨 위로 (날짜 구분선)</button>
       <button class="cm-sort${mode==='nameA'?' sort-active':''}" data-sort="nameA">🔤 이름 오름차순</button>
       <button class="cm-sort${mode==='nameD'?' sort-active':''}" data-sort="nameD">🔤 이름 내림차순</button>
       <button class="cm-sort${mode==='due'?' sort-active':''}" data-sort="due">📅 마감일순</button>
@@ -4560,7 +4575,10 @@ function renderColumn(col){
   const upcomingCards=notDone.filter(isUpcoming);
   const doneCards=allCards.filter(c=>c.done);
   const countEl=el.querySelector('.col-count');if(countEl){countEl.textContent=`${activeCards.length}/${doneCards.length}`;countEl.title=`진행중 ${activeCards.length}개 / 완료 ${doneCards.length}개`+(upcomingCards.length?` (예정 ${upcomingCards.length}개 접힘)`:'');}
-  activeCards.forEach((card,i)=>{wrapper.appendChild(renderCard(card,col.id));if(i<activeCards.length-1)wrapper.appendChild(mkInsZone(col,activeCards,i+1));});
+  let lastDay=null;
+  activeCards.forEach((card,i)=>{
+    if((col.sortMode||'reg')==='newTop'){const lb=cardRegLabel(cardRegAt(card));if(lb!==lastDay){lastDay=lb;const dv=document.createElement('div');dv.className='reg-day-sep';dv.textContent=lb;wrapper.appendChild(dv);}}
+    wrapper.appendChild(renderCard(card,col.id));if(i<activeCards.length-1)wrapper.appendChild(mkInsZone(col,activeCards,i+1));});
   // 예정 섹션 — 시작일이 아직 안 됐거나, 마감일까지 60일 넘게 남은 카드는 여기로 접어둡니다
   if(upcomingCards.length>0){
     const upSection=document.createElement('div');upSection.className='upcoming-section';
@@ -8326,7 +8344,7 @@ function aiAutoCol(){
   if(hit)return hit;
   (state.boards||[]).forEach(b=>(b.columns||[]).forEach(c=>{if(!hit&&c.title===AI_AUTO_TITLE)hit=c;}));
   if(!hit){const b=(state.boards||[])[0];if(!b)return null;b.columns=b.columns||[];
-    hit={id:uid(),title:AI_AUTO_TITLE,cards:[],sortMode:'reg',color:'none',collapsed:false};b.columns.unshift(hit);}
+    hit={id:uid(),title:AI_AUTO_TITLE,cards:[],sortMode:'newTop',color:'none',collapsed:false};b.columns.unshift(hit);}
   state.aiConfig=Object.assign({},cfg,{autoColId:hit.id});
   return hit;
 }
@@ -8349,12 +8367,20 @@ function aiAutoColFor(t){
   if(hit&&hitB!==home){   // 예전 방식(따로 보드)이면 카드째 이 보드로 옮기고, 그래서 텅 빈 보드는 지움
     hitB.columns.splice(hitB.columns.indexOf(hit),1);hit.title=AI_COL_TITLE[t];home.columns.push(hit);
     if(!hitB.columns.length)state.boards=state.boards.filter(b=>b!==hitB);}
-  if(!hit){hit={id:uid(),title:AI_COL_TITLE[t],cards:[],sortMode:'reg',color:'none',collapsed:false};home.columns.push(hit);}
+  if(!hit){hit={id:uid(),title:AI_COL_TITLE[t],cards:[],sortMode:'newTop',color:'none',collapsed:false};home.columns.push(hit);}
   ids[t]=hit.id;state.aiConfig=Object.assign({},state.aiConfig||{},{autoColIds:ids});
   aiOrderCols(home);
   return hit;
 }
 // 앱을 열 때 한 번: 따로 있던 카톡·문자 보드를 '📥 고객 할 일' 보드의 리스트로 모음
+// (10/15) 고객 할 일 세 리스트(통화·카톡·문자)만 한 번 '최신 등록 맨 위로'로 바꿈. 다른 리스트는 그대로.
+function aiNewTopOnce(){
+  const cfg=state.aiConfig||{};if(cfg.newTopSet)return;
+  let n=0;['call','kakao','sms'].forEach(t=>{const h=aiFindAutoColFor(t);if(h&&h.col){h.col.sortMode='newTop';n++;}});
+  if(!n)return;
+  state.aiConfig=Object.assign({},cfg,{newTopSet:1});saveState();try{renderCurrentView();}catch(e){}
+}
+setTimeout(()=>{try{aiNewTopOnce();}catch(e){}},8000);
 function aiMigrateBoards(){   // 열 때·자동 등록 때마다: 카톡·문자 리스트가 다른 보드로 빠져 있으면 다시 모음 (예전 화면이 나눠 놔도 스스로 고침)
   const cfg=state.aiConfig||{};
   const home=aiHomeBoard();if(!home)return;
@@ -8371,7 +8397,7 @@ function aiMigrateBoards(){   // 열 때·자동 등록 때마다: 카톡·문�
 }
 setTimeout(()=>{try{aiMigrateBoards();}catch(e){}},6500);
 // ── 새 버전 확인: 오래 열어 둔 화면이 예전 코드로 자료를 되돌리지 않게, 새 버전이 올라오면 스스로 새로 고침 ──
-const APP_BUILD='20261014b';   // ※ 앱을 고쳐 올릴 때마다 바꿀 것
+const APP_BUILD='20261015a';   // ※ 앱을 고쳐 올릴 때마다 바꿀 것
 async function checkNewBuild(){
   try{
     if(document.hidden)return;
