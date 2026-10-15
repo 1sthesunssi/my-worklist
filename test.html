@@ -8506,6 +8506,7 @@ const AI_SRC={
   call:{dot:'통',name:'통화',list:'📥 통화에서 온 할 일',bg:'#7c5cdb',fg:'#fff',link:'▶ 원본 통화 듣기'},
   kakao:{dot:'톡',name:'카톡',list:'💬 카톡에서 온 할 일',bg:'#fac775',fg:'#633806',link:'▶ 원본 대화 보기'},
   sms:{dot:'문',name:'문자',list:'✉️ 문자에서 온 할 일',bg:'#22a06b',fg:'#fff',link:'▶ 원본 문자 보기'},
+  voice:{dot:'보',name:'보이스톡',list:'📞 통화에서 온 할 일',bg:'#5e4db2',fg:'#fff',link:'▶ 원본 알림 보기'},
   mail:{dot:'메',name:'메일',list:'📧 메일에서 온 할 일',bg:'#1d7afc',fg:'#fff',link:'▶ 원본 메일 보기'}};
 const aiType=r=>{const t=((r&&r.source)||{}).type||'call';return AI_SRC[t]?t:'unknown';};
 const aiSrcInfo=t=>AI_SRC[t]||{dot:'?',name:'알 수 없는 출처',bg:'#8590a2',fg:'#fff',link:'▶ 원본'};
@@ -8636,7 +8637,7 @@ async function aiItems(){
       const cid=await aiCardId(r.processId,it.itemId),key=cid.slice(3),st=aiStOf(key);
       let hold='',olds=[];
       if(t==='unknown')hold='unknown';
-      else if(t!=='call'&&src.isGroup!==false)hold='group';   // 1:1로 확인된 대화만 등록
+      else if(t!=='call'&&t!=='voice'&&src.isGroup!==false)hold='group';   // 1:1로 확인된 대화만 등록
       else{
         for(const o of (it.replaces||[])){const oc=await aiCardId(r.processId,o),os=aiStOf(oc.slice(3));if(aiFindCard(oc)||os==='registered'||os==='merged')olds.push(oc);}
         if(olds.length)hold='replace';   // 이미 카드가 된 항목을 대신하는 새 항목 → 자동 등록하지 않음
@@ -8732,7 +8733,7 @@ function aiOrderCols(home){   // 통화→카톡→문자 리스트를 보드 �
   home.columns=mine.concat(home.columns.filter(c=>!mine.includes(c)));
 }
 function aiAutoColFor(t){
-  if(t==='call')return aiAutoCol();
+  if(t==='call'||t==='voice')return aiAutoCol();   // 보이스톡도 통화 리스트로
   if(!AI_SRC[t])return null;
   if(!aiAutoCol())return null;
   const home=aiHomeBoard();if(!home)return null;
@@ -8771,7 +8772,7 @@ function aiMigrateBoards(){   // 열 때·자동 등록 때마다: 카톡·문�
 }
 setTimeout(()=>{try{aiMigrateBoards();}catch(e){}},6500);
 // ── 새 버전 확인: 오래 열어 둔 화면이 예전 코드로 자료를 되돌리지 않게, 새 버전이 올라오면 스스로 새로 고침 ──
-const APP_BUILD='20261015b';   // ※ 앱을 고쳐 올릴 때마다 바꿀 것
+const APP_BUILD='20261015c';   // ※ 앱을 고쳐 올릴 때마다 바꿀 것
 async function checkNewBuild(){
   try{
     if(document.hidden)return;
@@ -8786,7 +8787,7 @@ async function checkNewBuild(){
 setInterval(checkNewBuild,10*60*1000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkNewBuild();});
 function aiFindAutoColFor(t){
-  if(t==='call')return aiFindAutoCol();
+  if(t==='call'||t==='voice')return aiFindAutoCol();
   const id=((state.aiConfig||{}).autoColIds||{})[t];if(!id)return null;let hit=null;
   (state.boards||[]).forEach(b=>(b.columns||[]).forEach(c=>{if(!hit&&c.id===id)hit={board:b,col:c};}));return hit;
 }
@@ -8868,7 +8869,7 @@ function aiEvHead(r,it){const s=r.source||{};if(aiType(r)==='call')return `${esc
   return ev.length?ev.map(m=>aiMsgLine(m,s.counterpart)).join(' · '):esc(s.counterpart||'');}
 function aiSrcLink(t,s){if(aiExpired(s.retentionUntil))return '<span style="font-size:12.5px;color:#8590a2">원본 보관 기간 종료</span>';
   const i=aiSrcInfo(t);return s.link?`<a href="${esc(s.link)}" target="_blank" rel="noopener" style="font-size:12.5px">${i.link}</a>`:`<span style="font-size:12.5px;color:#8590a2">${i.link}: 아직 연결 전</span>`;}
-function aiCoverTag(t,s){const c=s.coverage;if(t==='call'||!c)return '';const via=Array.isArray(c.via)?c.via:[];
+function aiCoverTag(t,s){const c=s.coverage;if(t==='call'||t==='voice'||!c)return '';const via=Array.isArray(c.via)?c.via:[];
   const parts=[];if(via.length===1&&via[0]==='notification')parts.push('알림만 수집');if(c.includesMyMessages===false)parts.push('내 답장 없음');if(c.complete===false&&!parts.length)parts.push('일부만 수집');
   return parts.length?`<span class="ai-tag g">${parts.join(' · ')}</span>`:'';}
 async function renderAiInbox(){
@@ -8932,7 +8933,7 @@ async function renderAiInbox(){
       return `<div style="font-size:13px;line-height:1.6">${st} · ${aiSrcInfo(aiType(r)).dot} · ${esc(aiTime(s.start)||it.dueRaw||'')} ${esc(it.title||'')}${s.reason?` <span style="color:#626f86">(${esc(s.reason)})</span>`:''}${s.userChanged?` <span style="color:#626f86">(직접 ${s.userChanged==='deleted'?'삭제':'수정'}함)</span>`:''}${s.link?` · <a href="${esc(s.link)}" target="_blank" rel="noopener">일정 열기</a>`:''}</div>`;}).join('')}</div>`:'';
   const cnt=t=>aiResults.filter(r=>aiType(r)===t).length;
   const report=`<div class="ai-card" style="flex-direction:row;flex-wrap:wrap;gap:14px;font-size:13px">
-    <span>읽은 결과 <b>${aiResults.length}</b> <span style="color:#626f86">(통화 ${cnt('call')} · 카톡 ${cnt('kakao')} · 문자 ${cnt('sms')} · 메일 ${cnt('mail')}${cnt('unknown')?' · 기타 '+cnt('unknown'):''})</span></span><span>할 일 있음 <b>${aiResults.filter(r=>r.items&&r.items.length).length}</b></span><span>할 일 없음 <b>${noWork.length}</b></span><span style="color:#bf2600">분석 실패 <b>${failed.length}</b></span>${aiConflicts.length?`<span style="color:#bf2600">판 충돌 <b>${aiConflicts.length}</b></span>`:''}
+    <span>읽은 결과 <b>${aiResults.length}</b> <span style="color:#626f86">(통화 ${cnt('call')} · 카톡 ${cnt('kakao')} · 문자 ${cnt('sms')} · 메일 ${cnt('mail')} · 보이스톡 ${cnt('voice')}${cnt('unknown')?' · 기타 '+cnt('unknown'):''})</span></span><span>할 일 있음 <b>${aiResults.filter(r=>r.items&&r.items.length).length}</b></span><span>할 일 없음 <b>${noWork.length}</b></span><span style="color:#bf2600">분석 실패 <b>${failed.length}</b></span>${aiConflicts.length?`<span style="color:#bf2600">판 충돌 <b>${aiConflicts.length}</b></span>`:''}
     <span style="margin-left:auto;color:#5e6c84">${aiLoadedAt?'불러온 시각 '+aiTime(new Date(aiLoadedAt).toISOString()):''}${aiSample?' · 샘플':''}</span></div>`;
   const conflictHtml=aiConflicts.length?`<div class="ai-card" style="border-color:#f87168"><div style="font-size:14px;font-weight:800;color:#ae2e24">판이 겹친 결과 — 등록 보류</div><div style="font-size:12.5px;color:#44546f">같은 처리번호·같은 판인데 내용이 다른 파일이 있어요. 어느 쪽도 고르지 않고 멈춰 뒀어요. 분석 담당(Codex)에게 알려 주세요.</div>${aiConflicts.map(c=>`<div style="font-size:13px">${aiSrcInfo(c.type).dot} · 처리번호 <b>${esc(c.processId)}</b> · ${c.resultVersion}판 <div style="color:#44546f;padding-left:12px">${(c.groups||[c.files]).map((g,i)=>`내용 ${String.fromCharCode(65+i)}: ${g.map(esc).join(', ')}${g.length>1?' <span style="color:#626f86">(같은 내용)</span>':''}`).join('<br>')}</div></div>`).join('')}</div>`:'';
   p.innerHTML=head+setup+(msg?`<div class="ai-card" style="color:#974f0c">${msg}</div>`:'')+report+conflictHtml
@@ -8955,10 +8956,10 @@ contractBadgeHtml=function(card){const a=card&&card.ai;let h='';
 const _aiRenderContract=renderContractSection;
 renderContractSection=function(card){_aiRenderContract(card);const box=document.getElementById('modal-contract-section');if(!box||!card||!card.ai)return;
   const a=card.ai,t=a.source||'call',i=aiSrcInfo(t);
-  const when=t==='call'?aiTime(a.callAt):[aiTime(a.startedAt),aiTime(a.endedAt)].filter(Boolean).join(' ~ ');
+  const when=(t==='call'||t==='voice')?aiTime(a.callAt):[aiTime(a.startedAt),aiTime(a.endedAt)].filter(Boolean).join(' ~ ');
   const ev=(a.evidenceMsgs||[]).map(m=>aiMsgLine(m,a.counterpart)).join(' · ');
   const rr=a.needsSourceReview?((a.reviewReasons||[]).map(k=>AI_RR[k]||k).join(', ')||'원문 확인 필요'):'';
-  const cv=a.coverage&&t!=='call'?aiCoverTag(t,{coverage:a.coverage}):'';
+  const cv=a.coverage&&t!=='call'&&t!=='voice'?aiCoverTag(t,{coverage:a.coverage}):'';
   const p=a.pending;
   const pend=p?`<div style="border:1px solid #f5cd47;background:#fffbea;border-radius:8px;padding:9px 11px;display:flex;flex-direction:column;gap:4px">
       <b style="color:#7f5f01">분석이 바뀌었어요 (${esc(String(p.ver||''))}판)${p.fromItem?' — 새 분석 #'+esc(p.fromItem):''}</b>
