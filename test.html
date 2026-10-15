@@ -1498,6 +1498,8 @@ body{font-family:'NanumSquare',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-
         <button id="backup-folder-btn" onclick="closeMoreMenu();pickBackupFolder()"><span>백업 폴더 지정</span></button>
         <button onclick="closeMoreMenu();document.getElementById('import-file').click()"><span>백업 불러오기</span></button>
         <button onclick="closeMoreMenu();findHeavyCards()"><span>무거운 카드 찾기</span></button>
+        <div class="mm-sep"></div>
+        <button onclick="closeMoreMenu();exportAllXlsx()"><span>📊 엑셀로 내보내기</span></button>
       </div>
     </div>
     <input type="file" id="import-file" accept=".json" onchange="importJSON(this)">
@@ -8440,6 +8442,50 @@ function renderSales(){
   if(tb)tb.addEventListener('click',e=>{const tr=e.target.closest('tr[data-i]');if(!tr)return;const x=window.__slRows[Number(tr.dataset.i)];if(!x)return;
     closeSales();openBoard(x.board.id);setTimeout(()=>openModal(x.card.id,x.col.id),200);});
 }
+// ── (10/15) 모든 보드·리스트·카드를 엑셀(.xlsx)로: 시트1 "전체 카드" + 보드마다 시트 하나
+// 일기·메모·플래너·첨부 사진은 넣지 않음. 엑셀 라이브러리는 버튼을 처음 누를 때만 불러옴.
+let _xlsxLib=null;
+function loadXlsxLib(){
+  if(window.XLSX)return Promise.resolve(window.XLSX);
+  if(_xlsxLib)return _xlsxLib;
+  _xlsxLib=new Promise((ok,no)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    s.onload=()=>window.XLSX?ok(window.XLSX):no(new Error('xlsx'));s.onerror=()=>{_xlsxLib=null;no(new Error('xlsx'));};document.head.appendChild(s);});
+  return _xlsxLib;
+}
+const XL_COLS=['보드','리스트','카드 제목','마감일','시작일','완료','별표','라벨','체크리스트','전화번호','출처','계약 구분','신규·갱신','보험료(원)','설명(앞부분)','등록일'];
+function xlCardRow(b,col,card){
+  const labels=(card.labels||[]).map(id=>{const l=(b.labels||[]).find(x=>x.id===id);return l?l.text:'';}).filter(Boolean).join(', ');
+  const cl=Array.isArray(card.checklist)&&card.checklist.length?`${card.checklist.filter(i=>i.checked).length}/${card.checklist.length}`:'';
+  const done=card.done||/done|완료/i.test(col.title||'');
+  const src=card.ai&&card.ai.source?((AI_SRC[card.ai.source]||{}).name||card.ai.source):'직접';
+  const c=card.contract&&card.contract.date?card.contract:null;
+  let desc='';try{const d=document.createElement('div');d.innerHTML=String(card.desc||'').replace(/<img[^>]*>/gi,'');desc=(d.textContent||'').replace(/\s+/g,' ').trim().slice(0,300);}catch(e){}
+  const reg=Number(card.createdAt)?localDateStr(new Date(Number(card.createdAt))):'';
+  return [b.title||'',col.title||'',card.title||'',card.due||'',card.start||'',done?'완료':'',card.starred?'★':'',labels,cl,card.phone||'',src,
+    c?ctCat(c.cat):'',c?ctBizOf(c,col.title,b.title):'',c?(Number(c.amount)||0):'',desc,reg];
+}
+function xlSheetName(name,used){
+  let n=String(name||'보드').replace(/[\[\]:*?\/\\]/g,' ').trim().slice(0,28)||'보드';let k=n,i=2;
+  while(used.has(k.toLowerCase()))k=n.slice(0,25)+' ('+(i++)+')';used.add(k.toLowerCase());return k;
+}
+function xlSheet(X,rows){
+  const ws=X.utils.aoa_to_sheet([XL_COLS].concat(rows));
+  ws['!cols']=[14,14,40,11,11,6,5,18,9,14,8,10,9,12,50,11].map(w=>({wch:w}));
+  ws['!autofilter']={ref:X.utils.encode_range({s:{r:0,c:0},e:{r:Math.max(rows.length,1),c:XL_COLS.length-1}})};
+  ws['!freeze']={xSplit:0,ySplit:1};ws['!views']=[{state:'frozen',ySplit:1}];
+  return ws;
+}
+async function exportAllXlsx(){
+  showToast('📊','엑셀 파일을 만들고 있어요…',2000);
+  let X;try{X=await loadXlsxLib();}catch(e){showToast('⚠️','엑셀 도구를 불러오지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요.',4000);return;}
+  const all=[],per=[];
+  (state.boards||[]).forEach(b=>{const rows=[];(b.columns||[]).forEach(col=>(col.cards||[]).forEach(card=>{const r=xlCardRow(b,col,card);rows.push(r);all.push(r);}));per.push([b,rows]);});
+  const wb=X.utils.book_new(),used=new Set();
+  X.utils.book_append_sheet(wb,xlSheet(X,all),xlSheetName('전체 카드',used));
+  per.forEach(([b,rows])=>X.utils.book_append_sheet(wb,xlSheet(X,rows),xlSheetName(b.title,used)));
+  X.writeFile(wb,`MyWorklist_${localDateStr(new Date())}.xlsx`);
+  showToast('✅',`보드 ${per.length}개 · 카드 ${all.length}장을 엑셀로 내보냈어요 (다운로드 폴더)`,3500);
+}
 function slExport(){
   const [from,to]=slRange();
   const rows=slAll().filter(x=>x.c.date>=from&&x.c.date<=to).sort((a,b)=>a.c.date.localeCompare(b.c.date));
@@ -8772,7 +8818,7 @@ function aiMigrateBoards(){   // 열 때·자동 등록 때마다: 카톡·문�
 }
 setTimeout(()=>{try{aiMigrateBoards();}catch(e){}},6500);
 // ── 새 버전 확인: 오래 열어 둔 화면이 예전 코드로 자료를 되돌리지 않게, 새 버전이 올라오면 스스로 새로 고침 ──
-const APP_BUILD='20261015c';   // ※ 앱을 고쳐 올릴 때마다 바꿀 것
+const APP_BUILD='20261015d';   // ※ 앱을 고쳐 올릴 때마다 바꿀 것
 async function checkNewBuild(){
   try{
     if(document.hidden)return;
