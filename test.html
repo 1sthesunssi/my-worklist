@@ -8505,7 +8505,8 @@ function aiValidResult(j){return j&&j.schemaVersion===3&&typeof j.processId==='s
 const AI_SRC={
   call:{dot:'통',name:'통화',list:'📥 통화에서 온 할 일',bg:'#7c5cdb',fg:'#fff',link:'▶ 원본 통화 듣기'},
   kakao:{dot:'톡',name:'카톡',list:'💬 카톡에서 온 할 일',bg:'#fac775',fg:'#633806',link:'▶ 원본 대화 보기'},
-  sms:{dot:'문',name:'문자',list:'✉️ 문자에서 온 할 일',bg:'#22a06b',fg:'#fff',link:'▶ 원본 문자 보기'}};
+  sms:{dot:'문',name:'문자',list:'✉️ 문자에서 온 할 일',bg:'#22a06b',fg:'#fff',link:'▶ 원본 문자 보기'},
+  mail:{dot:'메',name:'메일',list:'📧 메일에서 온 할 일',bg:'#1d7afc',fg:'#fff',link:'▶ 원본 메일 보기'}};
 const aiType=r=>{const t=((r&&r.source)||{}).type||'call';return AI_SRC[t]?t:'unknown';};
 const aiSrcInfo=t=>AI_SRC[t]||{dot:'?',name:'알 수 없는 출처',bg:'#8590a2',fg:'#fff',link:'▶ 원본'};
 const AI_CAT={'보상 요청':['#ffeceb','#ae2e24'],'업무 요청':['#dcfff1','#216e4e'],'보험 문의':['#e9f2ff','#0055cc'],'약속·일정':['#f3f0ff','#5e4db2'],'기타':['#f1f2f4','#44546f']};
@@ -8650,7 +8651,7 @@ async function aiUpdateBadge(){
   try{if(aiNeedLogin&&aiAutoOn()){b.textContent='!';b.title='읽기 권한을 다시 연결해 주세요';b.style.display='';return;}b.title='';
     const all=await aiItems();const holds=all.filter(x=>!x.reg&&x.hold&&x.st!=='excluded').length+aiConflicts.length;
     let n;
-    if(aiAutoOn()){n=0;['call','kakao','sms'].forEach(t=>{const c=aiFindAutoColFor(t);if(c)n+=(c.col.cards||[]).filter(k=>!k.done).length;});}
+    if(aiAutoOn()){n=0;['call','kakao','sms','mail'].forEach(t=>{const c=aiFindAutoColFor(t);if(c)n+=(c.col.cards||[]).filter(k=>!k.done).length;});}
     else n=all.filter(x=>!x.reg&&!x.hold&&x.st!=='excluded'&&x.st!=='later').length;
     n+=holds;b.textContent=n;b.style.display=n?'':'none';if(holds)b.title=`확인할 항목 ${holds}건`;}catch(e){}
 }
@@ -8723,11 +8724,11 @@ function aiAutoCol(){
 }
 // 출처별 리스트: 한 보드(📥 고객 할 일) 안에 📞 통화 → 💬 카톡 → ✉️ 문자
 const AI_HOME_TITLE='📥 고객 할 일';
-const AI_COL_TITLE={call:'📞 통화',kakao:'💬 카톡',sms:'✉️ 문자'};
+const AI_COL_TITLE={call:'📞 통화',kakao:'💬 카톡',sms:'✉️ 문자',mail:'📧 메일'};
 function aiHomeBoard(){const id=(state.aiConfig||{}).autoColId;return (state.boards||[]).find(b=>(b.columns||[]).some(c=>c.id===id))||null;}
 function aiOrderCols(home){   // 통화→카톡→문자 리스트를 보드 맨 앞에 차례로 (나머지 리스트는 그 뒤에 그대로)
   const cfg=state.aiConfig||{},ids=Object.assign({},cfg.autoColIds||{},{call:cfg.autoColId});
-  const mine=['call','kakao','sms'].map(t=>home.columns.find(c=>c.id===ids[t])).filter(Boolean);
+  const mine=['call','kakao','sms','mail'].map(t=>home.columns.find(c=>c.id===ids[t])).filter(Boolean);
   home.columns=mine.concat(home.columns.filter(c=>!mine.includes(c)));
 }
 function aiAutoColFor(t){
@@ -8749,7 +8750,7 @@ function aiAutoColFor(t){
 // (10/15) 고객 할 일 세 리스트(통화·카톡·문자)만 한 번 '최신 등록 맨 위로'로 바꿈. 다른 리스트는 그대로.
 function aiNewTopOnce(){
   const cfg=state.aiConfig||{};if(cfg.newTopSet)return;
-  let n=0;['call','kakao','sms'].forEach(t=>{const h=aiFindAutoColFor(t);if(h&&h.col){h.col.sortMode='newTop';n++;}});
+  let n=0;['call','kakao','sms','mail'].forEach(t=>{const h=aiFindAutoColFor(t);if(h&&h.col){h.col.sortMode='newTop';n++;}});
   if(!n)return;
   state.aiConfig=Object.assign({},cfg,{newTopSet:1});saveState();try{renderCurrentView();}catch(e){}
 }
@@ -8757,20 +8758,20 @@ setTimeout(()=>{try{aiNewTopOnce();}catch(e){}},8000);
 function aiMigrateBoards(){   // 열 때·자동 등록 때마다: 카톡·문자 리스트가 다른 보드로 빠져 있으면 다시 모음 (예전 화면이 나눠 놔도 스스로 고침)
   const cfg=state.aiConfig||{};
   const home=aiHomeBoard();if(!home)return;
-  const out=['kakao','sms'].some(t=>{const h=aiFindAutoColFor(t);return !h||h.board!==home;});
+  const out=['kakao','sms','mail'].some(t=>{const h=aiFindAutoColFor(t);return !h||h.board!==home;});
   if(cfg.layout==='one'&&!out)return;
   const wasOn=activeBoardId,first=cfg.layout!=='one';
-  ['kakao','sms'].forEach(t=>aiAutoColFor(t));   // 카드가 아직 없어도 세 리스트를 미리 만들어 둠
+  ['kakao','sms','mail'].forEach(t=>aiAutoColFor(t));   // 카드가 아직 없어도 세 리스트를 미리 만들어 둠
   const callCol=home.columns.find(c=>c.id===cfg.autoColId);if(callCol&&callCol.title===AI_AUTO_TITLE)callCol.title=AI_COL_TITLE.call;
   if(first)home.title=AI_HOME_TITLE;
   aiOrderCols(home);
   state.aiConfig=Object.assign({},state.aiConfig||{},{layout:'one'});saveState();
   try{if(wasOn&&!state.boards.some(b=>b.id===wasOn))openBoard(home.id);else renderCurrentView();}catch(e){}
-  showToast('📥','통화·카톡·문자를 「'+home.title+'」 보드 한 곳에 리스트로 모았어요.',3500);
+  showToast('📥','통화·카톡·문자·메일을 「'+home.title+'」 보드 한 곳에 리스트로 모았어요.',3500);
 }
 setTimeout(()=>{try{aiMigrateBoards();}catch(e){}},6500);
 // ── 새 버전 확인: 오래 열어 둔 화면이 예전 코드로 자료를 되돌리지 않게, 새 버전이 올라오면 스스로 새로 고침 ──
-const APP_BUILD='20261015a';   // ※ 앱을 고쳐 올릴 때마다 바꿀 것
+const APP_BUILD='20261015b';   // ※ 앱을 고쳐 올릴 때마다 바꿀 것
 async function checkNewBuild(){
   try{
     if(document.hidden)return;
@@ -8829,7 +8830,7 @@ function aiFindAutoCol(){const id=(state.aiConfig||{}).autoColId;let hit=null;
 let aiGoLast=null;   // 버튼을 누를 때마다 할 일 남은 리스트(통화 → 카톡 → 문자)로 차례로
 function aiGoList(force){
   const cfg=state.aiConfig||{};
-  const spots=aiAutoOn()?['call','kakao','sms'].map(t=>{const h=aiFindAutoColFor(t);return h?Object.assign({t,n:(h.col.cards||[]).filter(k=>!k.done).length},h):null;}).filter(Boolean):[];
+  const spots=aiAutoOn()?['call','kakao','sms','mail'].map(t=>{const h=aiFindAutoColFor(t);return h?Object.assign({t,n:(h.col.cards||[]).filter(k=>!k.done).length},h):null;}).filter(Boolean):[];
   if(!spots.length||!cfg.folderId||aiNeedLogin){openAiInbox();return;}
   const work=spots.filter(x=>x.n>0);
   const onHome=document.getElementById('board-screen').style.display!=='none'&&spots.some(x=>x.board.id===activeBoardId);
@@ -8931,7 +8932,7 @@ async function renderAiInbox(){
       return `<div style="font-size:13px;line-height:1.6">${st} · ${aiSrcInfo(aiType(r)).dot} · ${esc(aiTime(s.start)||it.dueRaw||'')} ${esc(it.title||'')}${s.reason?` <span style="color:#626f86">(${esc(s.reason)})</span>`:''}${s.userChanged?` <span style="color:#626f86">(직접 ${s.userChanged==='deleted'?'삭제':'수정'}함)</span>`:''}${s.link?` · <a href="${esc(s.link)}" target="_blank" rel="noopener">일정 열기</a>`:''}</div>`;}).join('')}</div>`:'';
   const cnt=t=>aiResults.filter(r=>aiType(r)===t).length;
   const report=`<div class="ai-card" style="flex-direction:row;flex-wrap:wrap;gap:14px;font-size:13px">
-    <span>읽은 결과 <b>${aiResults.length}</b> <span style="color:#626f86">(통화 ${cnt('call')} · 카톡 ${cnt('kakao')} · 문자 ${cnt('sms')}${cnt('unknown')?' · 기타 '+cnt('unknown'):''})</span></span><span>할 일 있음 <b>${aiResults.filter(r=>r.items&&r.items.length).length}</b></span><span>할 일 없음 <b>${noWork.length}</b></span><span style="color:#bf2600">분석 실패 <b>${failed.length}</b></span>${aiConflicts.length?`<span style="color:#bf2600">판 충돌 <b>${aiConflicts.length}</b></span>`:''}
+    <span>읽은 결과 <b>${aiResults.length}</b> <span style="color:#626f86">(통화 ${cnt('call')} · 카톡 ${cnt('kakao')} · 문자 ${cnt('sms')} · 메일 ${cnt('mail')}${cnt('unknown')?' · 기타 '+cnt('unknown'):''})</span></span><span>할 일 있음 <b>${aiResults.filter(r=>r.items&&r.items.length).length}</b></span><span>할 일 없음 <b>${noWork.length}</b></span><span style="color:#bf2600">분석 실패 <b>${failed.length}</b></span>${aiConflicts.length?`<span style="color:#bf2600">판 충돌 <b>${aiConflicts.length}</b></span>`:''}
     <span style="margin-left:auto;color:#5e6c84">${aiLoadedAt?'불러온 시각 '+aiTime(new Date(aiLoadedAt).toISOString()):''}${aiSample?' · 샘플':''}</span></div>`;
   const conflictHtml=aiConflicts.length?`<div class="ai-card" style="border-color:#f87168"><div style="font-size:14px;font-weight:800;color:#ae2e24">판이 겹친 결과 — 등록 보류</div><div style="font-size:12.5px;color:#44546f">같은 처리번호·같은 판인데 내용이 다른 파일이 있어요. 어느 쪽도 고르지 않고 멈춰 뒀어요. 분석 담당(Codex)에게 알려 주세요.</div>${aiConflicts.map(c=>`<div style="font-size:13px">${aiSrcInfo(c.type).dot} · 처리번호 <b>${esc(c.processId)}</b> · ${c.resultVersion}판 <div style="color:#44546f;padding-left:12px">${(c.groups||[c.files]).map((g,i)=>`내용 ${String.fromCharCode(65+i)}: ${g.map(esc).join(', ')}${g.length>1?' <span style="color:#626f86">(같은 내용)</span>':''}`).join('<br>')}</div></div>`).join('')}</div>`:'';
   p.innerHTML=head+setup+(msg?`<div class="ai-card" style="color:#974f0c">${msg}</div>`:'')+report+conflictHtml
