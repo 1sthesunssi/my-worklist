@@ -8262,7 +8262,7 @@ function renderContractSection(card){
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><a href="#" onclick="event.preventDefault();openSales()" style="font-size:12.5px">매출 화면에서 보기 →</a><span style="margin-left:auto"></span>${ajBtns}</div></div>`;
     return;
   }
-  box.innerHTML=`<div class="ct-box ct-empty"><div style="flex:1 1 240px;font-size:13px;color:#44546f;line-height:1.5">계약이 확정되면 눌러 주세요. 확정일과 보험료를 적으면 <b>매출 화면</b>에 모여요.</div><button type="button" class="ct-btn go" onclick="ctEdit()">✓ 계약 확정</button><div style="flex-basis:100%;display:flex;align-items:center;gap:8px;font-size:12.5px;color:#7a8794">${ajList?'':'예전 계약이 해지·감액됐나요?'}<span style="margin-left:auto"></span>${ajBtns}</div>${ajList?`<div style="flex-basis:100%">${ajList}</div>`:''}</div>`;
+  box.innerHTML=`<div class="ct-box ct-empty"><div style="flex:1 1 240px;font-size:13px;color:#44546f;line-height:1.5">계약이 확정되면 눌러 주세요. 확정일과 보험료를 적으면 <b>매출 화면</b>에 모여요.</div><button type="button" class="ct-btn go" onclick="ctEdit()">✓ 계약 확정</button><div style="flex-basis:100%;display:flex;align-items:center;gap:8px;font-size:12.5px;color:#7a8794">${ajList?`<a href="#" onclick="event.preventDefault();openSales()" style="font-size:12.5px">매출 화면에서 보기 →</a>`:'예전 계약이 해지·감액됐나요?'}<span style="margin-left:auto"></span>${ajBtns}</div>${ajList?`<div style="flex-basis:100%">${ajList}</div>`:''}</div>`;
 }
 function ctGuessCat(card){
   const t=(card.title||'')+' '+(document.getElementById('modal-col-label')||{}).textContent;
@@ -8818,7 +8818,7 @@ function aiMigrateBoards(){   // 열 때·자동 등록 때마다: 카톡·문�
 }
 setTimeout(()=>{try{aiMigrateBoards();}catch(e){}},6500);
 // ── 새 버전 확인: 오래 열어 둔 화면이 예전 코드로 자료를 되돌리지 않게, 새 버전이 올라오면 스스로 새로 고침 ──
-const APP_BUILD='20261015d';   // ※ 앱을 고쳐 올릴 때마다 바꿀 것
+const APP_BUILD='20261015e';   // ※ 앱을 고쳐 올릴 때마다 바꿀 것
 async function checkNewBuild(){
   try{
     if(document.hidden)return;
