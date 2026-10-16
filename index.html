@@ -8292,7 +8292,7 @@ function aiApplyPending(id,apply){
   if(apply){
     if('title' in p)k.title=p.title;
     if('due' in p)k.due=p.due;
-    if('desc' in p)k.desc=esc(p.desc);
+    if('desc' in p)k.desc=aiDescHtml(p.desc);
     if('checklist' in p){const have=new Set((k.checklist||[]).map(x=>x.text));p.checklist.forEach(t=>{if(!have.has(t))(k.checklist=k.checklist||[]).push({id:uid(),text:t,checked:false,due:''});});}   // 있던 항목·체크는 그대로, 새 항목만 추가
   }
   a.snap=Object.assign({},a.snap||{},p);delete a.pending;saveState();
@@ -8372,10 +8372,27 @@ function aiGuessPhone(src){
     for(const n of names){const m=contactsCache.filter(c=>c.name===n&&c.phone);if(m.length===1)return m[0].phone;}
   return '';
 }
+// 설명 글 모양: "## 제목" 한 줄 = 굵은 제목, "- 내용" = 동그라미 목록, "**이름:** 내용" = 굵은 이름표. 표시가 없으면 예전처럼 줄바꿈만.
+function aiDescHtml(t){
+  t=String(t==null?'':t).replace(/\r\n?/g,'\n').trim();
+  if(!t)return '';
+  const inl=s=>esc(s).replace(/\*\*([^*\n]+?)\*\*/g,'<b>$1</b>');
+  if(!/^(##\s|[-•]\s)/m.test(t))return t.split('\n').map(inl).join('<br>');
+  let out='',inUl=false;
+  const close=()=>{if(inUl){out+='</ul>';inUl=false;}};
+  t.split('\n').forEach(raw=>{
+    const l=raw.trim();if(!l)return;
+    let m;
+    if(m=l.match(/^##\s+(.*)$/)){close();out+='<div style="font-weight:800;margin:10px 0 2px">'+inl(m[1])+'</div>';}
+    else if(m=l.match(/^[-•]\s+(.*)$/)){if(!inUl){out+='<ul>';inUl=true;}out+='<li>'+inl(m[1])+'</li>';}
+    else{close();out+='<div>'+inl(l)+'</div>';}
+  });
+  close();return out;
+}
 function aiMakeCard(x,col,auto){
   const it=x.it,r=x.r,src=r.source||{};
   const card=mkCard(it.title||'(제목 없음)');card.id=x.cid;
-  const lines=[];if(it.desc)lines.push(esc(it.desc));
+  const lines=[];if(it.desc)lines.push(aiDescHtml(it.desc));
   if(!it.due&&it.dueRaw)lines.push(`기한 원문: “${esc(it.dueRaw)}”${it.dueReason?' — '+esc(it.dueReason):''}`);
   card.desc=lines.join('<br>');
   if(/^\d{4}-\d{2}-\d{2}$/.test(it.due||''))card.due=it.due;
@@ -8599,7 +8616,7 @@ async function renderAiInbox(){
       <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center"><span class="ai-tag" style="background:${inf.bg};color:${inf.fg}">AI · ${esc(inf.name)}</span>${aiCatTag(it.category)}${it.area?`<span class="ai-tag g">${esc(it.area)}</span>`:''}${it.type?`<span class="ai-tag g">${esc(it.type)}</span>`:''}${due}${rr}${aiCoverTag(x.t,src)}</div>
       ${holdNote}
       <div style="font-size:15px;font-weight:800;line-height:1.4">${esc(it.title||'(제목 없음)')}</div>
-      ${it.desc?`<div style="font-size:13px;color:#44546f">${esc(it.desc)}</div>`:''}
+      ${it.desc?`<div style="font-size:13px;color:#44546f">${aiDescHtml(it.desc)}</div>`:''}
       ${it.evidence?`<blockquote class="ai-q"><span style="display:block;font-size:11.5px;font-weight:700;color:#626f86">근거 · ${aiEvHead(r,it)}</span>“${esc(it.evidence)}”${!it.due&&it.dueRaw?`<span style="display:block;font-size:12px;color:#974f0c;margin-top:3px">원문 “${esc(it.dueRaw)}”${it.dueReason?' — '+esc(it.dueReason):''}</span>`:''}${it.due&&it.dueBasis?`<span style="display:block;font-size:12px;color:#626f86;margin-top:3px">기한 근거: ${esc(it.dueBasis)}</span>`:''}</blockquote>`:''}
       ${rel?`<div style="font-size:13px"><div style="font-size:12px;font-weight:700;color:#44546f">관련 있어 보이는 기존 카드</div>${rel}</div>`:''}
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;border-top:1px solid #ebecf0;padding-top:9px">${aiSrcLink(x.t,src)}${acts}</div></div>`;};
