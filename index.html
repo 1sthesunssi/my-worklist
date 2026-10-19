@@ -4197,7 +4197,7 @@ function renderHome(){
     enableBoardTouchDrag(el,b,grid);
     grid.appendChild(el);
   });
-  grid.querySelectorAll('.bca-btn').forEach(btn=>{btn.addEventListener('click',async e=>{e.stopPropagation();const b=state.boards.find(x=>x.id===btn.dataset.id);if(!b)return;if(btn.dataset.a==='pin'){b.pinned=!b.pinned;saveState();renderHome();showToast(b.pinned?'📌':'📍',b.pinned?'보드 위치가 고정되었어요!':'위치 고정이 해제되었어요!',1800);}else if(btn.dataset.a==='rename'){const v=window.prompt('새 보드 이름:',b.title);if(v&&v.trim()){b.title=v.trim();saveState();renderHome();}}else{const ok=await confirm2('보드 삭제',`"${b.title}" 보드를 삭제할까요?`);if(ok){state.boards=state.boards.filter(x=>x.id!==b.id);saveState();renderHome();}}});});
+  grid.querySelectorAll('.bca-btn').forEach(btn=>{btn.addEventListener('click',async e=>{e.stopPropagation();const b=state.boards.find(x=>x.id===btn.dataset.id);if(!b)return;if(btn.dataset.a==='pin'){b.pinned=!b.pinned;saveState();renderHome();showToast(b.pinned?'📌':'📍',b.pinned?'보드 위치가 고정되었어요!':'위치 고정이 해제되었어요!',1800);}else if(btn.dataset.a==='rename'){const v=window.prompt('새 보드 이름:',b.title);if(v&&v.trim()){b.title=v.trim();saveState();renderHome();}}else{const ok=await confirm2('보드 삭제',`"${b.title}" 보드를 삭제할까요?`+ctDelWarn((b.columns||[]).flatMap(c=>c.cards||[])));if(ok){state.boards=state.boards.filter(x=>x.id!==b.id);saveState();renderHome();}}});});
   const nb=document.createElement('div');nb.className='new-board-card';nb.innerHTML='<span style="font-size:15px">＋</span><span>새 보드</span>';nb.onclick=()=>showNewBoardForm(nb);grid.appendChild(nb);
 }
 function reorderBoards(fromId,toId){
@@ -4633,7 +4633,7 @@ function renderColumn(col){
     foldChk.addEventListener('change',e=>{col.foldUpcoming=e.target.checked;saveState();renderBoard();closeMenus();});
   }
   el.querySelectorAll('.col-color-sw').forEach(sw=>{sw.addEventListener('click',()=>{col.color=sw.dataset.c;saveState();renderBoard();closeMenus();});});
-  el.querySelector('.cm-del').addEventListener('click',async()=>{const ok=await confirm2('리스트 삭제',`"${col.title}" 리스트(카드 ${col.cards.length}개)를 삭제할까요?`);if(ok){const b=getBoard();b.columns=b.columns.filter(c=>c.id!==col.id);renderBoard();closeMenus();}});
+  el.querySelector('.cm-del').addEventListener('click',async()=>{const ok=await confirm2('리스트 삭제',`"${col.title}" 리스트(카드 ${col.cards.length}개)를 삭제할까요?`+ctDelWarn(col.cards));if(ok){const b=getBoard();b.columns=b.columns.filter(c=>c.id!==col.id);renderBoard();closeMenus();}});
   el.querySelector('.cm-json-import').addEventListener('click',()=>{openJsonImport(col.id);closeMenus();});
   const mvToggle=el.querySelector('.cm-move-toggle'),mvList=el.querySelector('.cm-move-list');
   if(mvToggle&&mvList){mvToggle.addEventListener('click',e=>{e.stopPropagation();mvToggle.classList.toggle('open');mvList.classList.toggle('open');});}
@@ -5010,13 +5010,13 @@ function renderCard(card,colId){
     e.stopPropagation();
     const b=getBoard();const col=b.columns.find(c=>c.id===colId);if(!col)return;
     const newCard=JSON.parse(JSON.stringify(card));
-    newCard.id=uid();newCard.title=card.title+' (복사)';newCard.createdAt=Date.now();newCard.done=false;newCard.dueChecked=false;newCard.starred=false;
+    delete newCard.contract;delete newCard.contracts;delete newCard.adjust;newCard.id=uid();newCard.title=card.title+' (복사)';newCard.createdAt=Date.now();newCard.done=false;newCard.dueChecked=false;newCard.starred=false;
     const idx=col.cards.findIndex(c=>c.id===card.id);
     col.cards.splice(idx+1,0,newCard);
     saveState();renderBoard();
     showToast('⧉','카드가 복사되었어요!',2500);
   });
-  el.querySelector('.ca-del').addEventListener('click',async e=>{e.stopPropagation();const ok=await confirm2('카드 삭제',`"${card.title}"을 삭제할까요?`);if(ok){const b=getBoard();const col=b.columns.find(c=>c.id===colId);if(col){col.cards=col.cards.filter(c=>c.id!==card.id);saveState();renderBoard();}}});
+  el.querySelector('.ca-del').addEventListener('click',async e=>{e.stopPropagation();const ok=await confirm2('카드 삭제',`"${card.title}"을 삭제할까요?`+ctDelWarn([card]));if(ok){const b=getBoard();const col=b.columns.find(c=>c.id===colId);if(col){col.cards=col.cards.filter(c=>c.id!==card.id);saveState();renderBoard();}}});
   el.addEventListener('click',e=>{if(!e.target.closest('.card-actions')&&!e.target.classList.contains('card-star-btn')&&!e.target.classList.contains('card-done-check'))openModal(card.id,colId);});
   el.addEventListener('dragstart',e=>doDragStart(e,card.id,colId));el.addEventListener('dragend',doDragEnd);
   enableCardTouchDrag(el,card,colId);
@@ -6050,7 +6050,7 @@ document.getElementById('add-label-btn').addEventListener('click',()=>{
   const card=getActiveCard();renderLabelPicker(card);
   const btns=document.querySelectorAll('#label-picker .lp-edit-btn');if(btns.length)btns[btns.length-1].click();
 });
-document.getElementById('modal-delete-btn').addEventListener('click',async()=>{const ok=await confirm2('카드 삭제','이 카드를 삭제할까요?');if(!ok)return;const doomed=getActiveCard();const b=getBoard();const col=b.columns.find(c=>c.id===activeColId);if(col)col.cards=col.cards.filter(c=>c.id!==activeCardId);saveState();closeModal();renderBoard();
+document.getElementById('modal-delete-btn').addEventListener('click',async()=>{const ok=await confirm2('카드 삭제','이 카드를 삭제할까요?'+ctDelWarn([getActiveCard()]));if(!ok)return;const doomed=getActiveCard();const b=getBoard();const col=b.columns.find(c=>c.id===activeColId);if(col)col.cards=col.cards.filter(c=>c.id!==activeCardId);saveState();closeModal();renderBoard();
   // 구글테스크에 올려둔 카드였다면 거기서도 지웁니다
   if(doomed&&doomed.gtaskOn&&doomed.gtaskId)gtaskDelete(doomed).catch(()=>{});});
 document.addEventListener('click',e=>{if(!e.target.closest('.col-menu')&&!e.target.closest('.col-menu-btn')&&!e.target.closest('#board-switcher')&&!e.target.closest('#bsw-menu'))closeMenus();});
@@ -7762,6 +7762,13 @@ document.addEventListener('keydown',e=>{
 .ct-form .ct-btn{min-height:40px;height:40px;padding:0 18px}
 .ct-form .ct-btn.go{background:#3d8a64;border-color:#3d8a64}
 .ct-done{border:1px solid #baf3db;background:#f3fcf7}
+.ct-rows{display:flex;flex-direction:column}
+.ct-row{display:flex;align-items:center;gap:6px 10px;flex-wrap:wrap;font-size:13.5px;padding:8px 0;border-bottom:1px solid #dfe7e2}
+.ct-row:last-child{border-bottom:0}
+.ct-row .ct-ok{color:#00875a;font-weight:800}.ct-row .ct-d{color:#216e4e}.ct-row .ct-m{color:#44546f}
+.ct-row .ct-r{margin-left:auto;display:flex;gap:6px}
+.ct-row .ct-memo{flex-basis:100%;font-size:12.5px;color:#626f86;padding-left:20px}
+.ct-btn.ct-sm{min-height:30px;height:30px;padding:0 10px;font-size:12px}
 .ct-vals{display:flex;flex-wrap:wrap;gap:6px 22px;font-size:13.5px;align-items:baseline}
 .ct-vals>div{display:flex;gap:8px;align-items:baseline;white-space:nowrap}
 .ct-vals small{font-size:12px;color:#626f86}
@@ -7805,6 +7812,29 @@ const ctWon=n=>Math.round(Number(n)||0).toLocaleString('ko-KR');
 const ctMD=d=>d?Number(d.slice(5,7))+'/'+Number(d.slice(8,10)):'';
 let ctEditing=false,ctDraft=null,ajDraft=null;   // ajDraft: 해지·감액 입력 중
 const ctAdj=card=>Array.isArray(card&&card.adjust)?card.adjust:[];
+// (10/19) 카드 하나에 계약 여러 건 — card.contracts[] 가 기준, card.contract 는 '가장 최근 계약' 사본(예전 앱·엑셀용)
+// 예전 앱이 card.contract 만 고친 경우: id 없는 사본 = 최근 계약을 고친 것, 사본이 없어짐 = 최근 계약을 지운 것
+const ctByDate=(a,b)=>String(a.date||'').localeCompare(String(b.date||''));
+function ctList(card){
+  if(!card)return [];
+  const arr=Array.isArray(card.contracts)?card.contracts.filter(c=>c&&c.date).slice().sort(ctByDate):[];
+  const m=card.contract&&card.contract.date?card.contract:null;
+  if(!arr.length)return m?[Object.assign({},m,{id:m.id||'c_first'})]:[];
+  if(!m)return arr.slice(0,-1);
+  if(!m.id||!arr.some(c=>c.id===m.id)){arr[arr.length-1]=Object.assign({},m,{id:arr[arr.length-1].id});return arr.sort(ctByDate);}
+  return arr;
+}
+function ctWrite(card,list){
+  list=list.filter(c=>c&&c.date).slice().sort(ctByDate);
+  if(!list.length){delete card.contracts;delete card.contract;return;}
+  card.contracts=list.map(c=>({id:c.id||uid(),cat:c.cat,biz:c.biz,product:c.product,date:c.date,amount:c.amount,memo:c.memo||''}));
+  card.contract=Object.assign({},card.contracts[card.contracts.length-1]);
+}
+// 지우기 전 경고 문구: 계약이 든 카드가 있으면 몇 건인지 알려 줌
+function ctDelWarn(cards){
+  const n=(cards||[]).reduce((s,c)=>s+ctList(c).length,0);
+  return n?`\n\n⚠️ 계약 ${n}건이 들어 있어요. 지우면 계약도 같이 지워지고 매출이 줄어요.`:'';
+}
 // 신규·갱신 (10/14) — 장기는 늘 신규. 자동차·일반은 저장된 값, 없으면 리스트·보드 이름으로 짐작, 그래도 모르면 '미정'
 const ctIsLong=cat=>ctCat(cat)==='장기';
 const ctBizGuess=t=>/갱신/.test(t||'')?'갱신':/신규/.test(t||'')?'신규':'';
@@ -7817,20 +7847,20 @@ const ctBizStyle=b=>b==='갱신'?'background:#e9f2ff;color:#0055cc':b==='미정'
 function ctFindPlace(card){for(const b of (state.boards||[]))for(const col of (b.columns||[]))if((col.cards||[]).includes(card))return {b,col};return {};}
 
 function contractBadgeHtml(card){
-  const c=card&&card.contract;const aj=ctAdj(card);
+  const cl=ctList(card),c=cl[cl.length-1];const aj=ctAdj(card);const nB=cl.length>1?` ·${cl.length}건`:'';
   const ajB=aj.length?`<span class="card-contract-badge" style="background:#ffebe6;color:#ae2a19" title="${aj.map(a=>a.kind+' '+a.date+' −'+ctWon(a.amount)+'원').join(' / ')}">${aj.some(a=>a.kind==='해지')?'해지':'감액'}<span class="ccb-full"> ${ctMD(aj[aj.length-1].date)}</span></span>`:'';
   if(!c||!c.date)return ajB;
   const p=ctFindPlace(card),bz=ctBizOf(c,p.col&&p.col.title,p.b&&p.b.title);
   // 간편보기에서는 '✓갱'처럼 아주 짧게, 전체보기에서는 '✓ 일반 DB · 갱신 10/14' (10/14 제목이 가려지던 문제)
   // (10/15) 완료 카드(연초록 바탕)와 구별되게 진한 파랑 + 흰 글씨. 신규·갱신은 같은 색(계약했다는 게 중요), 미정만 주황
   const bzBg=bz==='미정'?'#c25100':'#0c66e4';
-  return `<span class="card-contract-badge" style="background:${bzBg};color:#fff" title="계약 확정 ${esc(c.date)} · ${esc(ctCat(c.cat)||'')} · ${esc(bz)} · ${esc(c.product||'')} ${ctWon(c.amount)}원"><span class="ccb-full">✓ ${esc(ctCat(c.cat)||'')}${ctIsLong(c.cat)?'':' · '+esc(bz)} ${ctMD(c.date)}</span><span class="ccb-short">✓${bz==='미정'?'?':esc(bz.slice(0,1))}</span></span>`+ajB;
+  return `<span class="card-contract-badge" style="background:${bzBg};color:#fff" title="${cl.length>1?'계약 '+cl.length+'건 · 최근 ':'계약 확정 '}${esc(c.date)} · ${esc(ctCat(c.cat)||'')} · ${esc(bz)} · ${esc(c.product||'')} ${ctWon(c.amount)}원"><span class="ccb-full">✓ ${esc(ctCat(c.cat)||'')}${ctIsLong(c.cat)?'':' · '+esc(bz)} ${ctMD(c.date)}${nB}</span><span class="ccb-short">✓${bz==='미정'?'?':esc(bz.slice(0,1))}${cl.length>1?cl.length:''}</span></span>`+ajB;
 }
 
 function renderContractSection(card){
   const box=document.getElementById('modal-contract-section');if(!box)return;
   if(!card){box.innerHTML='';return;}
-  const c=card.contract;
+  const cl=ctList(card),c=cl[cl.length-1];
   if(ajDraft){
     const d=ajDraft,prods=CT_PRODUCTS[d.cat]||[];
     box.innerHTML=`<form class="ct-box ct-form" style="border-color:#c9372c;background:#fff8f7" onsubmit="event.preventDefault();ajSave()">
@@ -7861,7 +7891,7 @@ function renderContractSection(card){
     const d=ctDraft;
     const prods=CT_PRODUCTS[d.cat]||[];
     box.innerHTML=`<form class="ct-box ct-form" onsubmit="event.preventDefault();ctSave()">
-      <div class="ct-h">계약 정보</div>
+      <div class="ct-h">${ctEditing==='new'&&cl.length?'다음 계약 추가 <span style="font-size:12px;font-weight:500;color:#7a8794">예전 계약은 그대로 남아요</span>':'계약 정보'}</div>
       <div class="ct-f"><div class="ct-lab">구분</div>
         <div class="ct-cats">${CT_CATS.map(k=>`<button type="button" class="ct-cat${k===d.cat?' on':''}" onclick="ctPickCat('${k}')">${k}</button>`).join('')}</div></div>
       ${ctIsLong(d.cat)?`<div style="font-size:12.5px;color:#5e6c84">장기는 늘 <b>신규</b>로 기록돼요.</div>`:`<div class="ct-f"><div class="ct-lab">신규 · 갱신 <span style="color:#ae2a19">*꼭 골라 주세요</span></div>
@@ -7878,17 +7908,22 @@ function renderContractSection(card){
       </div></form>`;
     return;
   }
-  if(c&&c.date){
+  if(cl.length){
+    const p=ctFindPlace(card);
+    const rows=cl.slice().reverse().map(x=>{const bz=ctBizOf(x,p.col&&p.col.title,p.b&&p.b.title);
+      return `<div class="ct-row"><span class="ct-ok">✓</span><b class="ct-d">${esc(x.date)}</b>
+        <span class="ct-m">${esc(ctCat(x.cat))}${ctIsLong(x.cat)?'':' · '+(bz==='미정'?'<span style="color:#a54800">신규·갱신 미정</span>':esc(bz))} · ${esc(x.product||'-')}</span>
+        <b>${ctWon(x.amount)}원</b><small class="ct-m">${esc(CT_UNIT[ctCat(x.cat)]||'')}</small>
+        <span class="ct-r"><button type="button" class="ct-btn ct-sm" onclick="ctEdit('${esc(x.id)}')">수정</button><button type="button" class="ct-btn ct-sm" onclick="ctRemove('${esc(x.id)}')">지우기</button></span>
+        ${x.memo?`<div class="ct-memo">${esc(x.memo)}</div>`:''}</div>`;}).join('');
     box.innerHTML=`<div class="ct-box ct-done">
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        <span style="font-size:12px;font-weight:800;padding:3px 9px;border-radius:4px;background:#00875a;color:#fff">계약 확정</span>
-        <span style="font-size:13px;color:#216e4e;font-weight:700">${esc(c.date)}</span>
-        <span style="margin-left:auto;display:flex;gap:6px"><button type="button" class="ct-btn" style="min-height:36px;font-size:12.5px" onclick="ctEdit()">수정</button><button type="button" class="ct-btn" style="min-height:36px;font-size:12.5px" onclick="ctRemove()">계약 지우기</button></span>
+        <span style="font-size:12px;font-weight:800;padding:3px 9px;border-radius:4px;background:#00875a;color:#fff">${cl.length>1?'계약 '+cl.length+'건':'계약 확정'}</span>
+        <a href="#" onclick="event.preventDefault();openSales()" style="margin-left:auto;font-size:12.5px">매출 화면에서 보기 →</a>
       </div>
-      <div class="ct-vals"><div><small>구분</small><b>${esc(ctCat(c.cat))}</b></div>${(()=>{const p=ctFindPlace(card),bz=ctBizOf(c,p.col&&p.col.title,p.b&&p.b.title);return `<div><small>신규·갱신</small><b>${bz==='미정'?'<span style="color:#a54800">미정 — 수정에서 골라 주세요</span>':esc(bz)}</b></div>`;})()}<div><small>상품</small><b>${esc(c.product||'-')}</b></div><div><small>${CT_UNIT[ctCat(c.cat)]||'보험료'}</small><b>${ctWon(c.amount)}원</b></div></div>
-      ${c.memo?`<div style="font-size:13px;color:#44546f">${esc(c.memo)}</div>`:''}
+      <div class="ct-rows">${rows}</div>
       ${ajList}
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><a href="#" onclick="event.preventDefault();openSales()" style="font-size:12.5px">매출 화면에서 보기 →</a><span style="margin-left:auto"></span>${ajBtns}</div></div>`;
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><button type="button" class="ct-btn go" style="min-height:36px;font-size:13px" onclick="ctEdit('new')">＋ 다음 계약 추가</button><span style="margin-left:auto"></span>${ajBtns}</div></div>`;
     return;
   }
   box.innerHTML=`<div class="ct-box ct-empty"><div style="flex:1 1 240px;font-size:13px;color:#44546f;line-height:1.5">계약이 확정되면 눌러 주세요. 확정일과 보험료를 적으면 <b>매출 화면</b>에 모여요.</div><button type="button" class="ct-btn go" onclick="ctEdit()">✓ 계약 확정</button><div style="flex-basis:100%;display:flex;align-items:center;gap:8px;font-size:12.5px;color:#7a8794">${ajList?`<a href="#" onclick="event.preventDefault();openSales()" style="font-size:12.5px">매출 화면에서 보기 →</a>`:'예전 계약이 해지·감액됐나요?'}<span style="margin-left:auto"></span>${ajBtns}</div>${ajList?`<div style="flex-basis:100%">${ajList}</div>`:''}</div>`;
@@ -7900,13 +7935,16 @@ function ctGuessCat(card){
   if(/일반|화재|배상|행사|승강기|적재물/.test(t))return /타사/.test(t)?'일반 타사':'일반 DB';
   return '장기';
 }
-function ctEdit(){
+function ctEdit(which){
   const card=getActiveCard();if(!card)return;ajDraft=null;
-  const c=card.contract||{};
+  const cl=ctList(card);const isNew=which==='new'||!cl.length;
+  const c=isNew?{}:(cl.find(x=>x.id===which)||cl[cl.length-1]);
   const cat=c.cat?ctCat(c.cat):ctGuessCat(card);
   const p=ctFindPlace(card);let biz=(c.biz==='신규'||c.biz==='갱신')?c.biz:(ctBizGuess(p.col&&p.col.title)||ctBizGuess(p.b&&p.b.title));
   ctDraft={cat,biz,product:c.product||CT_PRODUCTS[cat][0],date:c.date||localDateStr(new Date()),amount:c.amount||0,memo:c.memo||''};
-  ctEditing=true;renderContractSection(card);
+  // 다음 계약: 구분·상품·보험료는 지난 계약에서 가져오고, 날짜는 오늘
+  if(isNew&&cl.length){const L=cl[cl.length-1];ctDraft.cat=ctCat(L.cat);ctDraft.product=L.product||ctDraft.product;ctDraft.amount=L.amount||0;if(!ctIsLong(L.cat))ctDraft.biz='갱신';}
+  ctEditing=isNew?'new':c.id;renderContractSection(card);
 }
 function ctReadForm(){
   const g=id=>document.getElementById(id);
@@ -7924,19 +7962,23 @@ function ctSave(){
   if(!(d.amount>0)){showToast('⚠️','보험료를 넣어 주세요.',3000);return;}
   const biz=ctIsLong(d.cat)?'신규':d.biz;
   if(biz!=='신규'&&biz!=='갱신'){showToast('⚠️','신규인지 갱신인지 골라 주세요.',3000);return;}
-  card.contract={cat:d.cat,biz,product:d.product,date:d.date,amount:d.amount,memo:d.memo};
+  const rec={cat:d.cat,biz,product:d.product,date:d.date,amount:d.amount,memo:d.memo};
+  const cl=ctList(card);
+  if(ctEditing==='new'||!cl.length)cl.push(Object.assign({id:uid()},rec));
+  else{const i=cl.findIndex(x=>x.id===ctEditing);if(i<0){showToast('⚠️','고치던 계약을 찾지 못했어요. 다시 열어 주세요.',3500);return;}cl[i]=Object.assign({id:cl[i].id},rec);}
+  ctWrite(card,cl);
   ctEditing=false;ctDraft=null;
   saveState();try{refreshCard(card.id,activeColId);}catch(e){}
-  renderContractSection(card);showToast('✅',`${card.contract.cat} ${biz} 계약을 기록했어요 (${ctMD(card.contract.date)})`,2500);
+  renderContractSection(card);showToast('✅',`${rec.cat} ${biz} 계약을 기록했어요 (${ctMD(rec.date)})`,2500);
 }
-async function ctRemove(){
-  const card=getActiveCard();if(!card||!card.contract)return;
-  const ok=await confirm2('계약 지우기','이 카드의 계약 정보를 지울까요?\n매출 화면에서도 빠져요. (카드는 그대로예요)','지우기');if(!ok)return;
-  delete card.contract;saveState();try{refreshCard(card.id,activeColId);}catch(e){}
+async function ctRemove(id){
+  const card=getActiveCard();if(!card)return;const cl=ctList(card);const x=cl.find(k=>k.id===id)||(cl.length===1?cl[0]:null);if(!x)return;
+  const ok=await confirm2('계약 지우기',`${x.date} 계약(${ctWon(x.amount)}원)을 지울까요?\n매출 화면에서도 빠져요.${cl.length>1?' 다른 계약은 그대로예요.':' (카드는 그대로예요)'}`,'지우기');if(!ok)return;
+  ctWrite(card,cl.filter(k=>k!==x));saveState();try{refreshCard(card.id,activeColId);}catch(e){}
   renderContractSection(card);
 }
 function ajEdit(kind){
-  const card=getActiveCard();if(!card)return;const c=card.contract||{};
+  const card=getActiveCard();if(!card)return;const _cl=ctList(card);const c=_cl[_cl.length-1]||{};
   const cat=c.cat?ctCat(c.cat):ctGuessCat(card);
   ajDraft={kind,cat,product:(c.product&&CT_PRODUCTS[cat].includes(c.product))?c.product:CT_PRODUCTS[cat][0],date:localDateStr(new Date()),amount:kind==='해지'?(Number(c.amount)||0):0,memo:''};
   ctEditing=false;renderContractSection(card);
@@ -7994,8 +8036,7 @@ let slPeriod='year',slCat='장기',slFrom='',slTo='',slBiz='all';
 function slAll(){
   const out=[];
   (state.boards||[]).forEach(b=>(b.columns||[]).forEach(col=>(col.cards||[]).forEach(card=>{
-    const c0=card.contract;
-    if(c0&&c0.date){const bz=ctBizOf(c0,col.title,b.title);const c=Object.assign({},c0,{cat:ctCat(c0.cat),biz:bz,kind:bz});if(CT_CATS.includes(c.cat))out.push({c,card,board:b,col});}
+    ctList(card).forEach(c0=>{const bz=ctBizOf(c0,col.title,b.title);const c=Object.assign({},c0,{cat:ctCat(c0.cat),biz:bz,kind:bz});if(CT_CATS.includes(c.cat))out.push({c,card,board:b,col});});
     ctAdj(card).forEach(a=>{if(!a.date)return;const c={cat:ctCat(a.cat),product:a.product,date:a.date,amount:-(Number(a.amount)||0),memo:a.memo,kind:a.kind};if(CT_CATS.includes(c.cat))out.push({c,card,board:b,col,adj:1});});
   })));
   return out;
@@ -8087,7 +8128,7 @@ function xlCardRow(b,col,card){
   const cl=Array.isArray(card.checklist)&&card.checklist.length?`${card.checklist.filter(i=>i.checked).length}/${card.checklist.length}`:'';
   const done=card.done||/done|완료/i.test(col.title||'');
   const src=card.ai&&card.ai.source?((AI_SRC[card.ai.source]||{}).name||card.ai.source):'직접';
-  const c=card.contract&&card.contract.date?card.contract:null;
+  const _cl=ctList(card),c=_cl[_cl.length-1]||null;
   let desc='';try{const d=document.createElement('div');d.innerHTML=String(card.desc||'').replace(/<img[^>]*>/gi,'');desc=(d.textContent||'').replace(/\s+/g,' ').trim().slice(0,300);}catch(e){}
   const reg=Number(card.createdAt)?localDateStr(new Date(Number(card.createdAt))):'';
   return [b.title||'',col.title||'',card.title||'',card.due||'',card.start||'',done?'완료':'',card.starred?'★':'',labels,cl,card.phone||'',src,
