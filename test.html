@@ -1911,6 +1911,7 @@ body{font-family:'NanumSquare',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-
         <button class="sb-btn" onclick="showModalSection('phone-section')">📞 전화번호</button>
         <div class="sb-sec">작업</div>
         <button class="sb-btn" onclick="copyCardLink()">🔗 카드 링크 복사</button>
+        <button class="sb-btn" onclick="duplicateActiveCard()">⧉ 카드 복사</button>
         <button class="sb-btn" id="modal-move-btn" onclick="toggleMovePanel()">↔️ 리스트 이동</button>
         <div id="modal-move-panel" style="display:none;margin-top:4px"></div>
         <button class="sb-btn" onclick="openCardPrintView()">🖨️ 카드 인쇄</button>
@@ -5381,8 +5382,7 @@ function renderCard(card,colId){
   el.querySelector('.ca-copy').addEventListener('click',e=>{
     e.stopPropagation();
     const b=getBoard();const col=b.columns.find(c=>c.id===colId);if(!col)return;
-    const newCard=JSON.parse(JSON.stringify(card));
-    delete newCard.contract;delete newCard.contracts;delete newCard.adjust;newCard.id=uid();newCard.title=card.title+' (복사)';newCard.createdAt=Date.now();newCard.done=false;newCard.dueChecked=false;newCard.starred=false;
+    const newCard=makeCardCopy(card);
     const idx=col.cards.findIndex(c=>c.id===card.id);
     col.cards.splice(idx+1,0,newCard);
     saveState();renderBoard();
@@ -5544,6 +5544,22 @@ function autoLinkCards(html){
     if(!loc)return '<span class="desc-card-chip dcc-missing">📋 삭제된 카드</span>';
     return `<span class="desc-card-chip" data-card-id="${id}">📋 <b>${esc(loc.card.title)}</b><span class="dcc-list">${esc(loc.col.title)}</span></span>`;
   });
+}
+// 카드 복사 (10/19) — 리스트의 ⧉ 버튼과 카드 상세 '작업'의 [카드 복사]가 같이 씀
+// 계약·해지 기록(매출 두 번 세기)과 구글 태스크 연결(같은 할 일을 두 카드가 고침)은 복사하지 않음
+function makeCardCopy(card){
+  const n=JSON.parse(JSON.stringify(card));
+  delete n.contract;delete n.contracts;delete n.adjust;delete n.gtaskId;delete n.updatedAt;
+  n.id=uid();n.title=card.title+' (복사)';n.createdAt=Date.now();n.done=false;n.completedAt='';n.dueChecked=false;n.starred=false;
+  return n;
+}
+function duplicateActiveCard(){
+  const card=getActiveCard();if(!card)return;
+  const b=getBoard();const col=b&&b.columns.find(c=>c.id===activeColId);if(!col)return;
+  const n=makeCardCopy(card);const idx=col.cards.findIndex(c=>c.id===card.id);
+  col.cards.splice(idx<0?col.cards.length:idx+1,0,n);
+  saveState();renderBoard();openModal(n.id,col.id);
+  showToast('⧉','카드를 복사했어요. 지금 보이는 게 복사한 새 카드예요.',3500);
 }
 function copyCardLink(){
   const card=getActiveCard();if(!card)return;
