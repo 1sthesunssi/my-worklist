@@ -7742,17 +7742,25 @@ function calDescToText(s){
     s=s.replace(/<br\s*\/?>/gi,'\n').replace(/<\/(p|div|li)>/gi,'\n').replace(/<(i|em)>/gi,'*').replace(/<\/(i|em)>/gi,'*').replace(/<[^>]+>/g,'');
     const t=document.createElement('textarea');t.innerHTML=s;s=t.value;
   }
+  // 제미나이가 가끔 전각 글자(。 １ Ｄ)로 바꿔 넣어서, 보통 글자로 바꿔 보여 줌 (캘린더 원본은 그대로)
+  s=s.replace(/[！-～]/g,ch=>String.fromCharCode(ch.charCodeAt(0)-0xFEE0)).replace(/　/g,' ').replace(/。/g,'.');
   return s.replace(/\r/g,'').replace(/ /g,' ');
 }
-// 본문 / 날씨 줄('(추가) …날씨') / 맨 끝 *코멘트* 로 나눔
+// 본문 / 날씨 줄 / 맨 끝 *코멘트* 로 나눔
+// 날씨 줄 모양: '(추가) 2026년 10월 20일 서울 날씨: …' 또는 '🍂 2025년 10월 15일 서울 날씨: …'
 function parseCalDiary(desc){
   let s=calDescToText(desc).trim();
   let cmt='';
   const m=s.match(/(?:^|\n)\s*\*([^*][\s\S]*?)\*\s*$/);
   if(m){cmt=m[1].trim();s=s.slice(0,m.index).trim();}
   const wx=[];const body=[];
-  s.split('\n').forEach(line=>{if(/^\s*\(추가\)/.test(line)&&/날씨/.test(line))wx.push(line.trim());else body.push(line);});
-  return {text:body.join('\n').trim(),wx:wx.join('\n'),cmt};
+  s.split('\n').forEach(line=>{
+    const isWx=/날씨\s*:/.test(line)&&(/^\s*\(추가\)/.test(line)||/^\s*\S{0,3}\s*\d{4}\s*년\s*\d{1,2}\s*월\s*\d{1,2}\s*일/.test(line));
+    if(isWx)wx.push(line.trim());else body.push(line);
+  });
+  let text=body.join('\n').trim();
+  text=text.replace(/^\d{4}\.\d{1,2}\.\d{1,2}\s*일기\s*(\n+|$)/,'');   // 본문 첫 줄이 제목과 같으면 뺌
+  return {text:text.trim(),wx:wx.join('\n'),cmt};
 }
 async function loadCalDiary(interactive,force){
   if(calDiaryLoading)return calDiaryLoading;
@@ -7806,7 +7814,8 @@ function diaryEntryFor(ds){
 }
 const DIARY_WX_WORDS=[['뇌우','⛈️'],['천둥','⛈️'],['눈','❄️'],['비','🌧️'],['소나기','🌧️'],['안개','🌫️'],['바람','🌬️'],['구름 조금','⛅'],['구름조금','⛅'],['흐','☁️'],['구름','☁️'],['맑','☀️']];
 function diaryIconFor(e){
-  if(e.cal&&e.cal.wx){const t=e.cal.wx.replace(/^[\s\S]*?날씨\s*:?/,'');for(const [w,ic] of DIARY_WX_WORDS)if(t.includes(w))return ic;}
+  if(e.cal&&e.cal.wx){const lead=e.cal.wx.trim().match(/^(\p{Extended_Pictographic}\uFE0F?)/u);if(lead)return lead[1];
+    const t=e.cal.wx.replace(/^[\s\S]*?날씨\s*:?/,'');for(const [w,ic] of DIARY_WX_WORDS)if(t.includes(w))return ic;}
   if(e.app&&e.app.weather){const w=DIARY_WEATHER.find(x=>x.id===e.app.weather);if(w)return w.icon;}
   return '📔';
 }
