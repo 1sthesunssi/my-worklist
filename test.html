@@ -1286,6 +1286,43 @@ body{font-family:'NanumSquare',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-
 .diary-list-hd2{display:flex;align-items:center;gap:8px;margin-bottom:6px}
 .diary-list-date{font-size:13px;font-weight:800;color:var(--text);flex:1}
 .diary-list-text{font-size:13px;color:var(--text);line-height:1.6;white-space:pre-wrap;word-break:break-word}
+.diary-list-tags{display:flex;gap:5px;flex-wrap:wrap}
+.diary-tag{font-size:11px;font-weight:700;border-radius:5px;padding:2px 6px;background:#fff;border:1px solid #e6e8eb;color:var(--muted)}
+.diary-tag.dup{background:#fff7e6;border-color:#fde7b0;color:#8a5a00}
+.diary-list-wx{font-size:12px;color:#0f766e;margin-top:4px}
+.diary-list-item .diary-list-text{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+#diary-list-status{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 20px;background:#fff;border-bottom:1px solid #ececec;font-size:12px;color:var(--muted)}
+#diary-list-status .dl-sp{flex:1;min-width:120px}
+#diary-list-status .dl-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;background:#22c55e;vertical-align:middle}
+#diary-list-status .dl-dot.wait{background:#f59e0b}
+#diary-list-status .dl-dot.err{background:#ef4444}
+.dl-btn{font-family:inherit;font-size:12px;font-weight:700;border:1px solid #dfe1e6;background:#fff;color:var(--text);border-radius:7px;padding:5px 10px;cursor:pointer}
+.dl-btn:hover{border-color:#7c3aed;color:#7c3aed}
+.dl-btn.p{background:#7c3aed;border-color:#7c3aed;color:#fff}
+.dl-btn.p:hover{background:#6d28d9;color:#fff}
+#diary-list-filter{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:10px 20px 0}
+.dl-chip{font-family:inherit;font-size:12px;font-weight:700;border:1px solid #e6e8eb;background:#fff;color:var(--text);border-radius:999px;padding:3px 10px;cursor:pointer}
+.dl-chip.on{background:#f3ecff;border-color:#7c3aed;color:#7c3aed}
+#diary-list-search{font-family:inherit;font-size:12px;border:1px solid #dfe1e6;border-radius:999px;padding:4px 11px;outline:none;min-width:0;width:140px;margin-left:auto}
+#diary-list-search:focus{border-color:#7c3aed}
+#diary-list-gem{background:#fff;color:#4338ca;border:none;cursor:pointer;border-radius:8px;padding:6px 11px;font-size:12px;font-weight:800;font-family:inherit}
+#diary-list-gem:hover{background:#f3ecff}
+.diary-hd-gem{font-size:12px;font-weight:700;border:1px solid #e6e8eb;background:#fff;color:var(--text);border-radius:6px;padding:3px 9px;cursor:pointer;font-family:inherit}
+.diary-hd-gem:hover{border-color:#7c3aed;color:#7c3aed}
+#diary-read-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:240;align-items:flex-start;justify-content:center;padding:30px 12px 40px;overflow-y:auto}
+#diary-read-overlay.open{display:flex}
+#diary-read-panel{background:#fff;border-radius:14px;width:100%;max-width:560px;box-shadow:0 24px 64px rgba(0,0,0,.4);overflow:hidden}
+#diary-rd-hd{background:linear-gradient(135deg,#7c3aed 0%,#4338ca 100%);color:#fff;padding:14px 18px;display:flex;align-items:center;gap:10px;font-size:15px;font-weight:800}
+#diary-rd-hd span{flex:1}
+#diary-rd-close{background:rgba(255,255,255,.2);border:none;color:#fff;font-size:16px;cursor:pointer;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+#diary-rd-body{padding:18px 20px;display:flex;flex-direction:column;gap:14px;font-size:14.5px;line-height:1.75;color:var(--text);max-height:68vh;overflow-y:auto}
+.diary-rd-text{white-space:pre-wrap;word-break:break-word}
+.diary-rd-wx{font-size:13px;color:#0f766e;border-top:1px dashed #e6e8eb;padding-top:10px;white-space:pre-wrap}
+.diary-rd-cmt{font-style:italic;color:#5b5f6b;background:#f3ecff;border-radius:10px;padding:12px 14px;white-space:pre-wrap;word-break:break-word}
+.diary-rd-sep{font-size:12px;font-weight:800;color:var(--muted);border-top:1px solid #ececec;padding-top:12px}
+.diary-rd-empty{color:var(--muted);text-align:center;padding:26px 0}
+#diary-rd-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;padding:12px 18px;background:#fafafa;border-top:1px solid #f0f0f0}
+#diary-rd-foot .dl-mid{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
 /* ══════════════════════════════════════
    커스텀 필드 (Custom Fields)
 ════════════════════════════════════════ */
@@ -1580,7 +1617,7 @@ body{font-family:'NanumSquare',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-
   </div>
   <!-- 일기 -->
   <div class="home-sec" id="diary-section" data-sec="diary">
-    <h2><span class="sec-caret">▾</span><span class="sec-ico" style="background:#fdeef3;color:#d6336c">📔</span><span class="sec-label">Diary</span> <button onclick="openDiaryList()">전체보기</button></h2>
+    <h2><span class="sec-caret">▾</span><span class="sec-ico" style="background:#fdeef3;color:#d6336c">📔</span><span class="sec-label">Diary</span> <button class="diary-hd-gem" onclick="openGeminiDiary()">✍️ 제미나이에서 쓰기</button> <button onclick="openDiaryList()">전체보기</button></h2>
     <div class="sec-body"><div id="diary-collapsed-strip"></div></div>
   </div>
   <!-- 보드 -->
@@ -2078,6 +2115,7 @@ body{font-family:'NanumSquare',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-
   <div id="diary-list-panel">
     <div id="diary-list-hd">
       <span>📔 일기 전체보기</span>
+      <button id="diary-list-gem" onclick="openGeminiDiary()">✍️ 제미나이에서 쓰기</button>
       <button id="diary-list-close" onclick="closeDiaryList()">✕</button>
     </div>
     <div id="diary-list-printbar">
@@ -2088,7 +2126,28 @@ body{font-family:'NanumSquare',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-
       <input type="date" id="diary-print-date" disabled>
       <button id="diary-list-print" onclick="printDiary()">🖨️ 인쇄</button>
     </div>
+    <div id="diary-list-status"></div>
+    <div id="diary-list-filter"></div>
     <div id="diary-list-body"></div>
+  </div>
+</div>
+
+<!-- 일기 읽기 (캘린더 일기 + 앱 일기) -->
+<div id="diary-read-overlay">
+  <div id="diary-read-panel">
+    <div id="diary-rd-hd">
+      <span id="diary-rd-date"></span>
+      <button id="diary-rd-close" onclick="closeDiaryReader()" aria-label="닫기">✕</button>
+    </div>
+    <div id="diary-rd-body"></div>
+    <div id="diary-rd-foot">
+      <button class="dl-btn" id="diary-rd-prev" onclick="stepDiaryReader(-1)">‹ 전날</button>
+      <div class="dl-mid">
+        <button class="dl-btn p" onclick="openGeminiDiary()">✍️ 제미나이에서 쓰기</button>
+        <button class="dl-btn" id="diary-rd-app" onclick="openDiaryEditorFromReader()">앱에 직접 쓰기</button>
+      </div>
+      <button class="dl-btn" id="diary-rd-next" onclick="stepDiaryReader(1)">다음날 ›</button>
+    </div>
   </div>
 </div>
 
@@ -7489,6 +7548,7 @@ function openCalendar(){
   calYear=new Date().getFullYear();calMonth=new Date().getMonth();calSelectedDate=null;
   renderCalendar();
   document.getElementById('calendar-overlay').classList.add('open');
+  loadCalDiary(false).then(ok=>{if(ok&&document.getElementById('calendar-overlay').classList.contains('open'))renderCalendar();});
 }
 function closeCalendar(){document.getElementById('calendar-overlay').classList.remove('open');}
 
@@ -7550,11 +7610,10 @@ function renderCalendar(){
     }).join('');
     if(dayCards.length>5)dotsHtml+=`<div style="font-size:9px;color:var(--muted);font-weight:700;line-height:6px">+${dayCards.length-5}</div>`;
 
-    const journalEntry=ensureJournal()[ds];
-    const hasDiary=!!(journalEntry&&(journalEntry.text||journalEntry.weather));
-    const wxObj=journalEntry&&journalEntry.weather?DIARY_WEATHER.find(w=>w.id===journalEntry.weather):null;
-    const diaryIcon=hasDiary?(wxObj?wxObj.icon:'📔'):'＋';
-    d.innerHTML=`<div class="cal-day-num">${day}</div><div class="cal-dots">${dotsHtml}</div><div class="cal-diary-corner${hasDiary?'':' empty'}" title="${hasDiary?'일기 보기/수정':'일기 쓰기'}">${diaryIcon}</div>`;
+    const dEnt=diaryEntryFor(ds);
+    const hasDiary=!!dEnt;
+    const diaryIcon=hasDiary?diaryIconFor(dEnt):'＋';
+    d.innerHTML=`<div class="cal-day-num">${day}</div><div class="cal-dots">${dotsHtml}</div><div class="cal-diary-corner${hasDiary?'':' empty'}" title="${hasDiary?'일기 읽기':'일기 쓰기'}">${diaryIcon}</div>`;
 
     if(dayCards.length){
       d.addEventListener('click',()=>{
@@ -7564,7 +7623,7 @@ function renderCalendar(){
         renderCalDetail(ds,dayCards);
       });
     }
-    d.querySelector('.cal-diary-corner').addEventListener('click',e=>{e.stopPropagation();openDiaryEditor(ds);});
+    d.querySelector('.cal-diary-corner').addEventListener('click',e=>{e.stopPropagation();openDiaryReader(ds);});
     daysEl.appendChild(d);
   }
 
@@ -7650,19 +7709,199 @@ let diaryEditDate=null;
 let diaryEditWeather='';
 function ensureJournal(){state.journal=state.journal||{};return state.journal;}
 
+// ── 캘린더 일기 (2026-10-20) ──
+// 일기는 제미나이가 구글 캘린더 'Diary'에 그날 종일 일정으로 저장합니다.
+// 앱은 그 캘린더를 '읽기만' 해서 보여 줍니다(캘린더를 고치지 않음). 읽은 내용은 메모리에만 두고 기기에 저장하지 않아요.
+// 앱에 직접 쓴 예전 일기(state.journal)도 함께 보여 줍니다.
+const DIARY_CAL_ID='e643664f9354e3572bce8254ade6bcc4ae6b20055ad8207be0d9090dc0f11054@group.calendar.google.com';
+const GEMINI_DIARY_URL='https://gemini.google.com/app/93741f67fe47a8d2';
+const CAL_RO_SCOPE='https://www.googleapis.com/auth/calendar.readonly';
+let calRoClient=null,calRoToken=localStorage.getItem('cal_ro_token')||null,calRoExp=Number(localStorage.getItem('cal_ro_token_exp')||0);
+let calDiary={};          // 'YYYY-MM-DD' → {text, wx, cmt, n}
+let calDiaryAt=0,calDiaryLoading=null,calDiaryErr='';
+let diaryListMonth='all',diaryListQuery='',diaryReadDate=null;
+const calRoSignedIn=()=>!!calRoToken&&Date.now()<calRoExp;
+const calRoGranted=()=>localStorage.getItem('cal_ro_granted')==='1';
+function calRoGetToken(interactive){
+  return new Promise((res,rej)=>{
+    if(calRoSignedIn())return res(calRoToken);
+    if(!window.google||!google.accounts){rej(new Error('구글 로그인 스크립트를 아직 못 불러왔어요.'));return;}
+    if(!calRoClient)calRoClient=google.accounts.oauth2.initTokenClient({client_id:GOOGLE_CLIENT_ID,scope:CAL_RO_SCOPE,callback:()=>{}});
+    calRoClient.callback=r=>{if(!r||r.error||!r.access_token){rej(new Error('캘린더 읽기 허락을 받지 못했어요.'));return;}
+      calRoToken=r.access_token;calRoExp=Date.now()+((r.expires_in||3300)-60)*1000;
+      try{localStorage.setItem('cal_ro_token',calRoToken);localStorage.setItem('cal_ro_token_exp',String(calRoExp));localStorage.setItem('cal_ro_granted','1');}catch(e){}
+      res(calRoToken);};
+    calRoClient.error_callback=()=>rej(new Error('로그인 창을 열 수 없어요. 팝업 차단을 확인해 주세요.'));
+    try{calRoClient.requestAccessToken({prompt:interactive?'consent':'',hint:OWNER_EMAIL});}catch(e){rej(e);}
+  });
+}
+// 캘린더 메모 칸 → 글자. 캘린더 화면에서 고치면 HTML(<br>, <i>)로 바뀌므로 둘 다 받습니다.
+function calDescToText(s){
+  s=String(s||'');
+  if(/<[a-z][^>]*>/i.test(s)){
+    s=s.replace(/<br\s*\/?>/gi,'\n').replace(/<\/(p|div|li)>/gi,'\n').replace(/<(i|em)>/gi,'*').replace(/<\/(i|em)>/gi,'*').replace(/<[^>]+>/g,'');
+    const t=document.createElement('textarea');t.innerHTML=s;s=t.value;
+  }
+  return s.replace(/\r/g,'').replace(/ /g,' ');
+}
+// 본문 / 날씨 줄('(추가) …날씨') / 맨 끝 *코멘트* 로 나눔
+function parseCalDiary(desc){
+  let s=calDescToText(desc).trim();
+  let cmt='';
+  const m=s.match(/(?:^|\n)\s*\*([^*][\s\S]*?)\*\s*$/);
+  if(m){cmt=m[1].trim();s=s.slice(0,m.index).trim();}
+  const wx=[];const body=[];
+  s.split('\n').forEach(line=>{if(/^\s*\(추가\)/.test(line)&&/날씨/.test(line))wx.push(line.trim());else body.push(line);});
+  return {text:body.join('\n').trim(),wx:wx.join('\n'),cmt};
+}
+async function loadCalDiary(interactive,force){
+  if(calDiaryLoading)return calDiaryLoading;
+  if(!force&&calDiaryAt&&Date.now()-calDiaryAt<60000)return true;
+  if(!interactive&&!calRoSignedIn()&&!calRoGranted())return false;   // 아직 허락 전이면 조용히 건너뜀
+  calDiaryLoading=(async()=>{
+    try{
+      let tok=await withTimeout(calRoGetToken(interactive),interactive?60000:15000,'login');
+      const map={};let page='';
+      for(let i=0;i<20;i++){
+        const url='https://www.googleapis.com/calendar/v3/calendars/'+encodeURIComponent(DIARY_CAL_ID)+'/events?singleEvents=true&maxResults=2500&timeMin=2000-01-01T00:00:00Z&fields='+encodeURIComponent('nextPageToken,items(status,summary,description,start,updated)')+(page?'&pageToken='+encodeURIComponent(page):'');
+        let r=await fetch(url,{headers:{Authorization:'Bearer '+tok}});
+        if(r.status===401){calRoToken=null;calRoExp=0;try{localStorage.removeItem('cal_ro_token');}catch(e){}
+          tok=await withTimeout(calRoGetToken(interactive),15000,'login');r=await fetch(url,{headers:{Authorization:'Bearer '+tok}});}
+        if(!r.ok){let why='';try{const j=await r.json();why=(j.error&&j.error.message)||'';}catch(e){}
+          throw new Error(r.status===403&&/not been used|disabled/i.test(why)?'구글 클라우드에서 Calendar API가 꺼져 있어요.':r.status===404?'Diary 캘린더를 찾지 못했어요.':'캘린더 '+r.status);}
+        const j=await r.json();
+        (j.items||[]).forEach(ev=>{
+          if(ev.status==='cancelled')return;
+          const st=ev.start||{};
+          const ds=st.date?String(st.date).slice(0,10):(st.dateTime?localDateStr(new Date(st.dateTime)):'');
+          if(!/^\d{4}-\d{2}-\d{2}$/.test(ds))return;
+          const p=parseCalDiary(ev.description||'');
+          if(!p.text&&!p.wx&&!p.cmt)return;
+          (map[ds]=map[ds]||[]).push(Object.assign(p,{updated:ev.updated||''}));
+        });
+        page=j.nextPageToken;if(!page)break;
+      }
+      const out={};
+      Object.keys(map).forEach(ds=>{
+        const arr=map[ds].sort((a,b)=>String(a.updated).localeCompare(String(b.updated)));
+        out[ds]={text:arr.map(x=>x.text).filter(Boolean).join('\n\n────────\n\n'),wx:[...new Set(arr.map(x=>x.wx).filter(Boolean))].join('\n'),cmt:arr.map(x=>x.cmt).filter(Boolean).join('\n\n'),n:arr.length};
+      });
+      calDiary=out;calDiaryAt=Date.now();calDiaryErr='';
+      return true;
+    }catch(e){
+      calDiaryErr=e&&e.message==='login'?'캘린더 읽기 허락이 필요해요.':(e&&e.message)||'캘린더를 읽지 못했어요.';
+      return false;
+    }finally{calDiaryLoading=null;updateDiaryStrip();}
+  })();
+  return calDiaryLoading;
+}
+function openGeminiDiary(){window.open(GEMINI_DIARY_URL,'_blank','noopener');}
+// 날짜 하나의 일기 (캘린더 + 앱). 없으면 null
+function diaryEntryFor(ds){
+  const c=calDiary[ds]||null;
+  const a=ensureJournal()[ds];
+  const app=a&&(a.text||a.weather)?a:null;
+  if(!c&&!app)return null;
+  return {cal:c,app};
+}
+const DIARY_WX_WORDS=[['뇌우','⛈️'],['천둥','⛈️'],['눈','❄️'],['비','🌧️'],['소나기','🌧️'],['안개','🌫️'],['바람','🌬️'],['구름 조금','⛅'],['구름조금','⛅'],['흐','☁️'],['구름','☁️'],['맑','☀️']];
+function diaryIconFor(e){
+  if(e.cal&&e.cal.wx){const t=e.cal.wx.replace(/^[\s\S]*?날씨\s*:?/,'');for(const [w,ic] of DIARY_WX_WORDS)if(t.includes(w))return ic;}
+  if(e.app&&e.app.weather){const w=DIARY_WEATHER.find(x=>x.id===e.app.weather);if(w)return w.icon;}
+  return '📔';
+}
+function diaryWxShort(e){
+  if(e.cal&&e.cal.wx){let t=e.cal.wx.split('\n')[0].replace(/^\s*\(추가\)\s*/,'').replace(/^[^:]*날씨\s*:\s*/,'');return t.length>40?t.slice(0,40)+'…':t;}
+  if(e.app&&e.app.weather){const w=DIARY_WEATHER.find(x=>x.id===e.app.weather);if(w)return w.label;}
+  return '';
+}
+function diaryAllDates(desc){
+  const set=new Set(Object.keys(calDiary));
+  const j=ensureJournal();Object.keys(j).forEach(d=>{if(j[d]&&(j[d].text||j[d].weather))set.add(d);});
+  const arr=[...set];arr.sort((a,b)=>desc?b.localeCompare(a):a.localeCompare(b));return arr;
+}
+function diaryFirstLine(e){
+  const t=((e.cal&&e.cal.text)||(e.app&&e.app.text)||'').split('\n').map(x=>x.trim()).find(Boolean)||'';
+  return t;
+}
+
 function updateDiaryStrip(){
   const el=document.getElementById('diary-collapsed-strip');if(!el)return;
-  const journal=ensureJournal();
+  const dates=diaryAllDates(true);
   const todayStr=localDateStr(new Date());
-  const entry=journal[todayStr];
   const today=new Date();
   const dateLabel=`${today.getMonth()+1}월 ${today.getDate()}일`;
-  if(entry&&(entry.text||entry.weather)){
-    const wxObj=entry.weather?DIARY_WEATHER.find(w=>w.id===entry.weather):null;
-    el.innerHTML=`<div class="diary-strip" onclick="openDiaryEditor('${todayStr}')"><span style="font-size:18px">${wxObj?wxObj.icon:'📔'}</span><span style="flex:1">오늘(${dateLabel}) 일기를 썼어요</span><span class="diary-strip-edit">수정</span></div>`;
-  }else{
-    el.innerHTML=`<div class="diary-strip empty" onclick="openDiaryEditor('${todayStr}')"><span style="font-size:18px">📔</span><span style="flex:1">오늘(${dateLabel}) 아직 일기를 안 썼어요</span><span class="diary-strip-edit">쓰기</span></div>`;
+  const latest=dates[0];
+  if(!latest){
+    el.innerHTML=`<div class="diary-strip empty" onclick="openDiaryReader('${todayStr}')"><span style="font-size:18px">📔</span><span style="flex:1">오늘(${dateLabel}) 아직 일기가 없어요</span><span class="diary-strip-edit">보기</span></div>`;
+    return;
   }
+  const e=diaryEntryFor(latest);
+  const d=new Date(latest+'T00:00:00');
+  const lab=latest===todayStr?`오늘(${dateLabel})`:`${d.getMonth()+1}.${d.getDate()}`;
+  const locked=diaryLockOn()&&!diaryUnlocked;
+  const line=locked?'일기가 있어요 🔒':(diaryFirstLine(e)||'일기가 있어요');
+  const wx=locked?'':diaryWxShort(e);
+  el.innerHTML=`<div class="diary-strip" onclick="openDiaryReader('${latest}')"><span style="font-size:18px">${diaryIconFor(e)}</span><span style="flex:1">${esc(lab)} · ${esc(line)}${wx?' · '+esc(wx):''}</span><span class="diary-strip-edit">읽기</span></div>`;
+}
+// 앱이 열린 뒤 한 번, 허락을 받은 적이 있으면 조용히 캘린더 일기를 가져옴
+setTimeout(()=>{loadCalDiary(false);},2500);
+
+async function openDiaryReader(dateStr){
+  if(!await ensureDiaryUnlocked())return;
+  diaryReadDate=dateStr;
+  renderDiaryReader();
+  document.getElementById('diary-read-overlay').classList.add('open');
+  loadCalDiary(false).then(ok=>{if(ok&&diaryReadDate===dateStr&&document.getElementById('diary-read-overlay').classList.contains('open'))renderDiaryReader();});
+}
+function renderDiaryReader(){
+  const ds=diaryReadDate;if(!ds)return;
+  document.getElementById('diary-rd-date').textContent=fmtDiaryDateLabel(ds);
+  const e=diaryEntryFor(ds);
+  const body=document.getElementById('diary-rd-body');
+  let h='';
+  if(!e){
+    h=`<div class="diary-rd-empty">이날 일기가 없어요.${(!calRoGranted()&&!calRoSignedIn())||calDiaryErr?'<br><br><button class="dl-btn p" onclick="connectCalDiary()">📅 캘린더 일기 불러오기</button>':''}</div>`;
+  }else{
+    if(e.cal){
+      if(e.cal.n>1)h+=`<div class="diary-tag dup" style="align-self:flex-start">같은 날짜 일기 ${e.cal.n}개를 이어서 보여 줘요</div>`;
+      if(e.cal.text)h+=`<div class="diary-rd-text">${esc(e.cal.text)}</div>`;
+      if(e.cal.wx)h+=`<div class="diary-rd-wx">${esc(e.cal.wx)}</div>`;
+      if(e.cal.cmt)h+=`<div class="diary-rd-cmt">${esc(e.cal.cmt)}</div>`;
+    }
+    if(e.app){
+      const w=e.app.weather?DIARY_WEATHER.find(x=>x.id===e.app.weather):null;
+      if(e.cal)h+=`<div class="diary-rd-sep">앱에 직접 쓴 글</div>`;
+      if(w)h+=`<div class="diary-rd-wx" style="border-top:none;padding-top:0">${w.icon} ${esc(w.label)}</div>`;
+      if(e.app.text)h+=`<div class="diary-rd-text">${esc(e.app.text)}</div>`;
+    }
+  }
+  body.innerHTML=h;body.scrollTop=0;
+  const all=diaryAllDates(false);
+  const prev=all.filter(d=>d<ds).pop(),next=all.find(d=>d>ds);
+  const pb=document.getElementById('diary-rd-prev'),nb=document.getElementById('diary-rd-next');
+  pb.disabled=!prev;pb.style.visibility=prev?'visible':'hidden';
+  nb.disabled=!next;nb.style.visibility=next?'visible':'hidden';
+  document.getElementById('diary-rd-app').textContent=e&&e.app?'앱 글 고치기':'앱에 직접 쓰기';
+}
+function stepDiaryReader(dir){
+  const all=diaryAllDates(false);const ds=diaryReadDate;
+  const t=dir<0?all.filter(d=>d<ds).pop():all.find(d=>d>ds);
+  if(t){diaryReadDate=t;renderDiaryReader();}
+}
+function closeDiaryReader(){
+  document.getElementById('diary-read-overlay').classList.remove('open');
+  updateDiaryStrip();
+  if(document.getElementById('calendar-overlay').classList.contains('open'))renderCalendar();
+}
+function openDiaryEditorFromReader(){const ds=diaryReadDate;closeDiaryReader();openDiaryEditor(ds);}
+async function connectCalDiary(){
+  const ok=await loadCalDiary(true,true);
+  if(ok)showToast('📔',`캘린더 일기 ${Object.keys(calDiary).length}편을 가져왔어요.`,2600);
+  else showToast('⚠️',calDiaryErr||'캘린더를 읽지 못했어요.',4200);
+  if(document.getElementById('diary-read-overlay').classList.contains('open'))renderDiaryReader();
+  if(document.getElementById('diary-list-overlay').classList.contains('open'))renderDiaryList();
+  if(document.getElementById('calendar-overlay').classList.contains('open'))renderCalendar();
 }
 
 async function openDiaryEditor(dateStr){
@@ -7697,6 +7936,7 @@ function closeDiaryEditor(){
 }
 async function openDiaryList(){
   if(!await ensureDiaryUnlocked())return;
+  diaryListMonth='all';diaryListQuery='';
   renderDiaryList();
   const now=new Date();
   const mm=String(now.getMonth()+1).padStart(2,'0');
@@ -7705,6 +7945,8 @@ async function openDiaryList(){
   document.querySelector('input[name="diary-print-range"][value="all"]').checked=true;
   updateDiaryPrintRangeUI();
   document.getElementById('diary-list-overlay').classList.add('open');
+  loadCalDiary(false).then(()=>{if(document.getElementById('diary-list-overlay').classList.contains('open'))renderDiaryList();});
+  if(calDiaryLoading)renderDiaryListStatus();
 }
 function closeDiaryList(){document.getElementById('diary-list-overlay').classList.remove('open');}
 function updateDiaryPrintRangeUI(){
@@ -7712,36 +7954,60 @@ function updateDiaryPrintRangeUI(){
   document.getElementById('diary-print-month').disabled=mode!=='month';
   document.getElementById('diary-print-date').disabled=mode!=='one';
 }
-function getJournalDatesSorted(desc){
-  const journal=ensureJournal();
-  const dates=Object.keys(journal).filter(d=>journal[d]&&(journal[d].text||journal[d].weather));
-  dates.sort((a,b)=>desc?b.localeCompare(a):a.localeCompare(b));
-  return dates;
-}
+function getJournalDatesSorted(desc){return diaryAllDates(desc);}
 function fmtDiaryDateLabel(dateStr){
   const d=new Date(dateStr+'T00:00:00');
   const DAYS=['일','월','화','수','목','금','토'];
   return `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 (${DAYS[d.getDay()]})`;
 }
+function renderDiaryListStatus(){
+  const st=document.getElementById('diary-list-status');if(!st)return;
+  const n=Object.keys(calDiary).length;
+  let dot='',msg='',btn='';
+  if(calDiaryLoading){dot='wait';msg='캘린더에서 일기를 가져오는 중…';}
+  else if(calDiaryErr&&!calDiaryAt){dot='err';msg=calDiaryErr;btn='<button class="dl-btn p" onclick="connectCalDiary()">📅 캘린더 일기 불러오기</button>';}
+  else if(!calDiaryAt){dot='wait';msg='캘린더 일기를 아직 안 가져왔어요';btn='<button class="dl-btn p" onclick="connectCalDiary()">📅 캘린더 일기 불러오기</button>';}
+  else{const t=new Date(calDiaryAt);msg=`캘린더 일기 ${n}편 · ${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}에 가져옴`+(calDiaryErr?` (다시 가져오기 실패: ${calDiaryErr})`:'');btn='<button class="dl-btn" onclick="connectCalDiary()">↻ 다시 가져오기</button>';}
+  st.innerHTML=`<span class="dl-sp"><span class="dl-dot ${dot}"></span>${esc(msg)}</span>${btn}`;
+}
 function renderDiaryList(){
-  const journal=ensureJournal();
-  const dates=getJournalDatesSorted(true);
+  renderDiaryListStatus();
+  const dates=diaryAllDates(true);
+  const months=[...new Set(dates.map(d=>d.slice(0,7)))];
+  if(diaryListMonth!=='all'&&!months.includes(diaryListMonth))diaryListMonth='all';
+  const f=document.getElementById('diary-list-filter');
+  f.innerHTML=`<button class="dl-chip${diaryListMonth==='all'?' on':''}" data-m="all">전체</button>`+months.map(m=>`<button class="dl-chip${diaryListMonth===m?' on':''}" data-m="${m}">${m.replace('-','.')}</button>`).join('')+`<input id="diary-list-search" type="search" placeholder="🔍 검색" value="${esc(diaryListQuery)}">`;
+  f.querySelectorAll('.dl-chip').forEach(b=>b.addEventListener('click',()=>{diaryListMonth=b.dataset.m;renderDiaryList();}));
+  const si=f.querySelector('#diary-list-search');
+  si.addEventListener('input',()=>{diaryListQuery=si.value;renderDiaryListBody();});
+  renderDiaryListBody();
+}
+function renderDiaryListBody(){
   const body=document.getElementById('diary-list-body');
-  if(!dates.length){body.innerHTML='<div class="diary-list-empty">아직 작성한 일기가 없어요.</div>';return;}
+  const q=diaryListQuery.trim().toLowerCase();
+  const dates=diaryAllDates(true).filter(d=>diaryListMonth==='all'||d.startsWith(diaryListMonth)).filter(d=>{
+    if(!q)return true;const e=diaryEntryFor(d);
+    return [e.cal&&e.cal.text,e.cal&&e.cal.wx,e.cal&&e.cal.cmt,e.app&&e.app.text].filter(Boolean).join('\n').toLowerCase().includes(q);
+  });
+  if(!dates.length){body.innerHTML=`<div class="diary-list-empty">${q||diaryListMonth!=='all'?'조건에 맞는 일기가 없어요.':'아직 일기가 없어요.'}</div>`;return;}
   body.innerHTML='';
   dates.forEach(dateStr=>{
-    const entry=journal[dateStr];
-    const wxObj=entry.weather?DIARY_WEATHER.find(w=>w.id===entry.weather):null;
+    const e=diaryEntryFor(dateStr);
+    const tags=[];
+    if(!e.cal&&e.app)tags.push('<span class="diary-tag">앱에서 씀</span>');
+    if(e.cal&&e.app)tags.push('<span class="diary-tag">앱 글도 있음</span>');
+    if(e.cal&&e.cal.n>1)tags.push(`<span class="diary-tag dup">같은 날 ${e.cal.n}개</span>`);
+    const text=(e.cal&&e.cal.text)||(e.app&&e.app.text)||'';
+    const wx=diaryWxShort(e);
     const row=document.createElement('div');row.className='diary-list-item';
-    row.innerHTML=`<div class="diary-list-hd2"><span class="diary-list-date">${fmtDiaryDateLabel(dateStr)}</span><span style="font-size:18px">${wxObj?wxObj.icon:''}</span></div><div class="diary-list-text">${esc(entry.text||'')}</div>`;
-    row.addEventListener('click',()=>{closeDiaryList();openDiaryEditor(dateStr);});
+    row.innerHTML=`<div class="diary-list-hd2"><span class="diary-list-date">${fmtDiaryDateLabel(dateStr)}</span><span class="diary-list-tags">${tags.join('')}</span><span style="font-size:18px">${diaryIconFor(e)}</span></div><div class="diary-list-text">${esc(text)}</div>${wx?`<div class="diary-list-wx">${esc(wx)}</div>`:''}`;
+    row.addEventListener('click',()=>{closeDiaryList();openDiaryReader(dateStr);});
     body.appendChild(row);
   });
 }
 function printDiary(){
-  const journal=ensureJournal();
   const mode=document.querySelector('input[name="diary-print-range"]:checked').value;
-  let dates=getJournalDatesSorted(false);
+  let dates=diaryAllDates(false);
   let rangeLabel='전체';
   if(mode==='month'){
     const monthVal=document.getElementById('diary-print-month').value;
@@ -7762,16 +8028,30 @@ function printDiary(){
   content.innerHTML=`<div class="print-title">📔 일기 모음 — ${esc(rangeLabel)}</div><div class="print-date">인쇄일: ${today}</div>`;
   if(!dates.length)content.innerHTML+='<div style="color:#999;font-size:13px">해당 기간에 작성한 일기가 없어요.</div>';
   dates.forEach(dateStr=>{
-    const entry=journal[dateStr];
-    const wxObj=entry.weather?DIARY_WEATHER.find(w=>w.id===entry.weather):null;
+    const e=diaryEntryFor(dateStr);
+    let h='';
+    if(e.cal){
+      if(e.cal.text)h+=`<div style="font-size:13px;color:#333;line-height:1.7;white-space:pre-wrap">${esc(e.cal.text)}</div>`;
+      if(e.cal.wx)h+=`<div style="font-size:12px;color:#0f766e;margin-top:6px;white-space:pre-wrap">${esc(e.cal.wx)}</div>`;
+      if(e.cal.cmt)h+=`<div style="font-size:12.5px;color:#555;font-style:italic;margin-top:6px;white-space:pre-wrap">${esc(e.cal.cmt)}</div>`;
+    }
+    if(e.app&&e.app.text)h+=`<div style="font-size:13px;color:#333;line-height:1.7;white-space:pre-wrap;${e.cal?'margin-top:8px;border-top:1px dashed #ccc;padding-top:6px':''}">${esc(e.app.text)}</div>`;
     const sec=document.createElement('div');sec.className='print-col';
-    sec.innerHTML=`<div class="print-col-title">${fmtDiaryDateLabel(dateStr)} ${wxObj?wxObj.icon:''}</div><div style="font-size:13px;color:#333;line-height:1.7;white-space:pre-wrap">${esc(entry.text||'')}</div>`;
+    sec.innerHTML=`<div class="print-col-title">${fmtDiaryDateLabel(dateStr)} ${diaryIconFor(e)}</div>${h}`;
     content.appendChild(sec);
   });
   document.getElementById('print-overlay').classList.add('open');
 }
 bindOverlayClose('diary-list-overlay',closeDiaryList);
+bindOverlayClose('diary-read-overlay',closeDiaryReader);
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('diary-list-overlay').classList.contains('open'))closeDiaryList();});
+document.addEventListener('keydown',e=>{
+  if(!document.getElementById('diary-read-overlay').classList.contains('open'))return;
+  if(document.getElementById('diary-editor-overlay').classList.contains('open'))return;
+  if(e.key==='Escape')closeDiaryReader();
+  else if(e.key==='ArrowLeft')stepDiaryReader(-1);
+  else if(e.key==='ArrowRight')stepDiaryReader(1);
+});
 function saveDiaryEntry(){
   const journal=ensureJournal();
   const text=document.getElementById('diary-ed-text').value;
