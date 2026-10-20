@@ -1319,6 +1319,9 @@ body{font-family:'NanumSquare',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-
 .diary-rd-text{white-space:pre-wrap;word-break:break-word}
 .diary-rd-wx{font-size:13px;color:#0f766e;border-top:1px dashed #e6e8eb;padding-top:10px;white-space:pre-wrap}
 .diary-rd-cmt{font-style:italic;color:#5b5f6b;background:#f3ecff;border-radius:10px;padding:12px 14px;white-space:pre-wrap;word-break:break-word}
+.diary-rd-news{font-size:13px;color:var(--text);background:#f8f9fb;border-radius:10px;padding:10px 14px}
+.diary-rd-news-hd{font-size:12px;font-weight:800;color:var(--muted);margin-bottom:4px}
+.diary-rd-news ul{margin:0;padding-left:18px;line-height:1.6}
 .diary-rd-sep{font-size:12px;font-weight:800;color:var(--muted);border-top:1px solid #ececec;padding-top:12px}
 .diary-rd-empty{color:var(--muted);text-align:center;padding:26px 0}
 #diary-rd-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;padding:12px 18px;background:#fafafa;border-top:1px solid #f0f0f0}
@@ -7746,13 +7749,22 @@ function calDescToText(s){
   s=s.replace(/[！-～]/g,ch=>String.fromCharCode(ch.charCodeAt(0)-0xFEE0)).replace(/　/g,' ').replace(/。/g,'.');
   return s.replace(/\r/g,'').replace(/ /g,' ');
 }
-// 본문 / 날씨 줄 / 맨 끝 *코멘트* 로 나눔
+// 본문 / 날씨 줄 / *코멘트* / 그날의 뉴스 로 나눔
 // 날씨 줄 모양: '(추가) 2026년 10월 20일 서울 날씨: …' 또는 '🍂 2025년 10월 15일 서울 날씨: …'
+// 뉴스: 코멘트 아래에 붙는 '오늘의 핫토픽' 3줄 (2026-10-20 추가). 제목 줄(📰·뉴스·핫토픽)은 빼고 항목만 보여 줌
 function parseCalDiary(desc){
   let s=calDescToText(desc).trim();
-  let cmt='';
-  const m=s.match(/(?:^|\n)\s*\*([^*][\s\S]*?)\*\s*$/);
-  if(m){cmt=m[1].trim();s=s.slice(0,m.index).trim();}
+  let cmt='',newsRaw='';
+  // 코멘트: 줄 처음에서 *로 시작해 줄 끝에서 *로 끝나는 마지막 덩어리
+  const re=/(^|\n)[ \t]*\*([^*\n][^*]*?)\*[ \t]*(?=\n|$)/g;let m,last=null;
+  while((m=re.exec(s)))last={start:m.index+m[1].length,end:re.lastIndex,body:m[2]};
+  if(last){
+    cmt=last.body.trim();newsRaw=s.slice(last.end).trim();s=s.slice(0,last.start).trim();
+  }else{
+    // 코멘트가 없으면 뉴스 제목 줄부터 끝까지를 뉴스로
+    const h=s.search(/(^|\n)[ \t]*(📰|\[?\s*(오늘의\s*)?(핫\s*토픽|뉴스))/);
+    if(h>=0){newsRaw=s.slice(h).trim();s=s.slice(0,h).trim();}
+  }
   const wx=[];const body=[];
   s.split('\n').forEach(line=>{
     const isWx=/날씨\s*:/.test(line)&&(/^\s*\(추가\)/.test(line)||/^\s*\S{0,3}\s*\d{4}\s*년\s*\d{1,2}\s*월\s*\d{1,2}\s*일/.test(line));
@@ -7760,7 +7772,11 @@ function parseCalDiary(desc){
   });
   let text=body.join('\n').trim();
   text=text.replace(/^\d{4}\.\d{1,2}\.\d{1,2}\s*일기\s*(\n+|$)/,'');   // 본문 첫 줄이 제목과 같으면 뺌
-  return {text:text.trim(),wx:wx.join('\n'),cmt};
+  // 뉴스 항목: 제목 줄은 버리고, 남은 줄의 앞머리 기호(-, •, 1., ①, 📰 등)를 떼어 냄
+  const news=newsRaw.split('\n').map(x=>x.trim().replace(/\*\*/g,'').trim()).filter(Boolean)
+    .filter(x=>!/^(📰|🗞️?)?\s*\[?\s*(그날의|오늘의)?\s*(가장\s*)?(핫\s*토픽|핫한\s*뉴스|뉴스|헤드라인)[^:：]{0,20}[:：]?\s*\]?\s*$/.test(x))
+    .map(x=>x.replace(/^([-•·*▪︎▶➤]|\d+[.)]|[①-⑩]|📰|🗞️?)\s*/,'').trim()).filter(Boolean);
+  return {text:text.trim(),wx:wx.join('\n'),cmt,news};
 }
 async function loadCalDiary(interactive,force){
   if(calDiaryLoading)return calDiaryLoading;
@@ -7784,7 +7800,7 @@ async function loadCalDiary(interactive,force){
           const ds=st.date?String(st.date).slice(0,10):(st.dateTime?localDateStr(new Date(st.dateTime)):'');
           if(!/^\d{4}-\d{2}-\d{2}$/.test(ds))return;
           const p=parseCalDiary(ev.description||'');
-          if(!p.text&&!p.wx&&!p.cmt)return;
+          if(!p.text&&!p.wx&&!p.cmt&&!p.news.length)return;
           (map[ds]=map[ds]||[]).push(Object.assign(p,{updated:ev.updated||''}));
         });
         page=j.nextPageToken;if(!page)break;
@@ -7792,7 +7808,7 @@ async function loadCalDiary(interactive,force){
       const out={};
       Object.keys(map).forEach(ds=>{
         const arr=map[ds].sort((a,b)=>String(a.updated).localeCompare(String(b.updated)));
-        out[ds]={text:arr.map(x=>x.text).filter(Boolean).join('\n\n────────\n\n'),wx:[...new Set(arr.map(x=>x.wx).filter(Boolean))].join('\n'),cmt:arr.map(x=>x.cmt).filter(Boolean).join('\n\n'),n:arr.length};
+        out[ds]={news:[...new Set([].concat(...arr.map(x=>x.news||[])))],text:arr.map(x=>x.text).filter(Boolean).join('\n\n────────\n\n'),wx:[...new Set(arr.map(x=>x.wx).filter(Boolean))].join('\n'),cmt:arr.map(x=>x.cmt).filter(Boolean).join('\n\n'),n:arr.length};
       });
       calDiary=out;calDiaryAt=Date.now();calDiaryErr='';
       return true;
@@ -7877,6 +7893,7 @@ function renderDiaryReader(){
       if(e.cal.text)h+=`<div class="diary-rd-text">${esc(e.cal.text)}</div>`;
       if(e.cal.wx)h+=`<div class="diary-rd-wx">${esc(e.cal.wx)}</div>`;
       if(e.cal.cmt)h+=`<div class="diary-rd-cmt">${esc(e.cal.cmt)}</div>`;
+      if(e.cal.news&&e.cal.news.length)h+=`<div class="diary-rd-news"><div class="diary-rd-news-hd">📰 그날의 뉴스</div><ul>${e.cal.news.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`;
     }
     if(e.app){
       const w=e.app.weather?DIARY_WEATHER.find(x=>x.id===e.app.weather):null;
@@ -7996,7 +8013,7 @@ function renderDiaryListBody(){
   const q=diaryListQuery.trim().toLowerCase();
   const dates=diaryAllDates(true).filter(d=>diaryListMonth==='all'||d.startsWith(diaryListMonth)).filter(d=>{
     if(!q)return true;const e=diaryEntryFor(d);
-    return [e.cal&&e.cal.text,e.cal&&e.cal.wx,e.cal&&e.cal.cmt,e.app&&e.app.text].filter(Boolean).join('\n').toLowerCase().includes(q);
+    return [e.cal&&e.cal.text,e.cal&&e.cal.wx,e.cal&&e.cal.cmt,e.cal&&e.cal.news&&e.cal.news.join('\n'),e.app&&e.app.text].filter(Boolean).join('\n').toLowerCase().includes(q);
   });
   if(!dates.length){body.innerHTML=`<div class="diary-list-empty">${q||diaryListMonth!=='all'?'조건에 맞는 일기가 없어요.':'아직 일기가 없어요.'}</div>`;return;}
   body.innerHTML='';
@@ -8043,6 +8060,7 @@ function printDiary(){
       if(e.cal.text)h+=`<div style="font-size:13px;color:#333;line-height:1.7;white-space:pre-wrap">${esc(e.cal.text)}</div>`;
       if(e.cal.wx)h+=`<div style="font-size:12px;color:#0f766e;margin-top:6px;white-space:pre-wrap">${esc(e.cal.wx)}</div>`;
       if(e.cal.cmt)h+=`<div style="font-size:12.5px;color:#555;font-style:italic;margin-top:6px;white-space:pre-wrap">${esc(e.cal.cmt)}</div>`;
+      if(e.cal.news&&e.cal.news.length)h+=`<div style="font-size:12px;color:#555;margin-top:6px">📰 ${e.cal.news.map(esc).join(' · ')}</div>`;
     }
     if(e.app&&e.app.text)h+=`<div style="font-size:13px;color:#333;line-height:1.7;white-space:pre-wrap;${e.cal?'margin-top:8px;border-top:1px dashed #ccc;padding-top:6px':''}">${esc(e.app.text)}</div>`;
     const sec=document.createElement('div');sec.className='print-col';
