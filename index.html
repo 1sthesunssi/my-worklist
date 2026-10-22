@@ -867,19 +867,30 @@ body{font-family:'NanumSquare',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-
 #add-label-btn:hover{background:rgba(9,30,66,.13)}
 #gcal-btn{width:100%;background:#fff;border:1.5px solid #4285f4;color:#4285f4;border-radius:7px;padding:8px 10px;font-size:13px;cursor:pointer;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px;margin-top:6px;transition:background .15s}
 #gcal-btn:hover{background:#e8f0fe}
-#gcal-box{background:#f4f8ff;border:1.5px solid #4285f4;border-radius:9px;padding:9px 10px;margin-top:6px;font-size:12.5px;color:var(--text)}
-#gcal-box .gc-hd{font-weight:800;color:#1a56c4;margin-bottom:6px}
-#gcal-box .gc-row{display:flex;align-items:center;gap:6px;margin:4px 0}
-#gcal-box .gc-row>label{width:34px;flex:none;color:var(--muted);font-weight:700}
-#gcal-box input[type=date],#gcal-box input[type=time],#gcal-box select{flex:1;min-width:0;border:1px solid #c5d4ee;border-radius:6px;padding:4px 6px;font-size:12.5px;background:#fff;font-family:inherit}
-#gcal-box .gc-main{width:100%;background:#4285f4;border:none;color:#fff;border-radius:7px;padding:8px 10px;font-size:13px;font-weight:800;cursor:pointer;margin-top:6px}
+#gcal-box{background:#f6f9ff;border:1px solid #cfe0fb;border-radius:10px;padding:8px 9px;margin-top:6px;font-size:12px;color:var(--text)}
+#gcal-box .gc-hd{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:#3b4a63;margin-bottom:5px;white-space:nowrap}
+#gcal-box .gc-hd b{font-weight:800}
+#gcal-box .gc-ok{color:#1f8a5b}
+#gcal-box .gc-when{margin-left:auto;color:#6b778c;font-weight:600;font-size:11.5px}
+#gcal-box .gc-row{display:flex;align-items:center;gap:6px;margin:3px 0}
+#gcal-box .gc-row>label{width:30px;flex:none;color:#6b778c;font-size:11.5px;font-weight:600}
+#gcal-box input[type=date],#gcal-box input[type=time],#gcal-box select{flex:1;min-width:0;border:1px solid #d5e2f7;border-radius:6px;padding:3px 5px;font-size:12px;background:#fff;font-family:inherit;color:var(--text)}
+#gcal-box .gc-sw{position:relative;width:30px;height:17px;flex:none;display:inline-block}
+#gcal-box .gc-sw input{opacity:0;width:0;height:0;position:absolute}
+#gcal-box .gc-sw i{position:absolute;inset:0;background:#c9d3e3;border-radius:17px;transition:background .15s;cursor:pointer}
+#gcal-box .gc-sw i:before{content:"";position:absolute;left:2px;top:2px;width:13px;height:13px;background:#fff;border-radius:50%;transition:transform .15s;box-shadow:0 1px 2px rgba(0,0,0,.25)}
+#gcal-box .gc-sw input:checked+i{background:#4285f4}
+#gcal-box .gc-sw input:checked+i:before{transform:translateX(13px)}
+#gcal-box .gc-main{width:100%;background:#4285f4;border:none;color:#fff;border-radius:7px;padding:6px 8px;font-size:12.5px;font-weight:700;cursor:pointer;margin-top:5px}
 #gcal-box .gc-main:hover{background:#2f6fd6}
 #gcal-box .gc-main:disabled{opacity:.6;cursor:default}
-#gcal-box .gc-sub{display:flex;gap:5px;margin-top:6px}
-#gcal-box .gc-sub button,#gcal-box .gc-sub a{flex:1;text-align:center;background:#fff;border:1px solid #c5d4ee;border-radius:6px;padding:5px 2px;font-size:12px;font-weight:700;cursor:pointer;color:#1a56c4;text-decoration:none}
-#gcal-box .gc-sub button:hover,#gcal-box .gc-sub a:hover{background:#e8f0fe}
-#gcal-box .gc-ok{font-weight:800;color:#216e4e}
-#gcal-box .gc-warn{color:#974f0c;font-size:12px;margin-top:4px}
+#gcal-box .gc-sub{display:flex;gap:6px;margin-top:6px;justify-content:flex-end}
+#gcal-box .gc-ic{width:30px;height:28px;display:inline-flex;align-items:center;justify-content:center;background:#fff;border:1px solid #d5e2f7;border-radius:7px;cursor:pointer;color:#4a5b78;padding:0;text-decoration:none;transition:background .12s,color .12s}
+#gcal-box .gc-ic svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#gcal-box .gc-ic:hover{background:#e8f0fe;color:#1a56c4}
+#gcal-box .gc-ic.gc-d:hover{background:#fdecea;color:#c9372c;border-color:#f3c6c1}
+#gcal-box .gc-ic:disabled{opacity:.5;cursor:default}
+#gcal-box .gc-warn{color:#974f0c;font-size:11.5px;margin-top:4px;line-height:1.4}
 .sb-btn{background:rgba(9,30,66,.07);border:none;border-radius:7px;padding:8px 12px;font-size:13px;cursor:pointer;color:var(--text);text-align:left;width:100%;display:flex;align-items:center;gap:6px;transition:background .15s}
 .sb-btn:hover{background:rgba(9,30,66,.13)}
 .sb-btn.danger{color:var(--danger)}
@@ -6156,22 +6167,27 @@ function gcalRender(){
   const allDay=g?g.allDay!==false:true;
   const st=(g&&g.start)||'09:00',en=(g&&g.end)||'10:00';
   const rem=(g&&g.rem)||'default';
-  const remOpts=allDay?[['default','기본 알림'],['none','알림 없음']]:[['default','기본 알림'],['none','알림 없음'],['10','10분 전'],['30','30분 전'],['60','1시간 전'],['1440','1일 전']];
-  const head=g?`<div class="gc-hd"><span class="gc-ok">✓ 캘린더에 등록됨</span> · ${esc(g.date)}${g.allDay===false?' '+esc(g.start)+'~'+esc(g.end):' 하루 종일'}</div>`:'<div class="gc-hd">📅 구글 캘린더 일정</div>';
-  const warn=g&&card.due&&card.due!==g.date?`<div class="gc-warn">⚠️ 카드 마감일(${esc(card.due)})과 캘린더 날짜(${esc(g.date)})가 달라요. [일정 바꾸기]를 누르면 맞춰져요.</div>`:'';
+  const remList=a=>a?[['default','기본 알림'],['none','알림 없음']]:[['default','기본 알림'],['none','알림 없음'],['10','10분 전'],['30','30분 전'],['60','1시간 전'],['1440','1일 전']];
+  const md=d=>{const m=String(d||'').match(/^\d{4}-(\d{2})-(\d{2})$/);return m?(+m[1])+'/'+(+m[2]):'';};
+  const when=g?(md(g.date)+(g.allDay===false?' '+g.start:' 종일')):'';
+  const head=g?`<div class="gc-hd"><span class="gc-ok">✓</span><b>캘린더 등록됨</b><span class="gc-when">${esc(when)}</span></div>`:'<div class="gc-hd">📅 <b>캘린더 일정</b></div>';
+  const warn=g&&card.due&&card.due!==g.date?`<div class="gc-warn">⚠️ 마감일(${esc(md(card.due))})과 캘린더(${esc(md(g.date))})가 달라요. ✏️ 수정을 누르면 맞춰져요.</div>`:'';
+  const ico={open:'<svg viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>',
+    edit:'<svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4"/></svg>',
+    del:'<svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-12M9 7V4h6v3"/></svg>'};
   box.innerHTML=head+
    `<div class="gc-row"><label>날짜</label><input type="date" id="gc-date" value="${esc(date)}"></div>`+
-   `<div class="gc-row"><label>종일</label><input type="checkbox" id="gc-allday" ${allDay?'checked':''}><span style="color:var(--muted)">시간 없이 날짜만</span></div>`+
+   `<div class="gc-row"><label>종일</label><span class="gc-sw"><input type="checkbox" id="gc-allday" ${allDay?'checked':''}><i></i></span></div>`+
    `<div class="gc-row" id="gc-time-row" style="display:${allDay?'none':'flex'}"><label>시간</label><input type="time" id="gc-start" value="${esc(st)}"><span>~</span><input type="time" id="gc-end" value="${esc(en)}"></div>`+
-   `<div class="gc-row"><label>알림</label><select id="gc-rem">${remOpts.map(o=>`<option value="${o[0]}"${o[0]===rem?' selected':''}>${o[1]}</option>`).join('')}</select></div>`+
+   `<div class="gc-row"><label>알림</label><select id="gc-rem">${remList(allDay).map(o=>`<option value="${o[0]}"${o[0]===rem?' selected':''}>${o[1]}</option>`).join('')}</select></div>`+
    warn+
-   (g?`<div class="gc-sub">${g.link?`<a href="${esc(g.link)}" target="_blank" rel="noopener noreferrer">열어보기</a>`:''}<button type="button" id="gc-upd">일정 바꾸기</button><button type="button" id="gc-del">삭제</button></div>`
-     :`<button type="button" class="gc-main" id="gc-add">캘린더에 바로 등록</button>`);
+   (g?`<div class="gc-sub">${g.link?`<a class="gc-ic" href="${esc(g.link)}" target="_blank" rel="noopener noreferrer" title="캘린더에서 열기" aria-label="열기">${ico.open}</a>`:''}<button type="button" class="gc-ic" id="gc-upd" title="수정 (바뀐 날짜·시간을 캘린더에 반영)" aria-label="수정">${ico.edit}</button><button type="button" class="gc-ic gc-d" id="gc-del" title="캘린더 일정 삭제" aria-label="삭제">${ico.del}</button></div>`
+     :`<button type="button" class="gc-main" id="gc-add">캘린더에 등록</button>`);
   box.style.display='block';
   document.getElementById('gc-allday').addEventListener('change',e=>{
     document.getElementById('gc-time-row').style.display=e.target.checked?'none':'flex';
     const sel=document.getElementById('gc-rem'),cur=sel.value;
-    sel.innerHTML=(e.target.checked?[['default','기본 알림'],['none','알림 없음']]:[['default','기본 알림'],['none','알림 없음'],['10','10분 전'],['30','30분 전'],['60','1시간 전'],['1440','1일 전']]).map(o=>`<option value="${o[0]}">${o[1]}</option>`).join('');
+    sel.innerHTML=remList(e.target.checked).map(o=>`<option value="${o[0]}">${o[1]}</option>`).join('');
     if([...sel.options].some(o=>o.value===cur))sel.value=cur;
   });
   const add=document.getElementById('gc-add');if(add)add.onclick=()=>gcalSave(false);
