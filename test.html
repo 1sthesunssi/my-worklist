@@ -6524,6 +6524,13 @@ async function calRwApi(method,eventId,body,calId){
     return j;
   }
 }
+async function calRwMove(eventId,fromCal,toCal){
+  const tok=await calRwGetToken();
+  const r=await fetch('https://www.googleapis.com/calendar/v3/calendars/'+encodeURIComponent(fromCal||'primary')+'/events/'+encodeURIComponent(eventId)+'/move?destination='+encodeURIComponent(toCal),{method:'POST',headers:{Authorization:'Bearer '+tok}});
+  let j={};try{j=await r.json();}catch(e){}
+  if(!r.ok){const er=new Error((j.error&&j.error.message)||('달력 옮기기 오류 '+r.status));er.status=r.status;throw er;}
+  return j;
+}
 const GCAL_LAST_KEY='gcal_last_cal',GCAL_LIST_KEY='gcal_cals';
 function gcalCals(){try{const a=JSON.parse(localStorage.getItem(GCAL_LIST_KEY)||'[]');return Array.isArray(a)?a:[];}catch(e){return [];}}
 async function gcalLoadCals(){
@@ -6567,7 +6574,7 @@ function gcalRender(){
    `<div class="gc-row"><label>날짜</label><input type="date" id="gc-date" value="${esc(date)}"></div>`+
    `<div class="gc-row"><label>종일</label><span class="gc-sw"><input type="checkbox" id="gc-allday" ${allDay?'checked':''}><i></i></span></div>`+
    `<div class="gc-row" id="gc-time-row" style="display:${allDay?'none':'flex'}"><label>시간</label><input type="time" id="gc-start" value="${esc(st)}"><span>~</span><input type="time" id="gc-end" value="${esc(en)}"></div>`+
-   `<div class="gc-row"><label>달력</label><select id="gc-cal"${g?' disabled title="이미 등록된 달력이에요"':''}>${gcalCalOptions(calSel)}</select></div>`+
+   `<div class="gc-row"><label>달력</label><select id="gc-cal"${g?' title="달력을 바꾸고 ✏️ 수정을 누르면 일정이 그 달력으로 옮겨져요"':''}>${gcalCalOptions(calSel)}</select></div>`+
    warn+
    (g?`<div class="gc-sub">${g.link?`<a class="gc-ic" href="${esc(g.link)}" target="_blank" rel="noopener noreferrer" title="캘린더에서 열기" aria-label="열기">${ico.open}</a>`:''}<button type="button" class="gc-ic" id="gc-upd" title="수정 (바뀐 날짜·시간을 캘린더에 반영)" aria-label="수정">${ico.edit}</button><button type="button" class="gc-ic gc-d" id="gc-del" title="캘린더 일정 삭제" aria-label="삭제">${ico.del}</button></div>`
      :`<button type="button" class="gc-main" id="gc-add">캘린더에 등록</button>`);
@@ -6620,12 +6627,16 @@ async function gcalSave(isUpdate){
     const body=gcalBuildBody(card,v);
     let ev;
     if(isUpdate&&card.gcal&&card.gcal.eventId){
-      try{ev=await calRwApi('PATCH',card.gcal.eventId,body,card.gcal.calId);}
+      try{
+        let curCal=card.gcal.calId||'primary';
+        if(v.cal!==curCal&&!(curCal==='primary'&&gcalCals().some(c=>c.primary&&c.id===v.cal))){await calRwMove(card.gcal.eventId,curCal,v.cal);curCal=v.cal;}
+        ev=await calRwApi('PATCH',card.gcal.eventId,body,curCal);card.gcal.calId=curCal;
+      }
       catch(e){if(e.status===404||e.status===410){card.gcal=null;saveState();gcalRender();showToast('ℹ️','캘린더에서 이미 지워진 일정이었어요. 다시 등록해 주세요.',4200);return;}throw e;}
     }else{
       ev=await calRwApi('POST',null,body,v.cal);
     }
-    const calId=(isUpdate&&card.gcal&&card.gcal.calId)||v.cal;
+    const calId=(isUpdate&&card.gcal&&card.gcal.calId)||v.cal;   // 수정 때는 위에서 옮긴 달력이 card.gcal.calId에 들어 있음
     card.gcal={eventId:ev.id,calId,calName:gcalCalName(calId),allDay:v.allDay,date:v.date,start:v.start,end:v.end,link:ev.htmlLink||''};
     try{localStorage.setItem(GCAL_LAST_KEY,calId);}catch(e){}
     if(!gcalCals().length)gcalLoadCals().then(()=>{try{gcalRender();}catch(e){}}).catch(()=>{});
