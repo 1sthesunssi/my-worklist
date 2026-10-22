@@ -6123,8 +6123,8 @@ function showToast(icon,msg,duration=3500){
 }
 // ── 구글 캘린더에 바로 등록·수정·삭제 (내 기본 달력 'primary') ──
 // 카드에 card.gcal={eventId,allDay,date,start,end,link}을 남겨 같은 일정이 두 번 들어가지 않게 합니다.
-const CAL_RW_SCOPE='https://www.googleapis.com/auth/calendar.events';
-let calRwClient=null,calRwToken=localStorage.getItem('cal_rw_token')||null,calRwExp=Number(localStorage.getItem('cal_rw_token_exp')||0);
+const CAL_RW_SCOPE='https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.calendarlist.readonly';   // 일정 쓰기 + 내 달력 목록 읽기
+let calRwClient=null,calRwToken=localStorage.getItem('cal_rw2_token')||null,calRwExp=Number(localStorage.getItem('cal_rw2_token_exp')||0);
 const calRwSignedIn=()=>!!calRwToken&&Date.now()<calRwExp;
 function calRwGetToken(){
   return new Promise((res,rej)=>{
@@ -6133,25 +6133,42 @@ function calRwGetToken(){
     if(!calRwClient)calRwClient=google.accounts.oauth2.initTokenClient({client_id:GOOGLE_CLIENT_ID,scope:CAL_RW_SCOPE,callback:()=>{}});
     calRwClient.callback=r=>{if(!r||r.error||!r.access_token){rej(new Error('캘린더 일정 쓰기 허락을 받지 못했어요.'));return;}
       calRwToken=r.access_token;calRwExp=Date.now()+((r.expires_in||3300)-60)*1000;
-      try{localStorage.setItem('cal_rw_token',calRwToken);localStorage.setItem('cal_rw_token_exp',String(calRwExp));localStorage.setItem('cal_rw_granted','1');}catch(e){}
+      try{localStorage.setItem('cal_rw2_token',calRwToken);localStorage.setItem('cal_rw2_token_exp',String(calRwExp));localStorage.setItem('cal_rw2_granted','1');}catch(e){}
       res(calRwToken);};
     calRwClient.error_callback=()=>rej(new Error('로그인 창을 열 수 없어요. 팝업 차단을 확인해 주세요.'));
-    const granted=localStorage.getItem('cal_rw_granted')==='1';
+    const granted=localStorage.getItem('cal_rw2_granted')==='1';
     try{calRwClient.requestAccessToken({prompt:granted?'':'consent',hint:OWNER_EMAIL});}catch(e){rej(e);}
   });
 }
-async function calRwApi(method,eventId,body){
-  const url='https://www.googleapis.com/calendar/v3/calendars/primary/events'+(eventId?'/'+encodeURIComponent(eventId):'');
+async function calRwApi(method,eventId,body,calId){
+  const url='https://www.googleapis.com/calendar/v3/calendars/'+encodeURIComponent(calId||'primary')+'/events'+(eventId?'/'+encodeURIComponent(eventId):'');
   for(let t=0;t<2;t++){
     const tok=await calRwGetToken();
     const r=await fetch(url,{method,headers:Object.assign({Authorization:'Bearer '+tok},body?{'Content-Type':'application/json'}:{}),body:body?JSON.stringify(body):undefined});
-    if(r.status===401&&t===0){calRwToken=null;calRwExp=0;try{localStorage.removeItem('cal_rw_token');localStorage.removeItem('cal_rw_token_exp');}catch(e){}continue;}
+    if(r.status===401&&t===0){calRwToken=null;calRwExp=0;try{localStorage.removeItem('cal_rw2_token');localStorage.removeItem('cal_rw2_token_exp');}catch(e){}continue;}
     if(r.status===204)return {};
     let j={};try{j=await r.json();}catch(e){}
     if(!r.ok){const er=new Error((j.error&&j.error.message)||('캘린더 오류 '+r.status));er.status=r.status;throw er;}
     return j;
   }
 }
+const GCAL_LAST_KEY='gcal_last_cal',GCAL_LIST_KEY='gcal_cals';
+function gcalCals(){try{const a=JSON.parse(localStorage.getItem(GCAL_LIST_KEY)||'[]');return Array.isArray(a)?a:[];}catch(e){return [];}}
+async function gcalLoadCals(){
+  const tok=await calRwGetToken();
+  const r=await fetch('https://www.googleapis.com/calendar/v3/users/me/calendarList?minAccessRole=writer&maxResults=250&fields=items(id,summary,summaryOverride,primary)',{headers:{Authorization:'Bearer '+tok}});
+  if(!r.ok){const j=await r.json().catch(()=>({}));throw new Error((j.error&&j.error.message)||('달력 목록 오류 '+r.status));}
+  const j=await r.json();
+  const list=(j.items||[]).map(c=>({id:c.id,name:c.summaryOverride||c.summary||c.id,primary:!!c.primary})).sort((a,b)=>(b.primary-a.primary)||a.name.localeCompare(b.name,'ko'));
+  try{localStorage.setItem(GCAL_LIST_KEY,JSON.stringify(list));}catch(e){}
+  return list;
+}
+function gcalCalOptions(selId){
+  const list=gcalCals();
+  const opts=(list.length?list.map(c=>[c.id,(c.primary?'⭐ ':'')+c.name]):[['primary','기본 달력']]).concat([['__load',list.length?'↻ 목록 새로고침':'다른 달력 불러오기…']]);
+  return opts.map(o=>`<option value="${esc(o[0])}"${o[0]===selId?' selected':''}>${esc(o[1])}</option>`).join('');
+}
+function gcalCalName(id){const c=gcalCals().find(x=>x.id===id);return c?c.name:(id==='primary'?'기본 달력':id);}
 function gcalDescText(card){
   let s=String(card.desc||'').replace(/<br\s*\/?>/gi,'\n').replace(/<\/(p|div|li|ul|ol)>/gi,'\n').replace(/<li[^>]*>/gi,'- ').replace(/<[^>]+>/g,'');
   const t=document.createElement('textarea');t.innerHTML=s;s=t.value;
@@ -6166,11 +6183,10 @@ function gcalRender(){
   const date=card.due||(g&&g.date)||'';
   const allDay=g?g.allDay!==false:true;
   const st=(g&&g.start)||'09:00',en=(g&&g.end)||'10:00';
-  const rem=(g&&g.rem)||'default';
-  const remList=a=>a?[['default','기본 알림'],['none','알림 없음']]:[['default','기본 알림'],['none','알림 없음'],['10','10분 전'],['30','30분 전'],['60','1시간 전'],['1440','1일 전']];
+  const calSel=g?(g.calId||'primary'):(localStorage.getItem(GCAL_LAST_KEY)||'primary');
   const md=d=>{const m=String(d||'').match(/^\d{4}-(\d{2})-(\d{2})$/);return m?(+m[1])+'/'+(+m[2]):'';};
   const when=g?(md(g.date)+(g.allDay===false?' '+g.start:' 종일')):'';
-  const head=g?`<div class="gc-hd"><span class="gc-ok">✓</span><b>캘린더 등록됨</b><span class="gc-when">${esc(when)}</span></div>`:'<div class="gc-hd">📅 <b>캘린더 일정</b></div>';
+  const head=g?`<div class="gc-hd"><span class="gc-ok">✓</span><b>등록됨</b><span class="gc-when">${esc(when)}</span></div>`:'<div class="gc-hd">📅 <b>캘린더 일정</b></div>';
   const warn=g&&card.due&&card.due!==g.date?`<div class="gc-warn">⚠️ 마감일(${esc(md(card.due))})과 캘린더(${esc(md(g.date))})가 달라요. ✏️ 수정을 누르면 맞춰져요.</div>`:'';
   const ico={open:'<svg viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>',
     edit:'<svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4"/></svg>',
@@ -6179,16 +6195,22 @@ function gcalRender(){
    `<div class="gc-row"><label>날짜</label><input type="date" id="gc-date" value="${esc(date)}"></div>`+
    `<div class="gc-row"><label>종일</label><span class="gc-sw"><input type="checkbox" id="gc-allday" ${allDay?'checked':''}><i></i></span></div>`+
    `<div class="gc-row" id="gc-time-row" style="display:${allDay?'none':'flex'}"><label>시간</label><input type="time" id="gc-start" value="${esc(st)}"><span>~</span><input type="time" id="gc-end" value="${esc(en)}"></div>`+
-   `<div class="gc-row"><label>알림</label><select id="gc-rem">${remList(allDay).map(o=>`<option value="${o[0]}"${o[0]===rem?' selected':''}>${o[1]}</option>`).join('')}</select></div>`+
+   `<div class="gc-row"><label>달력</label><select id="gc-cal"${g?' disabled title="이미 등록된 달력이에요"':''}>${gcalCalOptions(calSel)}</select></div>`+
    warn+
    (g?`<div class="gc-sub">${g.link?`<a class="gc-ic" href="${esc(g.link)}" target="_blank" rel="noopener noreferrer" title="캘린더에서 열기" aria-label="열기">${ico.open}</a>`:''}<button type="button" class="gc-ic" id="gc-upd" title="수정 (바뀐 날짜·시간을 캘린더에 반영)" aria-label="수정">${ico.edit}</button><button type="button" class="gc-ic gc-d" id="gc-del" title="캘린더 일정 삭제" aria-label="삭제">${ico.del}</button></div>`
      :`<button type="button" class="gc-main" id="gc-add">캘린더에 등록</button>`);
   box.style.display='block';
   document.getElementById('gc-allday').addEventListener('change',e=>{
     document.getElementById('gc-time-row').style.display=e.target.checked?'none':'flex';
-    const sel=document.getElementById('gc-rem'),cur=sel.value;
-    sel.innerHTML=remList(e.target.checked).map(o=>`<option value="${o[0]}">${o[1]}</option>`).join('');
-    if([...sel.options].some(o=>o.value===cur))sel.value=cur;
+  });
+  const cs=document.getElementById('gc-cal');
+  cs.addEventListener('change',async()=>{
+    if(cs.value==='__load'){
+      cs.disabled=true;
+      try{await gcalLoadCals();const keep=localStorage.getItem(GCAL_LAST_KEY)||'primary';cs.innerHTML=gcalCalOptions(keep);if(![...cs.options].some(o=>o.value===keep))cs.selectedIndex=0;showToast('📅','내 달력 '+gcalCals().length+'개를 불러왔어요.',2800);}
+      catch(e){cs.innerHTML=gcalCalOptions(localStorage.getItem(GCAL_LAST_KEY)||'primary');showToast('⚠️',(e&&e.message)||'달력 목록을 못 불러왔어요.',5000);}
+      cs.disabled=false;
+    }else{try{localStorage.setItem(GCAL_LAST_KEY,cs.value);}catch(e){}}
   });
   const add=document.getElementById('gc-add');if(add)add.onclick=()=>gcalSave(false);
   const upd=document.getElementById('gc-upd');if(upd)upd.onclick=()=>gcalSave(true);
@@ -6198,8 +6220,9 @@ function gcalReadForm(){
   const date=document.getElementById('gc-date').value;
   const allDay=document.getElementById('gc-allday').checked;
   const start=document.getElementById('gc-start').value,end=document.getElementById('gc-end').value;
-  const rem=document.getElementById('gc-rem').value;
-  return {date,allDay,start,end,rem};
+  const cs=document.getElementById('gc-cal').value;
+  const cal=(cs&&cs!=='__load')?cs:'primary';
+  return {date,allDay,start,end,cal};
 }
 function gcalBuildBody(card,v){
   const loc=findCardLocation(card.id);
@@ -6210,9 +6233,6 @@ function gcalBuildBody(card,v){
     const tz=(Intl.DateTimeFormat().resolvedOptions().timeZone)||'Asia/Seoul';
     body.start={dateTime:v.date+'T'+v.start+':00',timeZone:tz};body.end={dateTime:v.date+'T'+v.end+':00',timeZone:tz};
   }
-  if(v.rem==='none')body.reminders={useDefault:false,overrides:[]};
-  else if(v.rem==='default')body.reminders={useDefault:true};
-  else body.reminders={useDefault:false,overrides:[{method:'popup',minutes:Number(v.rem)}]};
   return body;
 }
 async function gcalSave(isUpdate){
@@ -6228,12 +6248,15 @@ async function gcalSave(isUpdate){
     const body=gcalBuildBody(card,v);
     let ev;
     if(isUpdate&&card.gcal&&card.gcal.eventId){
-      try{ev=await calRwApi('PATCH',card.gcal.eventId,body);}
+      try{ev=await calRwApi('PATCH',card.gcal.eventId,body,card.gcal.calId);}
       catch(e){if(e.status===404||e.status===410){card.gcal=null;saveState();gcalRender();showToast('ℹ️','캘린더에서 이미 지워진 일정이었어요. 다시 등록해 주세요.',4200);return;}throw e;}
     }else{
-      ev=await calRwApi('POST',null,body);
+      ev=await calRwApi('POST',null,body,v.cal);
     }
-    card.gcal={eventId:ev.id,allDay:v.allDay,date:v.date,start:v.start,end:v.end,rem:v.rem,link:ev.htmlLink||''};
+    const calId=(isUpdate&&card.gcal&&card.gcal.calId)||v.cal;
+    card.gcal={eventId:ev.id,calId,calName:gcalCalName(calId),allDay:v.allDay,date:v.date,start:v.start,end:v.end,link:ev.htmlLink||''};
+    try{localStorage.setItem(GCAL_LAST_KEY,calId);}catch(e){}
+    if(!gcalCals().length)gcalLoadCals().then(()=>{try{gcalRender();}catch(e){}}).catch(()=>{});
     saveState();refreshCard(activeCardId,activeColId);gcalRender();
     showToast('📅',isUpdate?'캘린더 일정을 바꿨어요 ✅':'캘린더에 등록했어요 ✅',3200);
   }catch(e){
@@ -6246,7 +6269,7 @@ async function gcalDelete(){
   if(!confirm('구글 캘린더의 이 일정을 지울까요?\n(카드는 그대로 남아요)'))return;
   const btns=document.querySelectorAll('#gcal-box button');btns.forEach(b=>b.disabled=true);
   try{
-    try{await calRwApi('DELETE',card.gcal.eventId);}catch(e){if(e.status!==404&&e.status!==410)throw e;}
+    try{await calRwApi('DELETE',card.gcal.eventId,null,card.gcal.calId);}catch(e){if(e.status!==404&&e.status!==410)throw e;}
     card.gcal=null;saveState();refreshCard(activeCardId,activeColId);gcalRender();
     showToast('🗑️','캘린더 일정을 지웠어요.',3000);
   }catch(e){btns.forEach(b=>b.disabled=false);showToast('⚠️',(e&&e.message)||'지우지 못했어요.',5000);}
