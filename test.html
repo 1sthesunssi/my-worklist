@@ -228,6 +228,16 @@ body{font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFo
 @media (max-width:760px){#home-screen #quick-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:600px){#quick-grid .ql-item{width:auto;padding:4px 12px 4px 4px}#quick-grid .ql-icon-wrap{width:26px;height:26px}#quick-grid .ql-name{font-size:12.5px}}
 /* ── 포스트잇 메모 (2026-10-23) ── */
+/* ── 메모 5장 · 넘겨 보기 · 끌어서 순서 바꾸기 ── */
+.memo-pager{display:inline-flex;align-items:center;gap:4px;margin-left:auto;font-size:12px;font-weight:600;color:var(--muted)}
+.memo-pager+.memo-open-btn{margin-left:8px!important}
+#home-screen h2 .memo-pager button{width:26px;height:26px;padding:0;border-radius:7px;border:1px solid #e4e7ea!important;background:#fff;color:var(--text);font-size:14px;line-height:1;display:inline-flex;align-items:center;justify-content:center}
+#home-screen h2 .memo-pager button:disabled{opacity:.35;cursor:default}
+.memo-mini-note[draggable="true"]{cursor:grab}
+.memo-mini-note.m-dragging,.mb-note.m-dragging{opacity:.35}
+.memo-mini-note.m-over,.mb-note.m-over{outline:2px dashed var(--accent);outline-offset:2px}
+@media (max-width:760px){#memo-recent.memo-mini{grid-template-columns:repeat(3,minmax(0,1fr));height:auto}.memo-mini-note{height:86px;-webkit-line-clamp:4}}
+
 /* ── 시계 줄 오른쪽 끝: 일기 알약 · 쓰기 · 일기 전체 | 매출 (시안 ③, 2026-10-23) ── */
 #home-top{align-items:center}
 #home-sub{margin-left:auto;display:flex;align-items:center;gap:8px;min-width:0}
@@ -249,8 +259,8 @@ body{font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFo
 #memo-section h2 .memo-open-btn{background:var(--accent);color:#fff;font-weight:800;padding:4px 11px;border-radius:7px;margin-left:auto}
 #memo-section h2 .memo-open-btn:hover{background:#0747a6;color:#fff}
 #memo-section .memo-enter{display:none}
-#memo-recent.memo-mini{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;height:104px;margin-top:8px;border:none;border-radius:0;overflow:visible}
-.memo-mini-note{border-radius:4px;padding:9px 10px;font-size:12.5px;line-height:1.45;color:#172b4d;box-shadow:0 2px 5px rgba(0,0,0,.09);cursor:pointer;overflow:hidden;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;white-space:pre-wrap;word-break:break-word;text-align:left;border:none;font-family:inherit}
+#memo-recent.memo-mini{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;height:104px;margin-top:8px;border:none;border-radius:0;overflow:visible}
+.memo-mini-note{border-radius:4px;padding:9px 10px;font-size:12.5px;line-height:1.45;color:#172b4d;box-shadow:0 2px 5px rgba(0,0,0,.09);cursor:pointer;overflow:hidden;display:-webkit-box;-webkit-line-clamp:5;user-select:none;-webkit-box-orient:vertical;white-space:pre-wrap;word-break:break-word;text-align:left;border:none;font-family:inherit}
 .memo-mini-note:hover{box-shadow:0 4px 10px rgba(0,0,0,.14)}
 .memo-mini-empty{grid-column:1/-1;font-size:12.5px;color:var(--muted);display:flex;align-items:center;justify-content:center;border:1px dashed #d5d9e0;border-radius:8px}
 #__memolist .mb-panel{background:#fff;border-radius:16px;width:100%;max-width:1240px;height:88vh;display:flex;flex-direction:column;box-shadow:0 24px 60px rgba(0,0,0,.3);overflow:hidden}
@@ -4101,7 +4111,34 @@ function bindMemoRow(row){
 const MEMO_COLORS={yellow:{bg:'#fbee8f',fg:'#6b5c00',dot:'#f4d94a',name:'노랑'},pink:{bg:'#f9c9dc',fg:'#8c2c55',dot:'#f2a0c4',name:'분홍'},green:{bg:'#c9ebc6',fg:'#2c6b28',dot:'#8fd18b',name:'초록'},blue:{bg:'#cfe0fb',fg:'#1f4f99',dot:'#8fb7f2',name:'파랑'}};
 const memoColor=m=>MEMO_COLORS[m&&m.color]||MEMO_COLORS.yellow;
 const memoLive=()=>ensureMemos().filter(m=>!m.archived);
-// 첫 화면: 입력 줄 + 최근 포스트잇 3장 (칸 높이 고정)
+// 첫 화면: 입력 줄 + 포스트잇 5장씩 (칸 높이 고정) · ‹ › 로 넘겨 보기 · 끌어서 순서 바꾸기
+const MEMO_HOME_N=5;let memoHomePage=0,memoDragId=null;
+function memoRenderPager(pages){
+  const h=document.querySelector('#memo-section > h2');if(!h)return;
+  let pg=h.querySelector('.memo-pager');
+  if(!pg){pg=document.createElement('span');pg.className='memo-pager';h.insertBefore(pg,h.querySelector('.memo-open-btn'));}
+  if(pages<=1){pg.innerHTML='';pg.style.visibility='hidden';return;}
+  pg.style.visibility='';
+  pg.innerHTML=`<button type="button" aria-label="이전 메모" ${memoHomePage===0?'disabled':''}>‹</button><span>${memoHomePage+1} / ${pages}</span><button type="button" aria-label="다음 메모" ${memoHomePage>=pages-1?'disabled':''}>›</button>`;
+  const [prev,next]=pg.querySelectorAll('button');
+  prev.onclick=e=>{e.stopPropagation();memoHomePage--;renderMemos();};
+  next.onclick=e=>{e.stopPropagation();memoHomePage++;renderMemos();};
+}
+// 끌어서 놓으면 그 메모 자리로 옮김 (첫 화면·메모장 모두)
+function memoReorder(fromId,toId){
+  const arr=ensureMemos();const a=arr.findIndex(x=>x.id===fromId),b=arr.findIndex(x=>x.id===toId);
+  if(a<0||b<0||a===b)return;
+  const [it]=arr.splice(a,1);arr.splice(b,0,it);it.updated=Date.now();
+  saveState();renderMemos();
+}
+function memoBindDrag(el,id){
+  el.draggable=true;
+  el.addEventListener('dragstart',e=>{memoDragId=id;e.dataTransfer.effectAllowed='move';try{e.dataTransfer.setData('text/plain',id);}catch(err){}setTimeout(()=>el.classList.add('m-dragging'),0);});
+  el.addEventListener('dragend',()=>{memoDragId=null;el.classList.remove('m-dragging');document.querySelectorAll('.m-over').forEach(x=>x.classList.remove('m-over'));});
+  el.addEventListener('dragover',e=>{if(!memoDragId||memoDragId===id)return;e.preventDefault();el.classList.add('m-over');});
+  el.addEventListener('dragleave',()=>el.classList.remove('m-over'));
+  el.addEventListener('drop',e=>{e.preventDefault();el.classList.remove('m-over');if(memoDragId&&memoDragId!==id){const f=memoDragId;memoDragId=null;memoReorder(f,id);}});
+}
 function renderMemos(){
   const wrap=document.getElementById('memo-recent');
   const cnt=document.getElementById('memo-count');
@@ -4110,12 +4147,16 @@ function renderMemos(){
   if(cnt)cnt.textContent=memos.length?memos.length:'';
   wrap.className='memo-mini';wrap.innerHTML='';
   if(!memos.length){wrap.innerHTML='<div class="memo-mini-empty">아직 메모가 없어요</div>';}
-  memos.slice(0,3).forEach(m=>{
+  const pages=Math.max(1,Math.ceil(memos.length/MEMO_HOME_N));
+  memoHomePage=Math.min(Math.max(0,memoHomePage),pages-1);
+  memoRenderPager(pages);
+  memos.slice(memoHomePage*MEMO_HOME_N,memoHomePage*MEMO_HOME_N+MEMO_HOME_N).forEach(m=>{
     const c=memoColor(m);
     const n=document.createElement('button');n.type='button';n.className='memo-mini-note';
     n.style.background=c.bg;n.title='메모장에서 보기';
     n.textContent=(m.text||'')+((m.tags||[]).length?'\n'+m.tags.map(t=>'#'+t).join(' '):'');
     n.addEventListener('click',()=>openMemoList(m.id));
+    memoBindDrag(n,m.id);
     wrap.appendChild(n);
   });
   if(document.getElementById('__memolist'))renderMemoList();
@@ -4162,7 +4203,7 @@ function openMemoList(focusId){
   const dots=Object.entries(MEMO_COLORS).map(([k,c])=>`<button type="button" class="mb-dot" data-c="${k}" style="background:${c.dot}" aria-label="${c.name} 메모만" title="${c.name}"></button>`).join('');
   d.innerHTML=`<div class="mb-panel" role="dialog" aria-label="나의 메모장">
     <div class="mb-head">
-      <div class="mb-title">${svgIcon('note',22)} 나의 메모장</div>
+      <div class="mb-title">${svgIcon('note',22)} 나의 메모장 <span style="font-size:12px;font-weight:500;color:var(--muted)">끌어서 순서 바꾸기</span></div>
       <div class="mb-colors">색상 <button type="button" class="mb-all" data-c="">전체</button>${dots}</div>
       <input class="mb-q" id="__ml-q" type="text" placeholder="메모 검색" aria-label="메모 검색">
       <div class="mb-btns">
@@ -4249,6 +4290,7 @@ function memoNoteEl(m,i){
     <div class="mb-text" title="눌러서 고치기">${esc(m.text||'')}</div>
     <div class="mb-meta" style="color:${c.fg}">${tags}<span class="mb-date">${memoDateLabel(m.created)}</span></div>`;
   el.querySelector('.mb-text').addEventListener('click',()=>{memoEditId=m.id;memoNewDraft=null;renderMemoList();});
+  memoBindDrag(el,m.id);
   el.querySelectorAll('.mb-tag').forEach(t=>t.addEventListener('click',()=>{memoTagFilter=memoTagFilter===t.dataset.tag?'':t.dataset.tag;renderMemoList();}));
   el.querySelectorAll('[data-set]').forEach(b=>b.addEventListener('click',()=>{memoSetColor(m.id,b.dataset.set);renderMemoList();}));
   el.querySelector('[data-a="card"]').addEventListener('click',()=>memoToCard(m.id));
