@@ -1498,7 +1498,102 @@ body{font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFo
 .sch-mc.today .n b{background:#1a56c4;color:#fff;border-radius:10px;padding:0 6px}
 .sch-mi{font-size:11px;font-weight:600;border-radius:4px;padding:1px 4px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;text-decoration:none}
 .sch-more{font-size:11px;color:#5e6c84;font-weight:700}
-@media(max-width:760px){#sch-side{display:none}}
+@media(max-width:760px){#sch-side{width:220px}}
+/* ══ 일정 관리 — 쌤핀 스타일 (2026-10-23): 월간 달력 + 이번 달 목록, 카테고리, 일정 추가 창 ══ */
+#sch-hd{gap:10px;padding:14px 18px}
+#sch-h1{font-size:19px;font-weight:800;color:#172b4d;margin-right:4px}
+#sch-hd .sch-seg{margin-left:0}
+#sch-hd .sdsp{flex:1}
+.sch-tbtn{border:1px solid #dfe3e8;background:#fff;border-radius:10px;padding:8px 13px;font:inherit;font-size:13px;font-weight:700;color:#172b4d;cursor:pointer;white-space:nowrap}
+.sch-tbtn:hover{border-color:#c1c7d0}
+.sch-tbtn.sync{border-color:#c7d8ff;background:#f5f8ff;color:#0052cc}
+.sch-tbtn.go{background:#0052cc;border-color:#0052cc;color:#fff;font-weight:800}
+.sch-tbtn.go:hover{background:#0747a6}
+#sch-calwrap{position:relative}
+#sch-side{display:none;position:absolute;right:0;top:calc(100% + 6px);width:240px;max-height:60vh;background:#fff;border:1px solid #e4e7ea;border-radius:12px;box-shadow:0 12px 30px rgba(9,30,66,.18);z-index:30;border-right:1px solid #e4e7ea}
+#sch-side.open{display:block}
+#sch-cats{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 18px;border-bottom:1px solid #eef0f3}
+.sc-chip{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;flex:none;border:1px solid #dfe3e8;background:#fff;border-radius:999px;padding:6px 13px;font:inherit;font-size:13px;font-weight:700;color:#172b4d;cursor:pointer}
+.sc-chip i{width:8px;height:8px;border-radius:50%;display:inline-block}
+.sc-chip.on{background:#172b4d;border-color:#172b4d;color:#fff}
+.sc-right{margin-left:auto;display:flex;gap:6px;align-items:center}
+.sc-link{border:none;background:none;font:inherit;font-size:12.5px;font-weight:600;color:#42526e;cursor:pointer;padding:5px 8px;border-radius:7px}
+.sc-link:hover{background:#f1f2f4}
+.sc-link.on{color:#216e4e}
+#sch-nav{display:flex;align-items:center;justify-content:center;gap:12px;padding:10px 18px 4px}
+#sch-nav #sch-title{font-size:18px;font-weight:800;min-width:170px;text-align:center;margin:0}
+#sch-nav #sch-today{position:absolute;right:18px}
+#sch-nav{position:relative}
+/* 월간: 왼쪽 달력 + 오른쪽 목록 */
+.sm-wrap{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:20px;padding:8px 18px 18px;min-height:100%;box-sizing:border-box}
+.sm-cal{background:#f7f8fa;border-radius:14px;padding:10px 12px 12px}
+.sm-hd{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));text-align:center;font-size:12.5px;font-weight:700;color:#5e6c84;padding:4px 0 6px}
+.sm-hd .sun{color:#c9372c}.sm-hd .sat{color:#1a56c4}
+.sm-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));grid-auto-rows:minmax(96px,1fr)}
+.sm-c{padding:5px 5px 3px;border-radius:10px;cursor:pointer;min-width:0;overflow:hidden}
+.sm-c:hover{background:#eef2f8}
+.sm-c .n{font-size:14px;font-weight:600;line-height:24px;height:24px}
+.sm-c.sun .n,.sm-c.hol .n{color:#c9372c}.sm-c.sat .n{color:#1a56c4}
+.sm-c.other{opacity:.38}
+.sm-c.today{background:#eef4ff}
+.sm-c.today .n b{display:inline-block;width:24px;height:24px;text-align:center;border-radius:50%;background:#0052cc;color:#fff;font-weight:800}
+.sm-c .hn{font-size:10.5px;color:#c9372c;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sm-e{display:block;font-size:11px;font-weight:600;border-radius:4px;padding:1px 5px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:none;cursor:pointer}
+.sm-more{font-size:10.5px;color:#5e6c84;font-weight:700;margin-top:2px}
+.sm-list{display:flex;flex-direction:column;gap:10px;min-width:0}
+.sm-lt{font-size:13px;font-weight:800;color:#42526e}
+.sm-q{display:flex;align-items:center;gap:8px;background:#f7f8fa;border:1px solid #e4e7ea;border-radius:10px;padding:9px 12px}
+.sm-q input{border:none;background:none;outline:none;font:inherit;font-size:13.5px;flex:1;min-width:0}
+.sm-past{display:flex;align-items:center;gap:6px;background:#f7f8fa;border:1px solid #e4e7ea;border-radius:10px;padding:9px 12px;font:inherit;font-size:12.5px;font-weight:700;color:#42526e;cursor:pointer;width:100%;text-align:left}
+.sm-past span{margin-left:auto}
+.sm-it{border:1px solid #e4e7ea;border-radius:12px;padding:11px 13px;cursor:pointer;background:#fff;text-align:left;font:inherit;width:100%}
+.sm-it:hover{border-color:#c1c7d0;box-shadow:0 2px 8px rgba(9,30,66,.06)}
+.sm-it.past{opacity:.6}
+.sm-it .d{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:800}
+.sm-it .d .ct{margin-left:auto;font-size:11px;color:#5e6c84;font-weight:600}
+.sm-it .dd{background:#0b7a55;color:#fff;border-radius:6px;padding:0 6px;font-size:11px}
+.sm-it .t{font-size:15px;font-weight:800;color:#172b4d;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sm-it .m{font-size:12px;color:#5e6c84;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sm-empty{color:#8a94a6;font-size:13px;text-align:center;padding:30px 0}
+/* 일정 추가·수정 창 (쌤핀 스타일) */
+#sch-dlg.sx{width:min(560px,100%);padding:0;border-radius:18px;max-height:calc(100vh - 40px);display:flex;flex-direction:column}
+#sch-dlg.sx .xh{display:flex;align-items:center;padding:16px 20px;border-bottom:1px solid #eef0f3;font-size:18px;font-weight:800}
+#sch-dlg.sx .xh button{margin-left:auto;border:none;background:none;font-size:20px;color:#5e6c84;cursor:pointer}
+#sch-dlg.sx .xb{padding:14px 20px;overflow-y:auto;display:flex;flex-direction:column;gap:12px}
+#sch-dlg.sx .xf{display:flex;flex-direction:column;gap:6px;font-size:12.5px;font-weight:700;color:#42526e}
+#sch-dlg.sx .xf small{font-weight:500;color:#8a94a6}
+#sch-dlg.sx .x2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+#sch-dlg.sx input[type=text],#sch-dlg.sx input[type=date],#sch-dlg.sx input[type=time],#sch-dlg.sx select,#sch-dlg.sx textarea{border:1px solid #dfe3e8;border-radius:10px;padding:9px 11px;font:inherit;font-size:14px;font-weight:500;color:#172b4d;background:#fff;width:100%;box-sizing:border-box;min-width:0}
+#sch-dlg.sx textarea{height:60px;resize:vertical}
+#sch-dlg.sx .xt{display:flex;align-items:center;gap:6px}
+#sch-dlg.sx .xt input[type=time]{flex:1}
+#sch-dlg.sx .xchips{display:flex;flex-wrap:wrap;gap:6px}
+#sch-dlg.sx .xc{border:1px solid #dfe3e8;background:#fff;border-radius:999px;padding:6px 12px;font:inherit;font-size:12.5px;font-weight:700;color:#172b4d;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+#sch-dlg.sx .xc i{width:8px;height:8px;border-radius:50%;display:inline-block}
+#sch-dlg.sx .xc.on{border:2px solid #0052cc;background:#eef4ff;color:#0052cc;padding:5px 11px}
+#sch-dlg.sx .xchk{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:#42526e;cursor:pointer}
+#sch-dlg.sx .xchk small{font-weight:500;color:#8a94a6}
+#sch-dlg.sx .bt{padding:12px 20px 18px;margin:0;border-top:1px solid #eef0f3}
+#sch-dlg.sx .bt .ok{background:#0052cc;padding:10px 26px;font-size:14px}
+#sch-dlg.sx .bt button{padding:10px 16px;font-size:13.5px}
+/* 카테고리 관리 */
+.scm-row{display:flex;align-items:center;gap:8px}
+.scm-row input[type=color]{width:38px;height:34px;border:1px solid #dfe3e8;border-radius:8px;padding:2px;background:#fff;flex:none}
+.scm-row button{border:none;background:#fdecea;color:#c9372c;border-radius:8px;padding:7px 10px;font:inherit;font-size:12px;font-weight:700;cursor:pointer;flex:none}
+@media(max-width:760px){
+  .sm-wrap{grid-template-columns:minmax(0,1fr);padding:6px 10px 14px}
+  .sm-grid{grid-auto-rows:minmax(62px,auto)}
+  .sm-e{font-size:9.5px;padding:0 3px}
+  .sm-c .hn{font-size:9px}
+  #sch-hd{flex-wrap:wrap;padding:10px 12px}
+  #sch-h1{font-size:16px}
+  #sch-hd .sdsp{display:none}
+  .sch-tbtn{padding:7px 10px;font-size:12px}
+  #sch-cats{padding:8px 12px;overflow-x:auto;flex-wrap:nowrap}
+  .sc-right{display:none}
+  #sch-nav #sch-today{right:10px}
+}
+
 
 #calendar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);z-index:150;overflow-y:auto;padding:30px 12px 60px}
 #calendar-overlay.open{display:flex;justify-content:center;align-items:flex-start}
@@ -2394,17 +2489,17 @@ body{font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFo
 <div id="sch-overlay">
   <div id="sch-panel">
     <div id="sch-hd">
-      <button class="sch-nav" id="sch-prev">‹</button>
-      <button class="sch-nav" id="sch-today" style="font-size:12.5px">오늘</button>
-      <button class="sch-nav" id="sch-next">›</button>
-      <div id="sch-title"></div>
-      <button class="sch-nav sch-newbtn" id="sch-new">＋ 새 일정</button>
-      <div class="sch-seg"><button data-v="day">일</button><button data-v="week" class="on">주</button><button data-v="month">월</button></div>
-      <button class="sch-nav" id="sch-refresh" title="다시 불러오기" style="font-size:13px">↻</button>
-      <button id="sch-close" title="닫기">✕</button>
+      <div id="sch-h1">📅 일정 관리</div>
+      <div class="sch-seg"><button data-v="month">월간</button><button data-v="week" class="on">주간</button><button data-v="day">일간</button></div>
+      <span class="sdsp"></span>
+      <div id="sch-calwrap"><button class="sch-tbtn" id="sch-calbtn">🗂 달력 ▾</button><div id="sch-side"></div></div>
+      <button class="sch-tbtn sync" id="sch-refresh" title="구글 캘린더에서 다시 불러오기">↻ 구글 동기화</button>
+      <button class="sch-tbtn go" id="sch-new">＋ 일정 추가</button>
+      <button id="sch-close" title="닫기" aria-label="닫기">✕</button>
     </div>
+    <div id="sch-cats"></div>
+    <div id="sch-nav"><button class="sch-nav" id="sch-prev" aria-label="이전">‹</button><div id="sch-title"></div><button class="sch-nav" id="sch-next" aria-label="다음">›</button><button class="sch-nav" id="sch-today" style="font-size:12.5px">오늘</button></div>
     <div id="sch-body">
-      <div id="sch-side"></div>
       <div id="sch-main"><div id="sch-scroll"></div></div>
     </div>
   </div>
@@ -7788,6 +7883,13 @@ function closeCalendar(){document.getElementById('calendar-overlay').classList.r
 // ── 구글 캘린더 일정 보기 (읽기 전용: 기존 calendar.readonly 허락을 같이 씁니다) ──
 // 홈의 '오늘 일정' 줄과 '일정' 화면(일·주·월)에서 쓰며, 일정은 눌러서 구글 캘린더에서 엽니다.
 const SCH_HIDE_KEY='gsch_hidden',SCH_CARD_KEY='gsch_cards';
+// ── 일정 카테고리 (구글 일정 안에 숨은 표식 mwCat 으로 저장 — 저장은 구글 캘린더) ──
+const SCH_CATS_DEF=[{id:'biz',name:'고객·영업',color:'#0052cc'},{id:'claim',name:'보상',color:'#de350b'},{id:'church',name:'성당',color:'#7c3aed'},{id:'family',name:'가족',color:'#e67700'},{id:'school',name:'학교',color:'#0d9668'},{id:'etc',name:'기타',color:'#8a94a6'}];
+function schCats(){if(!Array.isArray(state.schCats)||!state.schCats.length)state.schCats=JSON.parse(JSON.stringify(SCH_CATS_DEF));return state.schCats;}
+const schCatOf=id=>schCats().find(c=>c.id===id)||null;
+let schCatFilter='',schListQ='',schShowPast=false;
+const SCH_HOLI_CAL='ko.south_korea#holiday@group.v.calendar.google.com';
+let schHoliCache={};
 const schEvMap={};
 let schCals=null,schCalsAt=0,schEvCache={},schView='week',schDate=new Date(),schBusy=false,schErr='';
 const schHidden=()=>{try{const a=JSON.parse(localStorage.getItem(SCH_HIDE_KEY));if(Array.isArray(a))return new Set(a);}catch(e){}return new Set([DIARY_CAL_ID]);};
@@ -7820,13 +7922,17 @@ function schNorm(ev,cal){
   const st=allDay?schParse(s.date):new Date(s.dateTime);
   let en=allDay?schParse(e.date||s.date):new Date(e.dateTime||s.dateTime);
   if(isNaN(st)||isNaN(en))return null;
-  const o={id:ev.id,calId:cal.id,calName:cal.name,color:cal.color,writable:!!cal.writable,title:ev.summary||'(제목 없음)',description:ev.description||'',allDay,st,en,link:ev.htmlLink||''};
+  const priv=(ev.extendedProperties&&ev.extendedProperties.private)||{};
+  const cat=schCatOf(priv.mwCat||'');
+  const rm=ev.reminders||{};
+  const alarm=rm.useDefault===false?((rm.overrides||[])[0]?String(rm.overrides[0].minutes):'none'):'';
+  const o={id:ev.id,calId:cal.id,calName:cal.name,calColor:cal.color,color:cat?cat.color:cal.color,cat:cat?cat.id:'',catName:cat?cat.name:'',writable:!!cal.writable,title:ev.summary||'(제목 없음)',description:ev.description||'',location:ev.location||'',dday:priv.mwDday==='1',priv,alarm,recurring:!!ev.recurringEventId,allDay,st,en,link:ev.htmlLink||''};
   schEvMap[o.calId+'|'+o.id]=o;return o;
 }
 async function schFetch(from,to,interactive,force){
   const cals=await schLoadCals(interactive,false);
   const hid=schHidden();
-  const vis=cals.filter(c=>!hid.has(c.id));
+  const vis=cals.filter(c=>!hid.has(c.id)&&!/#holiday@/.test(c.id));
   const key=from.getTime()+'-'+to.getTime()+'-'+vis.map(c=>c.id).join(',');
   const hit=schEvCache[key];
   if(!force&&hit&&Date.now()-hit.at<60000)return hit.ev;
@@ -7834,7 +7940,7 @@ async function schFetch(from,to,interactive,force){
   await Promise.all(vis.map(async c=>{
     let page='';
     for(let i=0;i<5;i++){
-      const url='https://www.googleapis.com/calendar/v3/calendars/'+encodeURIComponent(c.id)+'/events?singleEvents=true&orderBy=startTime&maxResults=250&timeMin='+encodeURIComponent(from.toISOString())+'&timeMax='+encodeURIComponent(to.toISOString())+'&fields='+encodeURIComponent('nextPageToken,items(id,status,summary,description,htmlLink,start,end)')+(page?'&pageToken='+encodeURIComponent(page):'');
+      const url='https://www.googleapis.com/calendar/v3/calendars/'+encodeURIComponent(c.id)+'/events?singleEvents=true&orderBy=startTime&maxResults=250&timeMin='+encodeURIComponent(from.toISOString())+'&timeMax='+encodeURIComponent(to.toISOString())+'&fields='+encodeURIComponent('nextPageToken,items(id,status,summary,description,location,htmlLink,start,end,recurringEventId,extendedProperties,reminders)')+(page?'&pageToken='+encodeURIComponent(page):'');
       let j;try{j=await schApi(url,interactive);}catch(e){if(/404/.test(e.message))return;throw e;}
       (j.items||[]).forEach(ev=>{const n=schNorm(ev,c);if(n)out.push(n);});
       page=j.nextPageToken;if(!page)break;
@@ -7899,6 +8005,7 @@ async function renderHomeSchedule(force){
 // ── 일정 화면 ──
 function openSchedule(){
   schDate=new Date();
+  try{const v=localStorage.getItem('gsch_view');if(v==='month'||v==='week'||v==='day')schView=v;else schView='month';}catch(e){schView='month';}
   document.getElementById('sch-overlay').classList.add('open');
   renderSchedule(false);
 }
@@ -7907,7 +8014,7 @@ function schRange(){
   const a=new Date(schDate.getFullYear(),schDate.getMonth(),schDate.getDate());
   if(schView==='day')return {from:a,to:schAddDays(a,1)};
   if(schView==='week'){const m=mondayOf(a);const f=new Date(m.getFullYear(),m.getMonth(),m.getDate());return {from:f,to:schAddDays(f,7)};}
-  const f1=new Date(a.getFullYear(),a.getMonth(),1);const f=mondayOf(f1);const ff=new Date(f.getFullYear(),f.getMonth(),f.getDate());
+  const f1=new Date(a.getFullYear(),a.getMonth(),1);const ff=schAddDays(f1,-f1.getDay());   // 일요일부터
   return {from:ff,to:schAddDays(ff,42)};
 }
 function schTitle(){
@@ -7924,8 +8031,28 @@ function schSide(){
   side.innerHTML='<h4>내 달력</h4>'+(cals.length?cals.map(c=>{const on=!hid.has(c.id);return `<div class="sch-cb${on?' on':''}" data-cal="${esc(c.id)}"><i style="${on?'background:'+esc(c.color):''}">${on?'✓':''}</i><span title="${esc(c.name)}">${esc(c.name)}</span></div>`;}).join(''):'<div style="color:#8993a4;font-size:12px">불러오는 중…</div>')+
    `<div style="margin-top:14px;padding-top:10px;border-top:1px solid #eef1f6"><h4>표시</h4><div class="sch-cb${schShowCards()?' on':''}" data-cards="1"><i style="${schShowCards()?'background:#216e4e':''}">${schShowCards()?'✓':''}</i><span>마감 카드</span></div></div>`;
 }
+function schCatsRow(){
+  const el=document.getElementById('sch-cats');if(!el)return;
+  const on=schShowCards();
+  el.innerHTML=`<button class="sc-chip${schCatFilter===''?' on':''}" data-scat="">전체</button>`+schCats().map(c=>`<button class="sc-chip${schCatFilter===c.id?' on':''}" data-scat="${esc(c.id)}"><i style="background:${esc(c.color)}"></i>${esc(c.name)}</button>`).join('')+
+    `<span class="sc-right"><button class="sc-link${on?' on':''}" data-cards="1">${on?'☑':'☐'} 카드 마감</button><button class="sc-link" id="sch-catman">⚙ 카테고리 관리</button></span>`;
+}
+// 카테고리 칩으로 거르기 (분류 없는 일정은 '기타')
+const schCatPass=e=>!schCatFilter||(e.cat||'etc')===schCatFilter;
+async function schHolidays(from,to){
+  const key=from.getTime()+'-'+to.getTime();
+  if(schHoliCache[key])return schHoliCache[key];
+  const map={};
+  try{
+    const j=await schApi('https://www.googleapis.com/calendar/v3/calendars/'+encodeURIComponent(SCH_HOLI_CAL)+'/events?singleEvents=true&maxResults=100&timeMin='+encodeURIComponent(from.toISOString())+'&timeMax='+encodeURIComponent(to.toISOString())+'&fields='+encodeURIComponent('items(summary,start,end)'),false);
+    (j.items||[]).forEach(ev=>{const s=ev.start&&ev.start.date;if(!s)return;let d=schParse(s);const e=schParse((ev.end&&ev.end.date)||s);while(d<e){const k=schDs(d);map[k]=(map[k]?map[k]+', ':'')+(ev.summary||'');d=schAddDays(d,1);}});
+  }catch(e){}
+  schHoliCache[key]=map;return map;
+}
 async function renderSchedule(force){
   document.getElementById('sch-title').textContent=schTitle();
+  try{localStorage.setItem('gsch_view',schView);}catch(e){}
+  schCatsRow();
   document.querySelectorAll('#sch-hd .sch-seg button').forEach(b=>b.classList.toggle('on',b.dataset.v===schView));
   const sc=document.getElementById('sch-scroll');
   if(!calRoSignedIn()&&!calRoGranted()){
@@ -7937,10 +8064,12 @@ async function renderSchedule(force){
   sc.innerHTML='<div class="sch-empty" style="padding:30px">일정을 불러오는 중…</div>';
   try{
     const {from,to}=schRange();
-    const evs=await schFetch(from,to,false,force);
+    const all=await schFetch(from,to,false,force);
+    const holi=schView==='month'?await schHolidays(from,to):{};
     if(my!==schBusy)return;
     schSide();
-    sc.innerHTML=schView==='month'?schMonthHtml(evs,from):schTimeHtml(evs,from,schView==='day'?1:7);
+    const evs=all.filter(schCatPass);
+    sc.innerHTML=schView==='month'?schMonthHtml2(evs,from,holi):schTimeHtml(evs,from,schView==='day'?1:7);
     if(schView!=='month'){
       const now=new Date();const h=(now>=from&&now<to)?Math.max(0,now.getHours()-2):7;
       sc.scrollTop=h*44;
@@ -8011,6 +8140,58 @@ function schMonthHtml(evs,from){
   }
   return h+'</div>';
 }
+function schMonthHtml2(evs,from,holi){
+  const WD=['일','월','화','수','목','금','토'];
+  const todayStr=schDs(new Date()),now=new Date();
+  const lt=(e)=>e.cat?schCatOf(e.cat):null;
+  const tint=(c)=>`background:${c}1f;color:${c}`;
+  let g='';
+  for(let i=0;i<42;i++){
+    const d=schAddDays(from,i),ds=schDs(d);
+    const other=d.getMonth()!==schDate.getMonth();
+    const list=schForDay(evs,d).sort((a,b)=>(b.allDay-a.allDay)||(a.st-b.st));
+    const cards=schCatFilter?[]:schCardsOn(ds);
+    const items=[...list.map(e=>`<a class="sm-e" data-evk="${esc(e.calId+'|'+e.id)}" href="${esc(e.link)}" target="_blank" rel="noopener noreferrer" style="${tint(e.color)}" title="${esc((e.catName||e.calName)+' · '+e.title)}">${e.allDay?'':schHm(e.st)+' '}${esc(e.title)}</a>`),
+      ...cards.map(x=>`<span class="sm-e" data-card="${esc(x.card.id)}" data-col="${esc(x.col.id)}" data-board="${esc(x.board.id)}" style="background:#e3f6ec;color:#216e4e">☑ ${esc(x.card.title)}</span>`)];
+    const MAX=3,h=holi[ds];
+    const cls='sm-c'+(other?' other':'')+(ds===todayStr?' today':'')+(d.getDay()===0?' sun':'')+(d.getDay()===6?' sat':'')+(h?' hol':'');
+    g+=`<div class="${cls}" data-cdate="${ds}"><div class="n"><b>${d.getDate()}</b></div>${h?`<div class="hn" title="${esc(h)}">${esc(h)}</div>`:''}${items.slice(0,MAX).join('')}${items.length>MAX?`<div class="sm-more">+${items.length-MAX}</div>`:''}</div>`;
+  }
+  // 오른쪽: 이번 달 일정
+  const m0=new Date(schDate.getFullYear(),schDate.getMonth(),1),m1=new Date(schDate.getFullYear(),schDate.getMonth()+1,1);
+  const q=schListQ.trim().toLowerCase();
+  let mon=evs.filter(e=>e.st<m1&&e.en>m0).sort((a,b)=>a.st-b.st);
+  if(q)mon=mon.filter(e=>(e.title+' '+e.location+' '+e.description+' '+(e.catName||'')).toLowerCase().includes(q));
+  const past=mon.filter(e=>e.en<=now),up=mon.filter(e=>e.en>now);
+  const item=(e,isPast)=>{
+    const c=e.color,dd=Math.round((schParse(schDs(e.st))-schParse(todayStr))/86400000);
+    const meta=[e.allDay?'종일':schHm(e.st)+'–'+schHm(e.en),e.location?'📍 '+esc(e.location):'',e.recurring?'🔁 반복':''].filter(Boolean).join(' · ');
+    return `<button type="button" class="sm-it${isPast?' past':''}" data-evk="${esc(e.calId+'|'+e.id)}"><div class="d" style="color:${esc(c)}">● ${e.st.getMonth()+1}월 ${e.st.getDate()}일 (${WD[e.st.getDay()]})${schDs(e.st)===todayStr?' · 오늘':''}${e.dday&&dd>0?`<span class="dd">D-${dd}</span>`:''}${e.dday&&dd===0?'<span class="dd">D-DAY</span>':''}<span class="ct">${esc(e.catName||e.calName)}</span></div><div class="t">${esc(e.title)}</div><div class="m">${meta}</div></button>`;
+  };
+  const list=`<aside class="sm-list"><div class="sm-lt">${schDate.getMonth()+1}월 일정 <span style="font-weight:600;color:#8a94a6">${mon.length}건</span></div>
+    <label class="sm-q"><span aria-hidden="true">🔍</span><input id="sm-q" type="text" placeholder="일정 검색 (예: 상담, 청구)" value="${esc(schListQ)}" aria-label="일정 검색"></label>
+    ${past.length?`<button type="button" class="sm-past" id="sm-past">↺ 지난 일정 ${past.length}건<span>${schShowPast?'▴':'▾'}</span></button>`:''}
+    ${schShowPast?past.map(e=>item(e,true)).join(''):''}
+    ${up.length?up.map(e=>item(e,false)).join(''):`<div class="sm-empty">${q?'찾는 일정이 없어요':'남은 일정이 없어요'}</div>`}</aside>`;
+  return `<div class="sm-wrap"><div class="sm-cal"><div class="sm-hd">${WD.map((w,i)=>`<span class="${i===0?'sun':i===6?'sat':''}">${w}</span>`).join('')}</div><div class="sm-grid">${g}</div></div>${list}</div>`;
+}
+// ── 카테고리 관리 ──
+function schCatManager(){
+  schCloseDlg();
+  const bg=document.createElement('div');bg.id='sch-dlg-bg';
+  const rows=()=>schCats().map((c,i)=>`<div class="scm-row" data-i="${i}"><input type="color" value="${esc(c.color)}" aria-label="색"><input type="text" value="${esc(c.name)}" aria-label="이름" style="flex:1"><button type="button" data-del="${i}">삭제</button></div>`).join('');
+  bg.innerHTML=`<div id="sch-dlg" class="sx"><div class="xh">카테고리 관리<button type="button" id="scm-x" aria-label="닫기">✕</button></div><div class="xb" id="scm-rows">${rows()}</div>
+    <div class="bt"><button type="button" id="scm-add">＋ 추가</button><span class="sdsp"></span><button type="button" id="scm-cancel">취소</button><button type="button" class="ok" id="scm-ok">저장</button></div></div>`;
+  document.getElementById('sch-overlay').appendChild(bg);
+  let draft=JSON.parse(JSON.stringify(schCats()));
+  const read=()=>{bg.querySelectorAll('.scm-row').forEach(r=>{const i=+r.dataset.i;const [col,nm]=r.querySelectorAll('input');draft[i].color=col.value;draft[i].name=nm.value.trim()||draft[i].name;});};
+  const paint=()=>{const box=bg.querySelector('#scm-rows');box.innerHTML=draft.map((c,i)=>`<div class="scm-row" data-i="${i}"><input type="color" value="${esc(c.color)}" aria-label="색"><input type="text" value="${esc(c.name)}" aria-label="이름" style="flex:1"><button type="button" data-del="${i}">삭제</button></div>`).join('');};
+  paint();
+  bg.addEventListener('click',e=>{const d=e.target.closest('[data-del]');if(d){read();draft.splice(+d.dataset.del,1);paint();}});
+  bg.querySelector('#scm-add').onclick=()=>{read();draft.push({id:'c'+Date.now().toString(36),name:'새 카테고리',color:'#5e6c84'});paint();};
+  bg.querySelector('#scm-x').onclick=bg.querySelector('#scm-cancel').onclick=schCloseDlg;
+  bg.querySelector('#scm-ok').onclick=()=>{read();if(!draft.length){showToast('⚠️','카테고리가 하나는 있어야 해요.');return;}state.schCats=draft;if(schCatFilter&&!draft.some(c=>c.id===schCatFilter))schCatFilter='';saveState();schCloseDlg();schEvCache={};renderSchedule(false);try{renderHomeSchedule();}catch(e){}showToast('✅','카테고리를 저장했어요.',2000);};
+}
 function schMove(dir){
   const a=schDate;
   if(schView==='day')schDate=schAddDays(a,dir);
@@ -8028,29 +8209,39 @@ async function schOpenDlg(o){
   if(!schCals){try{await schLoadCals(false,false);}catch(e){showToast('⚠️','먼저 구글 캘린더를 연결해 주세요.',3500);return;}}
   const ev=o.ev||null;
   if(ev&&!ev.writable){window.open(ev.link,'_blank','noopener');return;}
-  if(ev&&!ev.allDay&&schDs(ev.st)!==schDs(new Date(ev.en.getTime()-1))){showToast('ℹ️','여러 날에 걸친 일정은 구글 캘린더에서 고쳐 주세요. 새 창으로 열게요.',4000);window.open(ev.link,'_blank','noopener');return;}
   schCloseDlg();
-  const cals=(schCals||[]).filter(c=>c.writable);
+  const cals=(schCals||[]).filter(c=>c.writable&&!/#holiday@/.test(c.id));
   const last=localStorage.getItem(GCAL_LAST_KEY);
   const defCal=ev?ev.calId:((cals.find(c=>c.id===last)||cals.find(c=>c.primary)||cals[0]||{}).id);
   const allDay=ev?ev.allDay:!!o.allDay;
   const date=ev?schDs(ev.st):(o.date||schDs(new Date()));
-  const st=ev&&!ev.allDay?schHm(ev.st):(o.start||'09:00');
-  const en=ev&&!ev.allDay?schHm(ev.en):(o.end||schHm2((+st.slice(0,2))*60+(+st.slice(3))+60));
+  const endD=ev?(ev.allDay?schDs(schAddDays(ev.en,-1)):schDs(new Date(ev.en.getTime()-1))):'';
+  const st=ev&&!ev.allDay?schHm(ev.st):(allDay?'':(o.start||''));
+  const en=ev&&!ev.allDay?schHm(ev.en):(allDay?'':(o.end||(o.start?schHm2((+o.start.slice(0,2))*60+(+o.start.slice(3))+60):'')));
+  const cat=ev?(ev.cat||''):(schCatFilter||'biz');
+  const alarm=ev?ev.alarm:'';
+  const ALARMS=[['','기본'],['0','정시'],['10','10분 전'],['30','30분 전'],['60','1시간 전'],['1440','1일 전'],['none','없음']];
   const bg=document.createElement('div');bg.id='sch-dlg-bg';
-  bg.innerHTML=`<div id="sch-dlg"><div class="dh">${ev?'일정 수정':'새 일정'}</div>
-   <input type="text" id="sd-title" placeholder="제목" value="${esc(ev?ev.title:'')}">
-   <div class="r"><label>날짜</label><input type="date" id="sd-date" value="${esc(date)}"></div>
-   <div class="r"><label>종일</label><span class="gc-sw"><input type="checkbox" id="sd-all" ${allDay?'checked':''}><i></i></span></div>
-   <div class="r" id="sd-tr" style="display:${allDay?'none':'flex'}"><label>시간</label><input type="time" id="sd-st" value="${esc(st)}"><span>~</span><input type="time" id="sd-en" value="${esc(en)}"></div>
-   <div class="r"><label>달력</label><select id="sd-cal"${ev?' disabled':''}>${cals.map(c=>`<option value="${esc(c.id)}"${c.id===defCal?' selected':''}>${esc((c.primary?'⭐ ':'')+c.name)}</option>`).join('')}</select></div>
-   <textarea id="sd-memo" placeholder="메모 (선택)">${esc(ev?ev.description:'')}</textarea>
-   ${ev&&/<[a-z][^>]*>/i.test(ev.description||'')?'<div class="note">메모에 서식이 있어서, 메모를 고치면 서식은 사라져요.</div>':''}
-   <div class="bt">${ev?'<button class="del" id="sd-del">삭제</button>':''}${ev&&ev.link?`<a class="op" href="${esc(ev.link)}" target="_blank" rel="noopener noreferrer" title="구글 캘린더에서 열기">↗</a>`:''}<span class="sdsp"></span><button id="sd-cancel">취소</button><button class="ok" id="sd-save">저장</button></div></div>`;
+  bg.innerHTML=`<div id="sch-dlg" class="sx" role="dialog" aria-label="${ev?'일정 수정':'일정 추가'}"><div class="xh">${ev?'일정 수정':'일정 추가'}<button type="button" id="sd-x" aria-label="닫기">✕</button></div>
+   <div class="xb">
+    <label class="xf">제목<input type="text" id="sd-title" placeholder="일정 제목을 입력하세요" value="${esc(ev?ev.title:'')}"></label>
+    <div class="x2"><label class="xf">시작일<input type="date" id="sd-date" value="${esc(date)}"></label><label class="xf"><span>종료일 <small>(하루면 비워 두기)</small></span><input type="date" id="sd-end" value="${esc(endD&&endD!==date?endD:'')}"></label></div>
+    <div class="xf">카테고리<div class="xchips" id="sd-cats">${schCats().map(c=>`<button type="button" class="xc${c.id===cat?' on':''}" data-c="${esc(c.id)}"><i style="background:${esc(c.color)}"></i>${esc(c.name)}</button>`).join('')}</div></div>
+    <div class="x2"><div class="xf"><span>시간 <small>(비우면 종일)</small></span><div class="xt"><input type="time" id="sd-st" value="${esc(st)}" aria-label="시작 시간"><span>~</span><input type="time" id="sd-en" value="${esc(en)}" aria-label="끝 시간"></div></div><label class="xf">장소<input type="text" id="sd-loc" placeholder="예: 종로 사무실" value="${esc(ev?ev.location:'')}"></label></div>
+    <label class="xchk"><input type="checkbox" id="sd-dday" ${ev&&ev.dday?'checked':''}> D-Day 카운트다운 표시 <small>(목록에 D-7처럼)</small></label>
+    <div class="xf">알림<div class="xchips" id="sd-alarm">${ALARMS.map(([v,t])=>`<button type="button" class="xc${v===alarm?' on':''}" data-a="${v}">${t}</button>`).join('')}</div></div>
+    <div class="x2">${ev&&ev.recurring?`<div class="xf">반복<div style="font-weight:500;color:#974f0c;font-size:12.5px;padding-top:6px">반복 일정 — 이 회차만 바뀌어요</div></div>`:`<label class="xf">반복<select id="sd-rep"><option value="">반복 없음</option><option value="DAILY">매일</option><option value="WEEKLY">매주</option><option value="MONTHLY">매월</option><option value="YEARLY">매년</option></select></label>`}
+     <label class="xf">달력<select id="sd-cal"${ev?' disabled':''}>${cals.map(c=>`<option value="${esc(c.id)}"${c.id===defCal?' selected':''}>${esc((c.primary?'⭐ ':'')+c.name)}</option>`).join('')}</select></label></div>
+    <label class="xf">메모<textarea id="sd-memo" placeholder="고객 정보, 준비물 등">${esc(ev?ev.description:'')}</textarea></label>
+    ${ev&&/<[a-z][^>]*>/i.test(ev.description||'')?'<div class="note">메모에 서식이 있어서, 메모를 고치면 서식은 사라져요.</div>':''}
+   </div>
+   <div class="bt">${ev?'<button type="button" class="del" id="sd-del">삭제</button>':''}${ev&&ev.link?`<a class="op" href="${esc(ev.link)}" target="_blank" rel="noopener noreferrer" title="구글 캘린더에서 열기">↗</a>`:''}<span class="sdsp"></span><button type="button" id="sd-cancel">취소</button><button type="button" class="ok" id="sd-save">${ev?'저장':'추가'}</button></div></div>`;
   document.getElementById('sch-overlay').appendChild(bg);
   const $=id=>document.getElementById(id);
-  $('sd-all').onchange=e=>{$('sd-tr').style.display=e.target.checked?'none':'flex';};
-  $('sd-cancel').onclick=schCloseDlg;
+  const pick=(box,attr)=>box.addEventListener('click',e=>{const b=e.target.closest('['+attr+']');if(!b)return;box.querySelectorAll('.xc').forEach(x=>x.classList.toggle('on',x===b));});
+  pick($('sd-cats'),'data-c');pick($('sd-alarm'),'data-a');
+  $('sd-st').addEventListener('change',()=>{const v=$('sd-st').value;if(v&&!$('sd-en').value)$('sd-en').value=schHm2((+v.slice(0,2))*60+(+v.slice(3))+60);});
+  $('sd-cancel').onclick=$('sd-x').onclick=schCloseDlg;
   bg.addEventListener('mousedown',e=>{if(e.target===bg)schCloseDlg();});
   $('sd-title').addEventListener('keydown',e=>{if(e.key==='Enter')$('sd-save').click();});
   $('sd-save').onclick=()=>schDlgSave(ev);
@@ -8059,31 +8250,39 @@ async function schOpenDlg(o){
 }
 async function schDlgSave(ev){
   const $=id=>document.getElementById(id);
-  const title=$('sd-title').value.trim(),date=$('sd-date').value,allDay=$('sd-all').checked,st=$('sd-st').value,en=$('sd-en').value;
-  const calId=$('sd-cal').value,memo=$('sd-memo').value;
+  const title=$('sd-title').value.trim(),date=$('sd-date').value;
+  let endD=$('sd-end').value||date;
+  const st=$('sd-st').value,en=$('sd-en').value,allDay=!st;
+  const calId=$('sd-cal').value,memo=$('sd-memo').value,loc=$('sd-loc').value.trim();
+  const catB=document.querySelector('#sd-cats .xc.on'),cat=catB?catB.dataset.c:'';
+  const alB=document.querySelector('#sd-alarm .xc.on'),alarm=alB?alB.dataset.a:'';
+  const rep=$('sd-rep')?$('sd-rep').value:'';
   if(!title){showToast('⚠️','제목을 적어 주세요.');$('sd-title').focus();return;}
-  if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){showToast('⚠️','날짜를 골라 주세요.');return;}
-  if(!allDay){if(!st||!en){showToast('⚠️','시작·끝 시간을 넣어 주세요.');return;}if(en<=st){showToast('⚠️','끝나는 시간이 시작보다 늦어야 해요.');return;}}
-  const body={summary:title};
-  if(!ev||memo!==(ev.description||''))body.description=memo;
-  if(allDay){
-    let days=1;if(ev&&ev.allDay)days=Math.max(1,Math.round((ev.en-ev.st)/86400000));
-    body.start={date,dateTime:null};body.end={date:schDs(schAddDays(schParse(date),days)),dateTime:null};
-  }else{
-    const tz=schTz();
-    body.start={dateTime:date+'T'+st+':00',timeZone:tz,date:null};body.end={dateTime:date+'T'+en+':00',timeZone:tz,date:null};
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){showToast('⚠️','시작일을 골라 주세요.');return;}
+  if(endD<date){showToast('⚠️','종료일이 시작일보다 앞이에요.');return;}
+  if(!allDay){if(!en){showToast('⚠️','끝 시간을 넣어 주세요.');return;}if(endD===date&&en<=st){showToast('⚠️','끝 시간이 시작보다 늦어야 해요.');return;}}
+  const tz=schTz();
+  const body={summary:title,location:loc,
+    start:allDay?{date}:{dateTime:date+'T'+st+':00',timeZone:tz},
+    end:allDay?{date:schDs(schAddDays(schParse(endD),1))}:{dateTime:endD+'T'+en+':00',timeZone:tz},
+    extendedProperties:{private:Object.assign({},ev?ev.priv:{},{mwCat:cat,mwDday:$('sd-dday').checked?'1':'0'})}};
+  if(ev){ // 종일↔시간 바꿀 때 남은 칸 지우기
+    if(allDay){body.start.dateTime=null;body.end.dateTime=null;}else{body.start.date=null;body.end.date=null;}
   }
+  if(!ev||memo!==(ev.description||''))body.description=memo;
   if(!ev&&!body.description)delete body.description;
+  if(!ev||alarm!==ev.alarm){
+    if(alarm==='')body.reminders={useDefault:true};
+    else if(alarm==='none')body.reminders={useDefault:false,overrides:[]};
+    else body.reminders={useDefault:false,overrides:[{method:'popup',minutes:+alarm}]};
+    if(!ev&&alarm==='')delete body.reminders;
+  }
+  if(rep&&!(ev&&ev.recurring))body.recurrence=['RRULE:FREQ='+rep];
   const btn=$('sd-save');btn.disabled=true;
   try{
     if(ev)await calRwApi('PATCH',ev.id,body,ev.calId);
-    else{
-      if(allDay){body.start={date};}else body.start={dateTime:body.start.dateTime,timeZone:body.start.timeZone};
-      body.end=allDay?{date:body.end.date}:{dateTime:body.end.dateTime,timeZone:body.end.timeZone};
-      await calRwApi('POST',null,body,calId);
-      try{localStorage.setItem(GCAL_LAST_KEY,calId);}catch(e){}
-    }
-    schCloseDlg();schEvCache={};showToast('📅',ev?'일정을 고쳤어요 ✅':'일정을 만들었어요 ✅',2800);
+    else{await calRwApi('POST',null,body,calId);try{localStorage.setItem(GCAL_LAST_KEY,calId);}catch(e){}}
+    schCloseDlg();schEvCache={};showToast('📅',ev?'일정을 고쳤어요 ✅':'일정을 추가했어요 ✅',2800);
     renderSchedule(true);try{renderHomeSchedule(true);}catch(e){}
   }catch(e){btn.disabled=false;showToast('⚠️',(e&&e.message)||'저장하지 못했어요.',5000);}
 }
@@ -8105,11 +8304,18 @@ async function schDlgDelete(ev){
   document.getElementById('sch-close').onclick=closeSchedule;
   ov.addEventListener('mousedown',e=>{if(e.target===ov)closeSchedule();});
   document.querySelectorAll('#sch-hd .sch-seg button').forEach(b=>b.onclick=()=>{schView=b.dataset.v;renderSchedule(false);});
-  document.getElementById('sch-new').onclick=()=>{const n=new Date();const m=(schView==='day'||schView==='week')?schDate:new Date();const ds=schDs(m);const now=n.getHours()*60+(n.getMinutes()>=30?60:30);schOpenDlg({date:ds,start:schHm2(Math.min(now,22*60)),allDay:false});};
+  document.getElementById('sch-calbtn').onclick=e=>{e.stopPropagation();document.getElementById('sch-side').classList.toggle('open');};
+  document.addEventListener('mousedown',e=>{const sd=document.getElementById('sch-side');if(sd&&sd.classList.contains('open')&&!e.target.closest('#sch-calwrap'))sd.classList.remove('open');});
+  document.getElementById('sch-panel').addEventListener('input',e=>{if(e.target.id==='sm-q'){schListQ=e.target.value;const pos=e.target.selectionStart;renderSchedule(false).then(()=>{const q=document.getElementById('sm-q');if(q){q.focus();try{q.setSelectionRange(pos,pos);}catch(x){}}});}});
+  document.getElementById('sch-new').onclick=()=>{const m=(schView==='day')?schDate:new Date();schOpenDlg({date:schDs(m),allDay:true});};
   document.getElementById('sch-panel').addEventListener('click',e=>{
     const evA=e.target.closest('[data-evk]');
     if(evA){e.preventDefault();const o=schEvMap[evA.dataset.evk];if(o)schOpenDlg({ev:o});return;}
-    const cb=e.target.closest('.sch-cb');
+    const sc=e.target.closest('[data-scat]');
+    if(sc){schCatFilter=sc.dataset.scat;renderSchedule(false);return;}
+    if(e.target.closest('#sch-catman')){schCatManager();return;}
+    if(e.target.closest('#sm-past')){schShowPast=!schShowPast;renderSchedule(false);return;}
+    const cb=e.target.closest('.sch-cb,.sc-link[data-cards]');
     if(cb){
       if(cb.dataset.cards){try{localStorage.setItem(SCH_CARD_KEY,schShowCards()?'0':'1');}catch(x){}}
       else{const hid=schHidden();const id=cb.dataset.cal;if(hid.has(id))hid.delete(id);else hid.add(id);schSaveHidden(hid);}
@@ -8120,6 +8326,7 @@ async function schDlgDelete(ev){
     if(e.target.closest('a'))return;
     const cc=e.target.closest('[data-cdate]');
     if(cc&&!e.target.closest('.sch-ev,.sch-chip')){
+      if(cc.classList.contains('sm-c')){schOpenDlg({date:cc.dataset.cdate,allDay:true});return;}
       if(cc.classList.contains('sch-col')){const y=e.clientY-cc.getBoundingClientRect().top;const mn=Math.min(22*60+30,Math.floor(y/44*2)*30);schOpenDlg({date:cc.dataset.cdate,start:schHm2(mn),allDay:false});}
       else schOpenDlg({date:cc.dataset.cdate,allDay:true});
       return;
