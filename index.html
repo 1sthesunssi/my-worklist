@@ -259,8 +259,8 @@ body{font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFo
 #memo-section h2 .memo-open-btn{background:var(--accent);color:#fff;font-weight:800;padding:4px 11px;border-radius:7px;margin-left:auto}
 #memo-section h2 .memo-open-btn:hover{background:#0747a6;color:#fff}
 #memo-section .memo-enter{display:none}
-#memo-recent.memo-mini{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;height:104px;margin-top:8px;border:none;border-radius:0;overflow:visible}
-.memo-mini-note{border-radius:4px;padding:9px 10px;font-size:12.5px;line-height:1.45;color:#172b4d;box-shadow:0 2px 5px rgba(0,0,0,.09);cursor:pointer;overflow:hidden;display:-webkit-box;-webkit-line-clamp:5;user-select:none;-webkit-box-orient:vertical;white-space:pre-wrap;word-break:break-word;text-align:left;border:none;font-family:inherit}
+#memo-recent.memo-mini{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;height:172px;margin-top:8px;border:none;border-radius:0;overflow:visible}
+.memo-mini-note{border-radius:4px;padding:9px 10px;font-size:12.5px;line-height:1.45;color:#172b4d;box-shadow:0 2px 5px rgba(0,0,0,.09);cursor:pointer;overflow:hidden;display:-webkit-box;-webkit-line-clamp:9;user-select:none;-webkit-box-orient:vertical;white-space:pre-wrap;word-break:break-word;text-align:left;border:none;font-family:inherit}
 .memo-mini-note:hover{box-shadow:0 4px 10px rgba(0,0,0,.14)}
 .memo-mini-empty{grid-column:1/-1;font-size:12.5px;color:var(--muted);display:flex;align-items:center;justify-content:center;border:1px dashed #d5d9e0;border-radius:8px}
 #__memolist .mb-panel{background:#fff;border-radius:16px;width:100%;max-width:1240px;height:88vh;display:flex;flex-direction:column;box-shadow:0 24px 60px rgba(0,0,0,.3);overflow:hidden}
@@ -3780,7 +3780,7 @@ function renderMemos(){
   memoRenderPager(pages);
   memos.slice(memoHomePage*MEMO_HOME_N,memoHomePage*MEMO_HOME_N+MEMO_HOME_N).forEach(m=>{
     const c=memoColor(m);
-    const n=document.createElement('button');n.type='button';n.className='memo-mini-note';
+    const n=document.createElement('div');n.setAttribute('role','button');n.tabIndex=0;n.className='memo-mini-note';n.addEventListener('keydown',e=>{if(e.key==='Enter')openMemoList(m.id);});
     n.style.background=c.bg;n.title='메모장에서 보기';
     n.textContent=(m.text||'')+((m.tags||[]).length?'\n'+m.tags.map(t=>'#'+t).join(' '):'');
     n.addEventListener('click',()=>openMemoList(m.id));
