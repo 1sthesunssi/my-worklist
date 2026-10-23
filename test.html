@@ -208,19 +208,23 @@ body{font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFo
 .memo-empty{font-size:12.5px;color:var(--muted);padding:14px 13px}
 
 /* ── 포스트잇 메모 (2026-10-23) ── */
-/* ── 매출 보기 · 일기 한 줄 (2026-10-23) ── */
-#home-sub{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:center;gap:10px 24px;margin:-6px 0 18px}
-#home-sub #home-sales{margin:0;justify-self:start}
+/* ── 시계 줄 오른쪽 끝: 일기 알약 · 쓰기 · 일기 전체 | 매출 (시안 ③, 2026-10-23) ── */
+#home-top{align-items:center}
+#home-sub{margin-left:auto;display:flex;align-items:center;gap:8px;min-width:0}
+#diary-section{display:flex;align-items:center;gap:6px;min-width:0}
+#diary-collapsed-strip{min-width:0}
+#diary-section .diary-strip{max-width:340px;padding:5px 14px 5px 7px;border-radius:999px;border-color:#e4e7ea;font-size:13.5px}
+#diary-section .diary-strip span:first-child{width:26px;height:26px;border-radius:50%;background:#fdeef3;display:inline-flex;align-items:center;justify-content:center;font-size:13px!important;flex-shrink:0}
+.ht-round{width:36px;height:36px;border-radius:50%;border:1px solid #e4e7ea;background:#fff;cursor:pointer;font-size:15px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;padding:0}
+.ht-round:hover{border-color:var(--accent)}
+.ht-div{width:1px;height:24px;background:#d5d9e0;margin:0 4px;flex-shrink:0}
+#home-sub #home-sales{margin:0;flex-shrink:0}
 #home-sub #home-sales .hs-head{margin:0}
+#home-sub .hs-toggle{padding:8px 14px;border-radius:999px;font-size:13px}
 #home-sales-grid{max-width:900px;margin:-8px 0 18px}
 #home-sales-grid:empty{display:none}
 #home-sales-grid .hs-more{display:inline-block;margin-top:6px;font-size:12px;font-weight:600;color:var(--accent);text-decoration:none}
-#diary-section{display:flex;align-items:center;gap:6px;min-width:0;grid-column:2}
-#diary-collapsed-strip{flex:1;min-width:0}
-#diary-section .diary-strip{padding:6px 12px;border-radius:16px;max-width:none}
-#diary-section .diary-strip span:first-child{font-size:15px!important}
-#diary-section .diary-hd-gem{flex-shrink:0;border-radius:16px;padding:5px 10px;color:var(--muted)}
-@media (max-width:600px){#diary-section{flex-basis:100%;flex-wrap:wrap}#diary-collapsed-strip{flex-basis:100%}}
+@media (max-width:760px){#home-sub{margin-left:0;width:100%;flex-wrap:wrap}.ht-div{display:none}#diary-section{flex:1 1 auto}#diary-section .diary-strip{max-width:none}}
 
 #memo-section h2 .memo-open-btn{background:var(--accent);color:#fff;font-weight:800;padding:4px 11px;border-radius:7px;margin-left:auto}
 #memo-section h2 .memo-open-btn:hover{background:#0747a6;color:#fff}
@@ -1793,9 +1797,7 @@ body{font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFo
 <!-- HOME -->
 <div id="home-screen">
   <!-- 시간 · 날짜 · 날씨 한 줄 -->
-  <div id="home-top"><span id="ht-time"></span><span id="ht-info"><span id="ht-date"></span><span id="ht-weather"></span></span></div>
-  <!-- 매출 보기 버튼 · 일기 한 줄 (매출 버튼은 renderHomeSales가 맨 앞에 넣음) -->
-  <div id="home-sub"><div id="diary-section"><div id="diary-collapsed-strip"></div><button type="button" class="diary-hd-gem" onclick="openGeminiDiary()">✍️ 제미나이에서 쓰기</button><button type="button" class="diary-hd-gem" onclick="openDiaryList()">일기 전체</button></div></div>
+  <div id="home-top"><span id="ht-time"></span><span id="ht-info"><span id="ht-date"></span><span id="ht-weather"></span></span><span id="home-sub"><span id="diary-section"><span id="diary-collapsed-strip"></span><button type="button" class="ht-round" onclick="openGeminiDiary()" title="제미나이에서 일기 쓰기" aria-label="제미나이에서 일기 쓰기">✍️</button><button type="button" class="ht-round" onclick="openDiaryList()" title="일기 전체" aria-label="일기 전체">📚</button></span><span class="ht-div" aria-hidden="true"></span></span></div>
   <!-- 보드 -->
   <div class="home-sec" id="boards-section" data-sec="boards">
     <h2><span class="sec-caret">▾</span><span class="sec-ico" style="background:#e6f9f0;color:#0d9668">📌</span><span class="sec-label">Boards</span></h2>
@@ -9485,7 +9487,7 @@ let hsOpen=false;
 function renderHomeSales(){
   const stats=document.getElementById('home-top');if(!stats)return;
   let box=document.getElementById('home-sales');
-  if(!box){box=document.createElement('section');box.id='home-sales';box.setAttribute('aria-label','매출 요약');const sub=document.getElementById('home-sub');if(sub)sub.prepend(box);else stats.insertAdjacentElement('afterend',box);}
+  if(!box){box=document.createElement('section');box.id='home-sales';box.setAttribute('aria-label','매출 요약');const sub=document.getElementById('home-sub');if(sub)sub.append(box);else stats.insertAdjacentElement('afterend',box);}
   const t=new Date(),y=t.getFullYear(),m=t.getMonth();
   const mFrom=localDateStr(new Date(y,m,1)),mTo=localDateStr(new Date(y,m+1,0));
   const all=slAll();
@@ -9502,7 +9504,8 @@ function renderHomeSales(){
   // 금액 칸은 버튼·일기 줄 아래에 따로 펼침 (버튼 자리는 그대로)
   const sub=document.getElementById('home-sub');
   let g=document.getElementById('home-sales-grid');
-  if(!g&&sub){g=document.createElement('div');g.id='home-sales-grid';sub.insertAdjacentElement('afterend',g);}
+  const top=document.getElementById('home-top');
+  if(!g&&top){g=document.createElement('div');g.id='home-sales-grid';top.insertAdjacentElement('afterend',g);}
   if(g)g.innerHTML=hsOpen?`<div class="hs-grid">${CT_CATS.map(tile).join('')}</div><a href="#" class="hs-more" onclick="event.preventDefault();slPeriod='month';openSales()">매출 화면 →</a>`:'';
 }
 const _ctRenderHome=renderHome;
