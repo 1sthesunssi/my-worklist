@@ -1,0 +1,14 @@
+{
+  "id": "./test.html",
+  "name": "My Worklist 테스트",
+  "short_name": "WL 테스트",
+  "start_url": "./test.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#12162c",
+  "theme_color": "#b42318",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"}
+  ]
+}

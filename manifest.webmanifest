@@ -1,0 +1,14 @@
+{
+  "id": "./index.html",
+  "name": "My Worklist",
+  "short_name": "Worklist",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#12162c",
+  "theme_color": "#16233d",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"}
+  ]
+}
