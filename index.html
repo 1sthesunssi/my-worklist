@@ -446,6 +446,7 @@ body{font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFo
 .bc-badge{font-size:11px;font-weight:800;padding:1px 7px;border-radius:999px;line-height:1.5}
 .bc-badge.over{color:#ae2a19;background:#fdecea}
 .bc-badge.today{color:#8a5300;background:#fff4dc}
+.bc-badge.today.zero{color:#8a94a6;background:#f1f2f4;font-weight:600}
 
 /* ── 홈 인사말 + 오늘 요약 통계 ── */
 #home-greet{font-size:13px;color:var(--muted);margin-bottom:10px;font-weight:500}
@@ -4440,7 +4441,7 @@ function hbBadges(b){
     if(/done|완료/i.test(col.title||''))return;
     (col.cards||[]).forEach(c=>{if(c.done||!c.due)return;if(c.due<today)over++;else if(c.due===today)tod++;});
   });
-  return (over?`<span class="bc-badge over">지남 ${over}</span>`:'')+(tod?`<span class="bc-badge today">오늘 ${tod}</span>`:'');
+  return (over?`<span class="bc-badge over">지남 ${over}</span>`:'')+`<span class="bc-badge today${tod?'':' zero'}">오늘 ${tod}</span>`;
 }
 function renderHomeToday(){
   renderHomeTop();
