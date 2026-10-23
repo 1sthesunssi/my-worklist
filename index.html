@@ -9127,13 +9127,13 @@ function renderHomeSales(){
       <span class="hs-sub">이번 달 ${mo.filter(x=>!x.adj).length}건${neg?` · <b style="color:#ae2a19">${ctWon(neg)}</b>`:''} · 올해 ${ctWon(sum(yr))}원</span></button>`;
   };
   // 평소에는 버튼만. 누를 때만 금액을 펼쳐 보여 줌 (앱을 다시 열면 다시 접힘)
-  box.innerHTML=`<div class="hs-head"><button type="button" class="hs-toggle" onclick="hsOpen=!hsOpen;renderHomeSales()">💰 매출 ${hsOpen?'접기 ▴':'보기 ▾'}</button></div>`;
+  box.innerHTML=`<div class="hs-head"><button type="button" class="hs-toggle" onclick="slPeriod='month';openSales()">💰 매출 보기</button></div>`;
   // 금액 칸은 버튼·일기 줄 아래에 따로 펼침 (버튼 자리는 그대로)
   const sub=document.getElementById('home-sub');
   let g=document.getElementById('home-sales-grid');
   const top=document.getElementById('home-top');
   if(!g&&top){g=document.createElement('div');g.id='home-sales-grid';top.insertAdjacentElement('afterend',g);}
-  if(g)g.innerHTML=hsOpen?`<div class="hs-grid">${CT_CATS.map(tile).join('')}</div><a href="#" class="hs-more" onclick="event.preventDefault();slPeriod='month';openSales()">매출 화면 →</a>`:'';
+  if(g)g.innerHTML=false?`<div class="hs-grid">${CT_CATS.map(tile).join('')}</div><a href="#" class="hs-more" onclick="event.preventDefault();slPeriod='month';openSales()">매출 화면 →</a>`:'';
 }
 const _ctRenderHome=renderHome;
 renderHome=function(){_ctRenderHome.apply(this,arguments);try{renderHomeSales();}catch(e){console.error(e);}};
