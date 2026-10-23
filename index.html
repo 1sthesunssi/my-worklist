@@ -208,7 +208,21 @@ body{font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFo
 .memo-empty{font-size:12.5px;color:var(--muted);padding:14px 13px}
 
 /* ── 포스트잇 메모 (2026-10-23) ── */
-.home-row.three>.home-sec{flex:1 1 300px}
+/* ── 매출 보기 · 일기 한 줄 (2026-10-23) ── */
+#home-sub{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:-6px 0 18px}
+#home-sub #home-sales{margin:0;flex:0 0 auto}
+#home-sub #home-sales .hs-head{margin:0}
+#home-sales-grid{max-width:900px;margin:-8px 0 18px}
+#home-sales-grid:empty{display:none}
+#home-sales-grid .hs-more{display:inline-block;margin-top:6px;font-size:12px;font-weight:600;color:var(--accent);text-decoration:none}
+#diary-section{display:flex;align-items:center;gap:6px;flex:0 1 640px;min-width:0}
+#diary-collapsed-strip{flex:1;min-width:0}
+#diary-section .diary-strip{padding:6px 12px;border-radius:16px}
+#diary-section .diary-strip span:first-child{font-size:15px!important}
+#diary-section .diary-hd-gem{flex-shrink:0;border-radius:16px;padding:5px 10px;color:var(--muted)}
+@media (max-width:600px){#diary-section{flex-basis:100%;flex-wrap:wrap}#diary-collapsed-strip{flex-basis:100%}}
+
+.home-row.three>.home-sec{flex:1 1 360px}
 #memo-section h2 .memo-open-btn{background:var(--accent);color:#fff;font-weight:800;padding:4px 11px;border-radius:7px;margin-left:auto}
 #memo-section h2 .memo-open-btn:hover{background:#0747a6;color:#fff}
 #memo-section .memo-enter{display:none}
@@ -1777,22 +1791,19 @@ body{font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFo
 <div id="home-screen">
   <!-- 시간 · 날짜 · 날씨 한 줄 -->
   <div id="home-top"><span id="ht-time"></span><span id="ht-info"><span id="ht-date"></span><span id="ht-weather"></span></span></div>
+  <!-- 매출 보기 버튼 · 일기 한 줄 (매출 버튼은 renderHomeSales가 맨 앞에 넣음) -->
+  <div id="home-sub"><div id="diary-section"><div id="diary-collapsed-strip"></div><button type="button" class="diary-hd-gem" onclick="openGeminiDiary()">✍️ 제미나이에서 쓰기</button><button type="button" class="diary-hd-gem" onclick="openDiaryList()">일기 전체</button></div></div>
   <!-- 보드 -->
   <div class="home-sec" id="boards-section" data-sec="boards">
     <h2><span class="sec-caret">▾</span><span class="sec-ico" style="background:#e6f9f0;color:#0d9668">📌</span><span class="sec-label">Boards</span></h2>
     <div class="sec-body"><div id="boards-grid"></div></div>
   </div>
-  <!-- 오늘 일정 · 일기 · 메모 나란히 (메모는 높이 고정 — 늘어나도 아래가 밀리지 않음) -->
+  <!-- 오늘 일정 · 메모 나란히 (메모는 높이 고정 — 늘어나도 아래가 밀리지 않음) -->
   <div class="home-row three">
     <!-- 오늘 일정 (구글 캘린더) -->
     <div class="home-sec" id="sched-section" data-sec="sched">
       <h2><span class="sec-caret">▾</span><span class="sec-ico" style="background:#eef4ff;color:#1a56c4">📅</span><span class="sec-label">Today Schedule</span> <button onclick="openSchedule()">전체 일정 보기 ›</button></h2>
       <div class="sec-body"><div id="home-sched"></div></div>
-    </div>
-    <!-- 일기 -->
-    <div class="home-sec" id="diary-section" data-sec="diary">
-      <h2><span class="sec-caret">▾</span><span class="sec-ico" style="background:#fdeef3;color:#d6336c">📔</span><span class="sec-label">Diary</span> <button class="diary-hd-gem" onclick="openGeminiDiary()">✍️ 제미나이에서 쓰기</button> <button onclick="openDiaryList()">전체보기</button></h2>
-      <div class="sec-body"><div id="diary-collapsed-strip"></div></div>
     </div>
     <!-- 메모 — 첫 화면에선 최근 3장만, 전체는 포스트잇 메모장(팝업) -->
     <div class="home-sec" id="memo-section" data-sec="memo">
@@ -9099,7 +9110,7 @@ let hsOpen=false;
 function renderHomeSales(){
   const stats=document.getElementById('home-top');if(!stats)return;
   let box=document.getElementById('home-sales');
-  if(!box){box=document.createElement('section');box.id='home-sales';box.setAttribute('aria-label','매출 요약');stats.insertAdjacentElement('afterend',box);}
+  if(!box){box=document.createElement('section');box.id='home-sales';box.setAttribute('aria-label','매출 요약');const sub=document.getElementById('home-sub');if(sub)sub.prepend(box);else stats.insertAdjacentElement('afterend',box);}
   const t=new Date(),y=t.getFullYear(),m=t.getMonth();
   const mFrom=localDateStr(new Date(y,m,1)),mTo=localDateStr(new Date(y,m+1,0));
   const all=slAll();
@@ -9112,8 +9123,12 @@ function renderHomeSales(){
       <span class="hs-sub">이번 달 ${mo.filter(x=>!x.adj).length}건${neg?` · <b style="color:#ae2a19">${ctWon(neg)}</b>`:''} · 올해 ${ctWon(sum(yr))}원</span></button>`;
   };
   // 평소에는 버튼만. 누를 때만 금액을 펼쳐 보여 줌 (앱을 다시 열면 다시 접힘)
-  box.innerHTML=`<div class="hs-head"><button type="button" class="hs-toggle" onclick="hsOpen=!hsOpen;renderHomeSales()">💰 매출 ${hsOpen?'접기 ▴':'보기 ▾'}</button>${hsOpen?`<a href="#" onclick="event.preventDefault();slPeriod='month';openSales()">매출 화면 →</a>`:''}</div>
-    ${hsOpen?`<div class="hs-grid">${CT_CATS.map(tile).join('')}</div>`:''}`;
+  box.innerHTML=`<div class="hs-head"><button type="button" class="hs-toggle" onclick="hsOpen=!hsOpen;renderHomeSales()">💰 매출 ${hsOpen?'접기 ▴':'보기 ▾'}</button></div>`;
+  // 금액 칸은 버튼·일기 줄 아래에 따로 펼침 (버튼 자리는 그대로)
+  const sub=document.getElementById('home-sub');
+  let g=document.getElementById('home-sales-grid');
+  if(!g&&sub){g=document.createElement('div');g.id='home-sales-grid';sub.insertAdjacentElement('afterend',g);}
+  if(g)g.innerHTML=hsOpen?`<div class="hs-grid">${CT_CATS.map(tile).join('')}</div><a href="#" class="hs-more" onclick="event.preventDefault();slPeriod='month';openSales()">매출 화면 →</a>`:'';
 }
 const _ctRenderHome=renderHome;
 renderHome=function(){_ctRenderHome.apply(this,arguments);try{renderHomeSales();}catch(e){console.error(e);}};
