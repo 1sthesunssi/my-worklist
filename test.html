@@ -149,7 +149,9 @@ body{font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFo
 /* 섹션 접기 — 오늘 안 쓰는 건 치워둘 수 있게 */
 .home-sec{margin-bottom:18px}
 #boards-section{margin-bottom:20px}
-#home-screen h2{cursor:pointer}
+#home-screen h2{cursor:default}
+#home-screen h2 .sec-ico,#home-screen h2 .sec-label{cursor:pointer}
+.home-sec.folded h2{cursor:pointer}
 .sec-caret{
   color:#6b7684;transition:transform .15s,color .15s,background .15s;
   display:inline-flex;align-items:center;justify-content:center;
@@ -160,7 +162,7 @@ body{font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFo
 .home-sec.folded h2{opacity:.7}
 #home-screen h2:hover .sec-caret{color:var(--text);background:rgba(9,30,66,.08)}
 /* 접힌 섹션은 '몇 개가 숨어있는지' 알려줍니다 */
-.home-sec.folded h2::after{content:'접힘';font-size:11px;font-weight:600;color:var(--muted);background:rgba(9,30,66,.06);padding:1px 7px;border-radius:20px}
+.home-sec.folded h2::after{content:'접힘 · 눌러서 펼치기';font-size:11px;font-weight:600;color:var(--muted);background:rgba(9,30,66,.06);padding:1px 7px;border-radius:20px}
 /* 버튼은 제목 바로 옆에 — 화면 끝으로 날아가지 않도록 */
 #ql-edit-toggle,
 #home-screen h2 button{
@@ -1827,7 +1829,7 @@ body{font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFo
   <div class="home-row home-bottom">
     <!-- 빠른 실행 -->
     <div class="home-sec" id="quick-section" data-sec="quick">
-      <h2><span class="sec-caret">▾</span><span class="sec-ico" style="background:#eef4ff;color:#0052cc">🔗</span><span class="sec-label">Hot Link</span> <button id="ql-edit-toggle" onclick="toggleQlEdit()">편집</button></h2>
+      <h2><span class="sec-caret">▾</span><span class="sec-ico" style="background:#eef4ff;color:#0052cc">🔗</span><span class="sec-label">Hot Link</span> <button id="ql-edit-toggle" onclick="toggleQlEdit()">편집</button> <button onclick="openQlModal(null)" title="바로가기 추가">＋ 추가</button></h2>
       <div class="sec-body"><div id="quick-grid"></div></div>
     </div>
     <!-- AI 자동화 -->
@@ -3987,6 +3989,8 @@ function initHomeFold(){
       // 제목 안의 버튼(편집·새로고침·전체보기)은 접기와 무관하게 동작
       if(e.target.closest('button'))return;
       const sec=h.parentElement;
+      // 아이콘·제목을 눌렀을 때만 접힘 (제목 줄의 빈 곳을 눌러 실수로 접히던 문제). 접힌 상태에선 '접힘' 표시를 눌러도 펼침
+      if(!e.target.closest('.sec-ico,.sec-label')&&!(sec.classList.contains('folded')&&e.target===h))return;
       const key=sec.dataset.sec;
       const folded=foldedSections();
       if(folded.has(key))folded.delete(key);else folded.add(key);
@@ -7247,10 +7251,7 @@ function renderQuickGrid(){
     grid.appendChild(item);
   });
   // 추가 버튼
-  const addBtn=document.createElement('div');addBtn.className='ql-add-btn';
-  addBtn.innerHTML=`<div class="ql-add-icon">＋</div><div class="ql-add-name">추가</div>`;
-  addBtn.addEventListener('click',()=>openQlModal(null));
-  grid.appendChild(addBtn);
+  // (큰 '추가' 칸은 없앰 — 제목 옆 '＋ 추가' 버튼으로)
 }
 
 function toggleQlEdit(){
