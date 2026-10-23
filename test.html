@@ -227,6 +227,71 @@ body{font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFo
 #home-screen #quick-grid.ql-editing{gap:12px 26px;padding:0 12px}
 @media (max-width:760px){#home-screen #quick-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:600px){#quick-grid .ql-item{width:auto;padding:4px 12px 4px 4px}#quick-grid .ql-icon-wrap{width:26px;height:26px}#quick-grid .ql-name{font-size:12.5px}}
+
+/* ══ 폰 화면 (640px 이하) — 아래 탭·보드 목록·메모 밀어 보기 (2026-10-23) ══ */
+.m-only{display:none!important}
+#m-more{display:none}
+@media (max-width:640px){
+  .m-only{display:revert!important}
+  body{padding-bottom:62px}
+  #app-header .hdr-btn:not(#more-btn):not(#m-search-btn){display:none!important}
+  #m-search-btn{display:inline-flex!important;font-size:16px}
+  #hdr-search-wrap{display:none}
+  #app-header .hdr-right{margin-left:auto}
+  #memo-section h2 .memo-open-btn{display:none!important}
+  #__memolist .mb-acts{position:static;opacity:1;margin:-8px -8px 6px;justify-content:flex-end;flex-wrap:nowrap;gap:2px;padding:3px}
+  #__memolist .mb-acts .mb-dot{width:13px;height:13px}
+  #__memolist .mb-acts .memo-act{padding:2px}
+  #__memolist .mb-acts svg{width:14px;height:14px}
+  #__memolist .mb-edit-row span{display:none}
+  body.m-search #hdr-search-wrap{display:flex;position:fixed;left:0;right:0;top:52px;max-width:none;padding:8px 10px;background:#16233d;z-index:60}
+  body.m-search #hdr-search-box{max-width:none}
+  #home-screen{padding:14px 12px 120px}
+  #home-screen h2{font-size:15px}
+  #home-top{flex-wrap:nowrap;align-items:center;margin-bottom:16px}
+  #home-top #ht-time{font-size:34px}
+  #home-top #ht-info{font-size:12.5px;display:block;line-height:1.5}
+  #home-top{display:grid!important;grid-template-columns:1fr auto;grid-template-rows:auto auto;column-gap:10px}
+  #ht-time{grid-column:1;grid-row:1}
+  #ht-info{grid-column:1;grid-row:2}
+  .m-top-btns{display:flex!important;gap:8px;grid-column:2;grid-row:1/3}
+  .m-top-btns .ht-round{width:44px;height:44px;font-size:18px}
+  #home-sub,#home-sales-grid{display:none!important}
+  .home-bottom{display:none!important}
+  /* 보드: 한 줄에 하나씩 목록 */
+  #boards-grid{flex-direction:column;flex-wrap:nowrap;gap:0;background:#fff;border:1px solid #e4e7ea;border-radius:12px;overflow:hidden}
+  #boards-grid .board-card{width:100%!important;min-height:50px;height:auto;flex-direction:row!important;align-items:center;gap:8px;border-radius:0!important;border:none!important;border-bottom:1px solid #f0f1f4!important;padding:8px 12px 8px 20px!important}
+  #boards-grid .board-card::before{width:5px;top:12px;bottom:12px;left:9px;border-radius:3px}
+  #boards-grid .board-card-title{flex:1;font-size:15px;min-width:0}
+  #boards-grid .board-card-bottom{flex:none;gap:6px}
+  #boards-grid .board-card-count{font-size:0!important;gap:5px}
+  #boards-grid .board-card-count .bc-badge{font-size:11px}
+  #boards-grid .board-card-actions,#boards-grid .board-pin-badge{display:none!important}
+  #boards-grid:not(.m-all) .board-card:nth-child(n+6),#boards-grid:not(.m-all) .new-board-card{display:none!important}
+  #boards-grid .new-board-card{width:100%!important;min-height:46px;border:none;border-bottom:1px solid #f0f1f4;border-radius:0}
+  .m-boards-more{display:block!important;width:100%;min-height:44px;border:none;background:#fff;font:inherit;font-size:13px;font-weight:700;color:var(--muted);cursor:pointer}
+  /* 메모: 입력 줄 대신 ＋ 버튼, 포스트잇은 옆으로 밀어서 */
+  #memo-input-row{display:none}
+  .memo-pager{display:none!important}
+  #memo-recent.memo-mini{display:flex!important;gap:8px;height:auto;overflow-x:auto;scroll-snap-type:x mandatory;padding:2px 2px 8px;margin-top:0}
+  #memo-recent .memo-mini-note{flex:none;width:128px;height:110px;scroll-snap-align:start;-webkit-line-clamp:6}
+  #memo-recent .memo-mini-empty{flex:1;height:80px}
+  #m-fab{display:flex!important;position:fixed;right:16px;bottom:78px;width:56px;height:56px;border-radius:50%;border:none;background:var(--accent);color:#fff;font-size:28px;align-items:center;justify-content:center;box-shadow:0 6px 16px rgba(0,82,204,.35);z-index:141;cursor:pointer}
+  /* 아래 고정 탭 */
+  #m-tabbar{display:grid!important;position:fixed;left:0;right:0;bottom:0;height:62px;padding-bottom:env(safe-area-inset-bottom);background:#fff;border-top:1px solid #e4e7ea;grid-template-columns:repeat(5,minmax(0,1fr));z-index:140}
+  #m-tabbar button{position:relative;border:none;background:none;font:inherit;font-size:11px;font-weight:600;color:#5e6c84;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer}
+  #m-tabbar button:first-child{color:var(--accent)}
+  .m-badge{position:absolute;top:6px;left:50%;margin-left:6px;background:#de350b;color:#fff;font-size:10px;font-weight:800;padding:1px 5px;border-radius:999px;line-height:1.4}
+  .m-badge:empty{display:none}
+  /* 더보기 판 */
+  #m-more.open{display:block;position:fixed;inset:0;background:rgba(9,30,66,.45);z-index:300}
+  .m-sheet{position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:18px 18px 0 0;padding:10px 16px calc(24px + env(safe-area-inset-bottom));box-shadow:0 -8px 30px rgba(0,0,0,.2)}
+  .m-grip{width:40px;height:5px;border-radius:3px;background:#d5d9e0;margin:0 auto 14px}
+  .m-sheet-title{font-size:16px;font-weight:800;margin-bottom:12px}
+  .m-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px 6px}
+  .m-grid button{border:none;background:none;font:inherit;font-size:12.5px;font-weight:600;color:var(--text);display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer}
+  .m-grid button span{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px}
+}
 /* ── 포스트잇 메모 (2026-10-23) ── */
 /* ── 메모 5장 · 넘겨 보기 · 끌어서 순서 바꾸기 ── */
 .memo-pager{display:inline-flex;align-items:center;gap:4px;margin-left:auto;font-size:12px;font-weight:600;color:var(--muted)}
@@ -1750,6 +1815,7 @@ body{font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFo
     </div>
   </div>
   <div class="hdr-right">
+    <button class="hdr-btn icon-only m-only" id="m-search-btn" onclick="mToggleSearch()" aria-label="검색">🔍</button>
     <button class="hdr-btn icon-only" id="undo-btn" onclick="undoLast()" title="실행취소 (Ctrl+Z)" disabled>↩</button>
     <button class="hdr-btn" id="myday-btn" onclick="openMyDay()">나의 하루<span id="myday-badge" class="hdr-badge" style="display:none"></span></button>
     <button class="hdr-btn" id="planner-btn" onclick="openPlanner()">✍️ 플래너</button>
@@ -1827,7 +1893,7 @@ body{font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFo
 <!-- HOME -->
 <div id="home-screen">
   <!-- 시간 · 날짜 · 날씨 한 줄 -->
-  <div id="home-top"><span id="ht-time"></span><span id="ht-info"><span id="ht-date"></span><span id="ht-weather"></span></span><span id="home-sub"><span id="diary-section"><span id="diary-collapsed-strip"></span><button type="button" class="ht-round" onclick="openGeminiDiary()" title="제미나이에서 일기 쓰기" aria-label="제미나이에서 일기 쓰기">✍️</button><button type="button" class="ht-round" onclick="openDiaryList()" title="일기 전체" aria-label="일기 전체">📚</button></span><span class="ht-div" aria-hidden="true"></span></span></div>
+  <div id="home-top"><span id="ht-time"></span><span id="ht-info"><span id="ht-date"></span><span id="ht-weather"></span></span><span id="home-sub"><span id="diary-section"><span id="diary-collapsed-strip"></span><button type="button" class="ht-round" onclick="openGeminiDiary()" title="제미나이에서 일기 쓰기" aria-label="제미나이에서 일기 쓰기">✍️</button><button type="button" class="ht-round" onclick="openDiaryList()" title="일기 전체" aria-label="일기 전체">📚</button></span><span class="ht-div" aria-hidden="true"></span></span><span class="m-only m-top-btns"><button type="button" class="ht-round" onclick="mOpenDiary()" aria-label="일기">📔</button><button type="button" class="ht-round" onclick="slPeriod='month';openSales()" aria-label="매출 보기">💰</button></span></div>
   <!-- 보드 -->
   <div class="home-sec" id="boards-section" data-sec="boards">
     <h2><span class="sec-caret">▾</span><span class="sec-ico" style="background:#e6f9f0;color:#0d9668">📌</span><span class="sec-label">Boards</span></h2>
@@ -1864,6 +1930,32 @@ body{font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFo
     <div class="home-sec" id="auto-section" data-sec="auto">
       <h2><span class="sec-caret">▾</span><span class="sec-ico" style="background:#f0ecff;color:#7c3aed">⚡</span><span class="sec-label">Auto Action</span> <span id="auto-status"></span> <button id="auto-refresh" onclick="renderAutoGrid()">새로고침</button></h2>
       <div class="sec-body"><div id="auto-grid"></div></div>
+    </div>
+  </div>
+  <button type="button" id="m-fab" class="m-only" onclick="mNewMemo()" aria-label="새 메모">＋</button>
+</div>
+
+<!-- 폰 전용: 아래 고정 탭 · 더보기 판 (2026-10-23) -->
+<nav id="m-tabbar" class="m-only" aria-label="아래 메뉴">
+  <button type="button" onclick="mGoHome()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12H3l9-9l9 9h-2"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>홈</button>
+  <button type="button" onclick="mTab(aiGoList)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 13h3l2 3h6l2-3h3"/><path d="M4 13l2-8h12l2 8v6H4z"/></svg>고객 할 일<span class="m-badge" id="m-badge-ai"></span></button>
+  <button type="button" onclick="mTab(openSchedule)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16"/></svg>일정</button>
+  <button type="button" onclick="mTab(openMyDay)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>나의 하루<span class="m-badge" id="m-badge-myday"></span></button>
+  <button type="button" onclick="mMore(true)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>더보기</button>
+</nav>
+<div id="m-more" onclick="if(event.target===this)mMore(false)">
+  <div class="m-sheet" role="dialog" aria-label="더보기">
+    <div class="m-grip"></div>
+    <div class="m-sheet-title">더보기</div>
+    <div class="m-grid">
+      <button type="button" onclick="mMore(false);slPeriod='month';openSales()"><span style="background:#fff4dc">💰</span>매출</button>
+      <button type="button" onclick="mMore(false);openPlanner()"><span style="background:#eef4ff">✍️</span>플래너</button>
+      <button type="button" onclick="mMore(false);openCalendar()"><span style="background:#e6f6ef">🗓️</span>캘린더</button>
+      <button type="button" onclick="mMore(false);openDiaryList()"><span style="background:#fdeef3">📚</span>일기 전체</button>
+      <button type="button" onclick="mMore(false);openMemoList()"><span style="background:#fff8d6">📝</span>메모장</button>
+      <button type="button" onclick="mMore(false);openAiInbox()"><span style="background:#f4efff">📥</span>접수함</button>
+      <button type="button" onclick="mMore(false);openSyncModal()"><span style="background:#f1f2f4">🔄</span>기기 연동</button>
+      <button type="button" onclick="mMore(false);setTimeout(()=>toggleMoreMenu(),50)"><span style="background:#f1f2f4">⚙️</span>설정·백업</button>
     </div>
   </div>
 </div>
@@ -4113,6 +4205,17 @@ const memoColor=m=>MEMO_COLORS[m&&m.color]||MEMO_COLORS.yellow;
 const memoLive=()=>ensureMemos().filter(m=>!m.archived);
 // 첫 화면: 입력 줄 + 포스트잇 5장씩 (칸 높이 고정) · ‹ › 로 넘겨 보기 · 끌어서 순서 바꾸기
 const MEMO_HOME_N=5;let memoHomePage=0,memoDragId=null;
+// ── 폰 전용 도우미 ──
+const mIsPhone=()=>window.matchMedia('(max-width:640px)').matches;
+function mOpenDiary(){const st=document.querySelector('#diary-collapsed-strip .diary-strip');if(st)st.click();else openDiaryList();}
+function mNewMemo(){openMemoList();memoNewDraft={color:'yellow'};renderMemoList();}
+function mToggleSearch(){const on=document.body.classList.toggle('m-search');if(on)setTimeout(()=>{const q=document.getElementById('hdr-search');if(q)q.focus();},50);}
+function mMore(on){const m=document.getElementById('m-more');if(m)m.classList.toggle('open',!!on);}
+function mGoHome(){try{document.querySelectorAll('.overlay.open,#sch-overlay.open,#sales-overlay.open,#ai-overlay.open').forEach(o=>o.classList.remove('open'));}catch(e){}const ml=document.getElementById('__memolist');if(ml)ml.remove();goHome();window.scrollTo(0,0);}
+function mTab(fn){mMore(false);try{fn();}catch(e){console.error(e);}}
+// 위쪽 버튼의 숫자(고객 할 일·나의 하루)를 아래 탭에도 똑같이
+setInterval(()=>{[['ai-badge','m-badge-ai'],['myday-badge','m-badge-myday']].forEach(([a,b])=>{const s=document.getElementById(a),d=document.getElementById(b);if(!s||!d)return;const t=s.style.display==='none'?'':s.textContent;if(d.textContent!==t)d.textContent=t;d.style.display=t?'':'none';});},2000);
+window.matchMedia('(max-width:640px)').addEventListener('change',()=>{try{renderMemos();}catch(e){}});
 function memoRenderPager(pages){
   const h=document.querySelector('#memo-section > h2');if(!h)return;
   let pg=h.querySelector('.memo-pager');
@@ -4147,10 +4250,11 @@ function renderMemos(){
   if(cnt)cnt.textContent=memos.length?memos.length:'';
   wrap.className='memo-mini';wrap.innerHTML='';
   if(!memos.length){wrap.innerHTML='<div class="memo-mini-empty">아직 메모가 없어요</div>';}
-  const pages=Math.max(1,Math.ceil(memos.length/MEMO_HOME_N));
+  const PER=mIsPhone()?40:MEMO_HOME_N;
+  const pages=Math.max(1,Math.ceil(memos.length/PER));
   memoHomePage=Math.min(Math.max(0,memoHomePage),pages-1);
   memoRenderPager(pages);
-  memos.slice(memoHomePage*MEMO_HOME_N,memoHomePage*MEMO_HOME_N+MEMO_HOME_N).forEach(m=>{
+  memos.slice(memoHomePage*PER,memoHomePage*PER+PER).forEach(m=>{
     const c=memoColor(m);
     const n=document.createElement('div');n.setAttribute('role','button');n.tabIndex=0;n.className='memo-mini-note';n.addEventListener('keydown',e=>{if(e.key==='Enter')openMemoList(m.id);});
     n.style.background=c.bg;n.title='메모장에서 보기';
@@ -4984,6 +5088,8 @@ function renderHome(){
   });
   grid.querySelectorAll('.bca-btn').forEach(btn=>{btn.addEventListener('click',async e=>{e.stopPropagation();const b=state.boards.find(x=>x.id===btn.dataset.id);if(!b)return;if(btn.dataset.a==='pin'){b.pinned=!b.pinned;saveState();renderHome();showToast(b.pinned?'📌':'📍',b.pinned?'보드 위치가 고정되었어요!':'위치 고정이 해제되었어요!',1800);}else if(btn.dataset.a==='rename'){const v=window.prompt('새 보드 이름:',b.title);if(v&&v.trim()){b.title=v.trim();saveState();renderHome();}}else{const ok=await confirm2('보드 삭제',`"${b.title}" 보드를 삭제할까요?`+ctDelWarn((b.columns||[]).flatMap(c=>c.cards||[])));if(ok){state.boards=state.boards.filter(x=>x.id!==b.id);saveState();renderHome();}}});});
   const nb=document.createElement('div');nb.className='new-board-card';nb.innerHTML='<span style="font-size:15px">＋</span><span>새 보드</span>';nb.onclick=()=>showNewBoardForm(nb);grid.appendChild(nb);
+  // 폰: 보드 1~5만 보이고 나머지는 '더 보기'로
+  if(state.boards.length>5){const mb=document.createElement('button');mb.type='button';mb.className='m-only m-boards-more';const more=state.boards.length-5;mb.textContent=grid.classList.contains('m-all')?'접기 ▴':`다른 보드 ${more}개 더 보기 ▾`;mb.onclick=()=>{grid.classList.toggle('m-all');mb.textContent=grid.classList.contains('m-all')?'접기 ▴':`다른 보드 ${more}개 더 보기 ▾`;};grid.appendChild(mb);}
 }
 function reorderBoards(fromId,toId){
   const arr=state.boards;
