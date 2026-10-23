@@ -209,6 +209,22 @@ body{font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFo
 .memo-tagchip.on{border-color:var(--accent);background:#eef4ff;color:var(--accent);font-weight:700}
 .memo-empty{font-size:12.5px;color:var(--muted);padding:14px 13px}
 
+
+/* ── Hot Link: 브라우저 즐겨찾기 줄처럼 납작한 알약 (2026-10-23, 시안 L2) — Auto Action 타일과 생김새를 구분 ── */
+#quick-grid .ql-item{width:auto;flex-direction:row;gap:8px;padding:5px 15px 5px 5px;border-radius:999px;border:1px solid #e4e7ea;background:#fff;box-shadow:none}
+#quick-grid .ql-item:hover{transform:none;border-color:var(--tc,#0052cc);background:var(--tcbg,#eef4ff);box-shadow:0 2px 8px rgba(9,30,66,.08)}
+#quick-grid .ql-icon-wrap{width:30px;height:30px;border-radius:50%;background:var(--tc,#0052cc)!important;color:#fff;flex-shrink:0}
+#quick-grid .ql-item:hover .ql-icon-wrap{color:#fff}
+#quick-grid .ql-icon-wrap svg{width:16px;height:16px}
+#quick-grid .ql-icon-wrap img{width:18px;height:18px;border-radius:4px}
+#quick-grid .ql-name{font-size:13.5px;font-weight:700;color:var(--text);max-width:160px}
+#quick-grid .ql-item:hover .ql-name{color:var(--text)}
+#quick-grid .ql-del-btn{top:-7px;right:-5px}
+#quick-grid .ql-move{top:50%;transform:translateY(-50%);height:22px}
+#quick-grid .ql-move.left{left:-10px}
+#quick-grid .ql-move.right{right:-10px}
+#quick-grid.ql-editing{gap:12px 26px;padding:0 12px}
+@media (max-width:600px){#quick-grid .ql-item{width:auto;padding:4px 12px 4px 4px}#quick-grid .ql-icon-wrap{width:26px;height:26px}#quick-grid .ql-name{font-size:12.5px}}
 /* ── 포스트잇 메모 (2026-10-23) ── */
 /* ── 시계 줄 오른쪽 끝: 일기 알약 · 쓰기 · 일기 전체 | 매출 (시안 ③, 2026-10-23) ── */
 #home-top{align-items:center}
@@ -6839,7 +6855,8 @@ function renderQuickGrid(){
     item.style.setProperty('--tcbg',tintOf(s.color));
     const qIcon=iconHtml(s,24)||svgIcon('globe',24);
     item.innerHTML=`<div class="ql-icon-wrap">${qIcon}</div><div class="ql-name">${esc(s.name)}</div><button class="ql-del-btn" title="삭제">✕</button><button class="ql-move left" title="왼쪽으로 이동" ${idx===0?'disabled':''}>‹</button><button class="ql-move right" title="오른쪽으로 이동" ${idx===total-1?'disabled':''}>›</button>`;
-    item.querySelector('.ql-icon-wrap').addEventListener('click',()=>{
+    item.addEventListener('click',e=>{
+      if(e.target.closest('button'))return;
       if(qlEditMode){openQlModal(s.id);return;}
       const type=s.type||'url';
       if(type==='folder'){openFolderHandle(s.handleId);}
