@@ -6384,10 +6384,11 @@ function copyToClipboard(text){if(navigator.clipboard){navigator.clipboard.write
 const winPathOk=p=>/^[A-Za-z]:\\/.test(p)&&!/[<>|*?"]/.test(p);
 function openInExplorer(p){
   if(!winPathOk(p)){showToast('⚠️','폴더 경로가 올바르지 않아요. 예: C:\\Users\\이름\\Documents',4000);return;}
-  const a=document.createElement('a');a.href='mwfolder:'+encodeURIComponent(p);a.style.display='none';
+  const a=document.createElement('a');let hx='';for(let i=0;i<p.length;i++)hx+=p.charCodeAt(i).toString(16).padStart(4,'0');
+  a.href='mwfolder:'+hx;a.style.display='none';
   document.body.appendChild(a);a.click();a.remove();
   let n=0;try{n=Number(localStorage.getItem('mwf_hint')||0);}catch(e){}
-  if(n<3){try{localStorage.setItem('mwf_hint',String(n+1));}catch(e){}showToast('📂','탐색기를 여는 중이에요. 안 열리면 폴더 바로가기의 "설치 파일 받기"로 도우미를 한 번 설치해 주세요.',6000);}
+  if(n<3){try{localStorage.setItem('mwf_hint',String(n+1));}catch(e){}showToast('📂','탐색기를 여는 중이에요. 안 열리면 폴더 바로가기의 "설치 파일 받기"로 도우미(새 버전)를 설치해 주세요.',6000);}
 }
 function addWinPathLink(){
   const inp=document.getElementById('local-path-input');let p=(inp.value||'').trim().replace(/^"+|"+$/g,'');
