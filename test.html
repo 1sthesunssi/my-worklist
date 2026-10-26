@@ -2283,6 +2283,13 @@ body{font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFo
               💡 아래 버튼을 누르면 탐색기가 열려요. 원하는 폴더를 찾아 클릭하면 바로 등록돼요.<br>(크롬·엣지 브라우저에서만 가능하고, <b>이 PC의 이 브라우저</b>에서만 다시 열 수 있어요)
             </div>
             <button class="bp" onclick="pickLocalFolder()" style="width:100%">📂 탐색기에서 폴더 찾기</button>
+            <div style="font-size:12px;color:var(--muted);line-height:1.7;margin-top:6px;border-top:1px dashed rgba(0,82,204,.25);padding-top:8px">
+              <b>또는 폴더 경로를 붙여넣기</b> — 누르면 <b>윈도우 탐색기가 바로 열려요</b><br>
+              (탐색기에서 폴더를 열고 위쪽 주소 칸을 클릭 → Ctrl+C)
+            </div>
+            <input id="local-path-input" type="text" placeholder="예: C:\Users\내이름\Documents\고객자료" onkeydown="if(event.key==='Enter')addWinPathLink()">
+            <button class="bp" onclick="addWinPathLink()" style="width:100%">📍 경로로 추가</button>
+            <div style="font-size:11.5px;color:var(--muted);line-height:1.6">처음 한 번만 PC에 작은 도우미 설치가 필요해요 → <a href="./tools/MyWorklist-folder-opener.zip" download style="color:var(--accent);font-weight:700">설치 파일 받기</a></div>
             <div class="fbtn" style="margin-top:6px">
               <button class="bx" onclick="cancelLocalLink()">취소</button>
             </div>
@@ -6371,6 +6378,37 @@ function renderModalCL(card){const section=document.getElementById('modal-cl-sec
 // ════════════════════════════
 function copyToClipboard(text){if(navigator.clipboard){navigator.clipboard.writeText(text).catch(()=>{});}else{const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(ta);}}
 
+// ── 윈도우 탐색기로 바로 열기 ──
+// 웹 화면은 탐색기를 직접 켤 수 없어서, PC에 깔아 둔 작은 도우미(mwfolder: 주소 연결)를 불러 줍니다.
+// 도우미는 내 PC의 드라이브 경로(C:\...)만 열고 프로그램은 실행하지 않습니다.
+const winPathOk=p=>/^[A-Za-z]:\\/.test(p)&&!/[<>|*?"]/.test(p);
+function openInExplorer(p){
+  if(!winPathOk(p)){showToast('⚠️','폴더 경로가 올바르지 않아요. 예: C:\\Users\\이름\\Documents',4000);return;}
+  const a=document.createElement('a');a.href='mwfolder:'+encodeURIComponent(p);a.style.display='none';
+  document.body.appendChild(a);a.click();a.remove();
+  let n=0;try{n=Number(localStorage.getItem('mwf_hint')||0);}catch(e){}
+  if(n<3){try{localStorage.setItem('mwf_hint',String(n+1));}catch(e){}showToast('📂','탐색기를 여는 중이에요. 안 열리면 폴더 바로가기의 "설치 파일 받기"로 도우미를 한 번 설치해 주세요.',6000);}
+}
+function addWinPathLink(){
+  const inp=document.getElementById('local-path-input');let p=(inp.value||'').trim().replace(/^"+|"+$/g,'');
+  if(!winPathOk(p)){showToast('⚠️','경로를 붙여넣어 주세요. 예: C:\\Users\\이름\\Documents\\고객자료',4000);return;}
+  const card=getActiveCard();if(!card)return;
+  card.localLinks=card.localLinks||[];
+  p=p.replace(/[\\/]+$/,'');if(/^[A-Za-z]:$/.test(p))p+='\\';
+  const name=p.replace(/[\\/]+$/,'').split(/[\\/]/).pop()||p;
+  card.localLinks.push({id:uid(),name,winPath:p});
+  saveState();inp.value='';renderLocalLinks(card);cancelLocalLink();
+  showToast('📍','폴더를 추가했어요. 누르면 탐색기가 열려요.');
+}
+function setWinPath(link,card){
+  const p0=prompt('이 폴더의 경로를 붙여넣어 주세요.\n(탐색기에서 폴더를 열고 위쪽 주소 칸 클릭 → Ctrl+C)\n지우려면 비워 두세요.',link.winPath||'');
+  if(p0===null)return;
+  const p=p0.trim().replace(/^"+|"+$/g,'');
+  if(!p){delete link.winPath;}
+  else if(!winPathOk(p)){showToast('⚠️','경로가 올바르지 않아요. 예: C:\\Users\\이름\\Documents',4000);return;}
+  else link.winPath=p;
+  saveState();renderLocalLinks(card);
+}
 function renderLocalLinks(card){
   card.localLinks=card.localLinks||[];
   const section=document.getElementById('modal-folder-section');
@@ -6379,15 +6417,16 @@ function renderLocalLinks(card){
   card.localLinks.forEach((link,idx)=>{
     const row=document.createElement('div');row.className='local-link-row';row.style.cursor='pointer';
     const safeN=esc(link.name||'폴더');
-    const subText=link.handleId?'📌 이 PC·이 브라우저에서만 열 수 있어요':esc(link.path||'');
-    row.innerHTML=`<span style="font-size:18px">📂</span><div style="flex:1;min-width:0"><span class="local-link-title">${safeN}</span><span class="local-link-sub">${subText}</span></div><button class="local-link-icon-btn" title="이름 변경">✏️</button><button class="local-link-icon-btn" title="삭제">✕</button>`;
-    const openThis=()=>{if(link.handleId)openFolderHandle(link.handleId);else if(link.path)window.open(link.path,'_blank','noopener');};
+    const subText=link.winPath?'📍 '+esc(link.winPath):(link.handleId?'📌 이 PC·이 브라우저에서만 열 수 있어요 (📍로 경로를 지정하면 탐색기로 열려요)':esc(link.path||''));
+    row.innerHTML=`<span style="font-size:18px">📂</span><div style="flex:1;min-width:0"><span class="local-link-title">${safeN}</span><span class="local-link-sub">${subText}</span></div><button class="local-link-icon-btn" title="탐색기로 열 폴더 경로 지정">📍</button><button class="local-link-icon-btn" title="이름 변경">✏️</button><button class="local-link-icon-btn" title="삭제">✕</button>`;
+    const openThis=()=>{if(link.winPath)openInExplorer(link.winPath);else if(link.handleId)openFolderHandle(link.handleId);else if(link.path)window.open(link.path,'_blank','noopener');};
     // 행(폴더 이름/아이콘) 클릭 → 바로 열기
     row.addEventListener('click',openThis);
     const titleEl=row.querySelector('.local-link-title');
     const btns=row.querySelectorAll('.local-link-icon-btn');
     // ✏️ 이름 변경 (클릭 전파 방지)
-    btns[0].addEventListener('click',e=>{
+    btns[0].addEventListener('click',e=>{e.stopPropagation();setWinPath(link,card);});
+    btns[1].addEventListener('click',e=>{
       e.stopPropagation();
       const inp=document.createElement('input');inp.type='text';inp.value=link.name||'';
       inp.style.cssText='border:1px solid var(--accent);border-radius:5px;padding:2px 6px;font-size:13px;font-weight:700;width:100%;outline:none';
@@ -6397,7 +6436,7 @@ function renderLocalLinks(card){
       inp.addEventListener('blur',fin);
       inp.addEventListener('keydown',ev=>{if(ev.key==='Enter')inp.blur();if(ev.key==='Escape'){inp.value=link.name||'';inp.blur();}});
     });
-    btns[1].addEventListener('click',e=>{e.stopPropagation();card.localLinks.splice(idx,1);if(link.handleId)idbDeleteHandle(link.handleId).catch(()=>{});saveState();renderLocalLinks(card);});
+    btns[2].addEventListener('click',e=>{e.stopPropagation();card.localLinks.splice(idx,1);if(link.handleId)idbDeleteHandle(link.handleId).catch(()=>{});saveState();renderLocalLinks(card);});
     container.appendChild(row);
   });
 }
