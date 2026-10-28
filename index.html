@@ -9312,6 +9312,9 @@ document.addEventListener('keydown',e=>{
 #sl-pick label:has(input:checked){border-color:#0c66e4;background:#e9f2ff}
 #sl-pick small{display:block;color:#5e6c84;font-size:12px}
 #sl-report{display:none}
+#sl-goal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:170;align-items:center;justify-content:center;padding:16px}
+#sl-goal.open{display:flex}
+#sl-goal .box{background:#fff;border-radius:12px;padding:20px;width:100%;max-width:380px;display:flex;flex-direction:column;gap:10px;color:#172b4d;box-shadow:0 20px 60px rgba(0,0,0,.3)}
 #sl-report.trend{page:land}
 @page land{size:A4 landscape;margin:10mm}
 #sl-report .tr-t td,#sl-report .tr-t th{padding:3px 4px;font-size:9.5px}
@@ -9684,6 +9687,7 @@ function renderSales(){
     ${slPeriod==='custom'?`<div class="sl-card" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:13px"><label>시작일 <input type="date" id="sl-from" value="${from}" onchange="slDates()" style="font:inherit;min-height:36px;border:1px solid #c1c7d0;border-radius:8px;padding:0 8px"></label> ~ <label>끝일 <input type="date" id="sl-to" value="${to}" onchange="slDates()" style="font:inherit;min-height:36px;border:1px solid #c1c7d0;border-radius:8px;padding:0 8px"></label></div>`:''}
     <div class="sl-noprint" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-size:13px;font-weight:700;color:#44546f">신규 · 갱신 · 변경</span>${bizPills}<span style="font-size:12px;color:#5e6c84">변경의 환급은 빼기(−) · 해지·감액·철회는 '전체'에서만 보여요</span></div>
     ${nUnk&&slBiz!=='미정'?`<div class="sl-card" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#fff7d6;border-color:#f5cd47;font-size:13px"><b style="color:#7f5f01">신규·갱신·변경 중 무엇인지 모르는 계약이 ${nUnk}건 있어요</b><span style="color:#5e6c84">카드를 열고 계약 '수정'에서 골라 주세요</span><button type="button" class="ct-btn" style="margin-left:auto;min-height:32px;font-size:12.5px" onclick="slSet('b','미정')">미정만 보기</button></div>`:''}
+    ${slGoalHtml(from,to)}
     <div class="sl-cats">${cats}</div>
     <div class="sl-noprint" style="font-size:12px;color:#5e6c84;margin-top:-6px">칸을 누르면 아래가 그 구분으로 바뀌어요. 구분끼리는 서로 더하지 않아요 (자동차 DB·BB, 일반 DB·타사도 따로).</div>
     <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start">
@@ -9766,6 +9770,51 @@ function slPrintRun(cls){
   window.addEventListener('afterprint',done);
   setTimeout(()=>{try{window.print();}finally{setTimeout(done,1500);}},80);
 }
+// ── (10/28) ④ 목표 대비 실적 — 사업단 월 목표(장기 월납·자동차 DB). 거의 안 바뀌어서 '적용 시작 달'부터 계속 씀
+// state.salesGoals = [ { from:'YYYY-MM', '장기':원, '자동차 DB':원 }, ... ]  바꾸면 그 달부터 새 목표, 지난 달은 옛 목표 그대로
+const GOAL_CATS=['장기','자동차 DB'];
+function goalFor(cat,ym){let v=0;(state.salesGoals||[]).slice().sort((a,b)=>a.from.localeCompare(b.from)).forEach(g=>{if(g.from<=ym&&g[cat]>0)v=g[cat];else if(g.from<=ym&&g[cat]===0)v=0;});return v;}
+function goalMonths(from,to){const out=[];let y=Number(from.slice(0,4)),m=Number(from.slice(5,7));const end=to.slice(0,7),now=localDateStr(new Date()).slice(0,7);
+  while(true){const ym=`${y}-${String(m).padStart(2,'0')}`;if(ym>end)break;if(ym<=now)out.push(ym);m++;if(m>12){m=1;y++;}if(out.length>240)break;}return out;}
+function slGoalHtml(from,to,forPrint){
+  const has=(state.salesGoals||[]).length;
+  if(!has)return forPrint?'':`<div class="sl-noprint" style="font-size:12.5px;margin-top:-6px"><a href="#" onclick="event.preventDefault();slGoalEdit()">🎯 월 목표 정하기</a> <span style="color:#5e6c84">— 장기 월납·자동차 목표를 적어 두면 달성률이 보여요</span></div>`;
+  const ms=goalMonths(from,to);if(!ms.length)return '';
+  const all=slAll();const now=new Date();const curYm=localDateStr(now).slice(0,7);
+  const rows=GOAL_CATS.map(k=>{const tg=ms.reduce((s,ym)=>s+goalFor(k,ym),0);if(!tg)return '';
+    const act=all.filter(x=>x.c.cat===k&&ms.includes(x.c.date.slice(0,7))).reduce((s,x)=>s+(Number(x.c.amount)||0),0);
+    const pct=Math.round(act/tg*100);const ok=pct>=100;
+    return `<div style="display:grid;grid-template-columns:96px 1fr auto;gap:10px;align-items:center;font-size:13px"><b>${k}</b>
+      <div style="height:12px;background:#f1f2f4;border-radius:6px;overflow:hidden"><div style="height:12px;width:${Math.max(0,Math.min(100,pct))}%;background:${ok?'#1f845a':'#0c66e4'};border-radius:6px"></div></div>
+      <span style="white-space:nowrap"><b style="font-size:15px">${pct}%</b> <span style="color:#44546f">${ctWon(act)} / ${ctWon(tg)}원${ok?' ✓':''}</span></span></div>`;}).filter(Boolean);
+  if(!rows.length)return '';
+  const one=ms.length===1;const lbl=one?`${Number(ms[0].slice(5))}월 목표`:`목표 누적 (${ms[0].replace('-','.')} ~ ${ms[ms.length-1].replace('-','.')})`;
+  const pass=one&&ms[0]===curYm?` · 이 달의 ${Math.round(now.getDate()/new Date(now.getFullYear(),now.getMonth()+1,0).getDate()*100)}% 지남`:'';
+  return `<div class="sl-card" style="display:flex;flex-direction:column;gap:8px"><div style="display:flex;align-items:center;gap:8px"><b style="font-size:15px">🎯 ${lbl}</b><span style="font-size:12px;color:#5e6c84">해지·감액·철회를 뺀 순금액 기준${pass}</span>
+    ${forPrint?'':`<a href="#" class="sl-noprint" style="margin-left:auto;font-size:12.5px" onclick="event.preventDefault();slGoalEdit()">목표 고치기</a>`}</div>${rows.join('')}</div>`;
+}
+function slGoalEdit(){
+  let p=document.getElementById('sl-goal');
+  if(!p){p=document.createElement('div');p.id='sl-goal';p.className='sl-goalbox';p.onclick=e=>{if(e.target===p)p.classList.remove('open');};document.body.appendChild(p);}
+  const ym=localDateStr(new Date()).slice(0,7);
+  const hist=(state.salesGoals||[]).slice().sort((a,b)=>b.from.localeCompare(a.from)).map(g=>`<div>${g.from.replace('-','.')}부터 · 장기 ${ctWon(g['장기']||0)} · 자동차 DB ${ctWon(g['자동차 DB']||0)}</div>`).join('');
+  const inp=(id,v)=>`<input class="ct-in" id="${id}" inputmode="numeric" value="${v?ctWon(v):''}" placeholder="0" oninput="this.value=this.value.replace(/[^0-9]/g,'').replace(/\\B(?=(\\d{3})+(?!\\d))/g,',')" style="text-align:right;width:100%;box-sizing:border-box;min-height:40px">`;
+  p.innerHTML=`<div class="box" role="dialog" aria-label="월 목표"><div style="font-size:16px;font-weight:800">🎯 월 목표</div>
+    <div style="font-size:12.5px;color:#5e6c84">한 번 적으면 다음 달에도 계속 써요. 목표가 바뀌면 그 달부터 새로 적어 주세요. 지난 달은 옛 목표 그대로예요.</div>
+    <label style="display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:700;color:#44546f"><span>장기 월납 보험료 (원)</span>${inp('gl-long',goalFor('장기',ym))}</label>
+    <label style="display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:700;color:#44546f"><span>자동차 DB 보험료 (원)</span>${inp('gl-car',goalFor('자동차 DB',ym))}</label>
+    <label style="display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:700;color:#44546f"><span>적용 시작 달</span><input class="ct-in" type="month" id="gl-from" value="${ym}" style="width:100%;box-sizing:border-box;min-height:40px"></label>
+    ${hist?`<div style="font-size:12px;color:#5e6c84;line-height:1.6;border-top:1px solid #dfe1e6;padding-top:6px">지금까지 목표<br>${hist}</div>`:''}
+    <div style="display:flex;gap:8px;justify-content:flex-end"><button type="button" class="ct-btn" onclick="document.getElementById('sl-goal').classList.remove('open')">취소</button><button type="button" class="ct-btn go" onclick="slGoalSave()">저장</button></div></div>`;
+  p.classList.add('open');
+}
+function slGoalSave(){
+  const n=id=>Number((document.getElementById(id).value||'').replace(/[^0-9]/g,''))||0;
+  const from=document.getElementById('gl-from').value;if(!/^\d{4}-\d{2}$/.test(from)){showToast('⚠️','적용 시작 달을 골라 주세요.',3000);return;}
+  const g={from,'장기':n('gl-long'),'자동차 DB':n('gl-car')};
+  state.salesGoals=(state.salesGoals||[]).filter(x=>x.from!==from).concat([g]).sort((a,b)=>a.from.localeCompare(b.from));
+  saveState();document.getElementById('sl-goal').classList.remove('open');renderSales();showToast('🎯',`${from.replace('-','.')}부터 목표를 저장했어요`,2500);
+}
 // ③ 월별 추이 (그 해 1~12월) — 작년 자료가 있으면 작년 같은 달을 회색으로 같이 보여 줌
 function slReportTrend(Y){
   Y=Y||Number(slRange()[0].slice(0,4));
@@ -9793,6 +9842,10 @@ function slReportTrend(Y){
     <table class="tr-t"><thead><tr>${hd}</tr></thead><tbody>${amtRows}</tbody></table>
     <h2>건수 <span style="font-weight:400;color:#5e6c84">계약 / 거래</span></h2>
     <table class="tr-t"><thead><tr>${hd}</tr></thead><tbody>${cntRows}</tbody></table>
+    ${(()=>{if(!(state.salesGoals||[]).length)return '';const ms=goalMonths(`${Y}-01-01`,`${Y}-12-31`);
+      const rs=GOAL_CATS.map(k=>{if(!ms.some(ym=>goalFor(k,ym)))return '';return `<tr><td><b>${k}</b></td>${M.map(m=>{const ym=`${Y}-${m}`,tg=goalFor(k,ym);if(!ms.includes(ym)||!tg)return '<td class="r">-</td>';
+        const p=Math.round(sum(inM(Y,m).filter(x=>x.c.cat===k))/tg*100);return `<td class="r"${p>=100?' style="color:#1f845a;font-weight:700"':''}>${p}%</td>`;}).join('')}<td></td></tr>`;}).join('');
+      return rs?`<h2>목표 달성률</h2><table class="tr-t"><thead><tr>${hd}</tr></thead><tbody>${rs}</tbody></table>`:'';})()}
     <div class="tr-charts">${charts}</div>
     <div class="rp-note">${hasPrev?'막대: 파랑 = 올해, 회색 = 작년 · ':''}계약 = 신규·갱신 · 거래 = 계약 + 변경 + 해지·감액·청약철회 · 금액은 해지·감액·철회·환급을 뺀 순금액 · 구분끼리는 단위가 달라 더하지 않아요</div>`;
 }
@@ -9817,6 +9870,7 @@ function slReportSummary(){
   const today=localDateStr(new Date());
   return `<div class="rp-head"><h1>${esc(label)} 매출 요약</h1><div style="font-size:10px;color:#5e6c84">기간 ${esc(from)} ~ ${esc(to)} · 출력일 ${today}</div></div>
     <div class="rp-tiles">${tiles}</div>
+    ${slGoalHtml(from,to,true)}
     <h2>구분별 · 상품별</h2>
     ${prodRows?`<table><thead><tr><th>구분</th><th>상품</th><th class="r">계약</th><th class="r">거래</th><th class="r">금액(원)</th></tr></thead><tbody>${prodRows}</tbody></table>`:'<div>이 기간에 기록이 없어요</div>'}
     <h2>해지 · 감액 · 청약철회 · 환급 내역 <span style="font-weight:400;color:#5e6c84">${neg.length}건</span></h2>
