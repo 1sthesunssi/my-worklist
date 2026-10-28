@@ -10158,14 +10158,14 @@ function slPrint(){
   if(!p){p=document.createElement('div');p.id='sl-pick';p.onclick=e=>{if(e.target===p)p.classList.remove('open');};document.body.appendChild(p);}
   const [,,label]=slRange();
   p.innerHTML=`<div class="box" role="dialog" aria-label="인쇄 고르기"><div style="font-size:16px;font-weight:800">무엇을 인쇄할까요?</div>
-    <label><input type="radio" name="slpk" value="sum" checked><span><b>기간 전체 요약</b><small>${esc(label)} · 5개 구분 + 상품별 요약 + 해지·감액·철회·환급 내역</small></span></label>
-    <label><input type="radio" name="slpk" value="trend"><span><b>월별 추이</b><small>${esc(slRange()[0].slice(0,4))}년 1~12월 · 구분별 보험료·건수·그래프 (가로 인쇄)</small></span></label>
-    <label><input type="radio" name="slpk" value="screen"><span><b>지금 보는 화면 그대로</b><small>${esc(slLabel(slCat))} 그래프·상품별·거래 목록</small></span></label>
+    <label><input type="radio" name="slpk" value="screen" checked><span><b>지금 보는 화면 그대로</b><small>${esc(slLabel(slCat))} · ${esc(label)} · 그래프·상품별·거래 목록</small></span></label>
+    <label><input type="radio" name="slpk" value="trend"><span><b>월별 추이 — ${esc(slRange()[0].slice(0,4))}년</b><small>1~12월 · 묶음별 보험료·건수·그래프 · 작년 비교 (가로 인쇄)</small></span></label>
+    <label><input type="radio" name="slpk" value="sum"><span><b>선택한 기간 요약 — ${esc(label)}</b><small>${esc(slRange()[0])} ~ ${esc(slRange()[1])} · 3묶음 + 상품별 + 해지·감액·철회·환급</small></span></label>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px"><button type="button" class="ct-btn" onclick="document.getElementById('sl-pick').classList.remove('open')">취소</button><button type="button" class="ct-btn go" onclick="slPrintGo()">인쇄</button></div></div>`;
   p.classList.add('open');
 }
 function slPrintGo(){
-  const p=document.getElementById('sl-pick');const v=(p.querySelector('input[name=slpk]:checked')||{}).value||'sum';p.classList.remove('open');
+  const p=document.getElementById('sl-pick');const v=(p.querySelector('input[name=slpk]:checked')||{}).value||'screen';p.classList.remove('open');
   if(v==='screen')return slPrintRun('sl-printing');
   let r=document.getElementById('sl-report');if(!r){r=document.createElement('div');r.id='sl-report';document.body.appendChild(r);}
   r.className=v==='trend'?'trend':'';r.innerHTML=v==='trend'?slReportTrend():slReportSummary();slPrintRun('sl-printing-report');
