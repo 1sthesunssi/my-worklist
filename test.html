@@ -9677,6 +9677,35 @@ document.addEventListener('keydown',e=>{
   body.sl-printing *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   @page{size:A4;margin:12mm}
 }
+/* (10/28) 매출 리포트 인쇄 — 고르는 창 + 리포트 전용 인쇄 영역 */
+#sl-pick{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:170;align-items:center;justify-content:center;padding:16px}
+#sl-pick.open{display:flex}
+#sl-pick .box{background:#fff;border-radius:12px;padding:20px;width:100%;max-width:380px;display:flex;flex-direction:column;gap:10px;color:#172b4d;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+#sl-pick label{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid #dfe1e6;border-radius:8px;cursor:pointer;font-size:14px;line-height:1.45}
+#sl-pick label:has(input:checked){border-color:#0c66e4;background:#e9f2ff}
+#sl-pick small{display:block;color:#5e6c84;font-size:12px}
+#sl-report{display:none}
+@media print{
+  body.sl-printing-report>*:not(#sl-report){display:none!important}
+  body.sl-printing-report #sl-report{display:block!important}
+  body.sl-printing-report *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+#sl-report{font-family:inherit;color:#172b4d;font-size:11px}
+#sl-report h1{font-size:18px;margin:0}
+#sl-report .rp-head{display:flex;align-items:flex-end;justify-content:space-between;border-bottom:2px solid #172b4d;padding-bottom:6px;margin-bottom:10px}
+#sl-report .rp-tiles{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:12px}
+#sl-report .rp-tile{border:1px solid #c1c7d0;border-radius:6px;padding:7px 8px;break-inside:avoid}
+#sl-report .rp-tile b.n{display:block;font-size:14px;margin:2px 0}
+#sl-report .rp-tile .c{font-size:10px;color:#44546f;font-weight:700}
+#sl-report .rp-tile .l{font-size:10px;color:#44546f;line-height:1.5}
+#sl-report h2{font-size:12.5px;margin:12px 0 4px}
+#sl-report table{width:100%;border-collapse:collapse;font-size:10.5px}
+#sl-report th,#sl-report td{border-bottom:1px solid #dfe1e6;padding:3px 5px;text-align:left}
+#sl-report th{background:#f1f2f4;font-weight:700}
+#sl-report td.r,#sl-report th.r{text-align:right;white-space:nowrap}
+#sl-report tr.grp td{background:#f7f8f9;font-weight:700}
+#sl-report tr{break-inside:avoid}
+#sl-report .rp-note{font-size:9.5px;color:#5e6c84;margin-top:8px}
 #sales-panel{background:#e9edf2;border-radius:14px;width:100%;max-width:1100px;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.35);padding:20px;display:flex;flex-direction:column;gap:16px;color:#172b4d;box-sizing:border-box}
 #sales-close{position:absolute;top:12px;right:12px;width:38px;height:38px;border-radius:50%;border:0;background:rgba(9,30,66,.08);font-size:18px;cursor:pointer}
 .sl-card{background:#fff;border:1px solid #dfe1e6;border-radius:12px;padding:14px 16px;box-sizing:border-box}
@@ -10075,12 +10104,55 @@ async function exportAllXlsx(){
   X.writeFile(wb,`MyWorklist_${localDateStr(new Date())}.xlsx`);
   showToast('✅',`보드 ${per.length}개 · 카드 ${all.length}장을 엑셀로 내보냈어요 (다운로드 폴더)`,3500);
 }
-// (10/28) 매출 화면 인쇄 — 지금 보는 기간·구분 그대로, 매출 화면만 A4로
+// ── (10/28) 매출 리포트 인쇄: [🖨 인쇄] → 고르는 창 → ① 기간 전체 요약 / 지금 보는 화면
 function slPrint(){
-  document.body.classList.add('sl-printing');
-  const done=()=>{document.body.classList.remove('sl-printing');window.removeEventListener('afterprint',done);};
+  let p=document.getElementById('sl-pick');
+  if(!p){p=document.createElement('div');p.id='sl-pick';p.onclick=e=>{if(e.target===p)p.classList.remove('open');};document.body.appendChild(p);}
+  const [,,label]=slRange();
+  p.innerHTML=`<div class="box" role="dialog" aria-label="인쇄 고르기"><div style="font-size:16px;font-weight:800">무엇을 인쇄할까요?</div>
+    <label><input type="radio" name="slpk" value="sum" checked><span><b>기간 전체 요약</b><small>${esc(label)} · 5개 구분 + 상품별 요약 + 해지·감액·철회·환급 내역</small></span></label>
+    <label><input type="radio" name="slpk" value="screen"><span><b>지금 보는 화면 그대로</b><small>${esc(slCat)} 그래프·상품별·거래 목록</small></span></label>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px"><button type="button" class="ct-btn" onclick="document.getElementById('sl-pick').classList.remove('open')">취소</button><button type="button" class="ct-btn go" onclick="slPrintGo()">인쇄</button></div></div>`;
+  p.classList.add('open');
+}
+function slPrintGo(){
+  const p=document.getElementById('sl-pick');const v=(p.querySelector('input[name=slpk]:checked')||{}).value||'sum';p.classList.remove('open');
+  if(v==='screen')return slPrintRun('sl-printing');
+  let r=document.getElementById('sl-report');if(!r){r=document.createElement('div');r.id='sl-report';document.body.appendChild(r);}
+  r.innerHTML=slReportSummary();slPrintRun('sl-printing-report');
+}
+function slPrintRun(cls){
+  document.body.classList.add(cls);
+  const done=()=>{document.body.classList.remove(cls);window.removeEventListener('afterprint',done);};
   window.addEventListener('afterprint',done);
-  setTimeout(()=>{try{window.print();}finally{setTimeout(done,1500);}},50);
+  setTimeout(()=>{try{window.print();}finally{setTimeout(done,1500);}},80);
+}
+// ① 기간 전체 요약 — 화면의 '신규·갱신·변경' 거르기와 상관없이 그 기간 전부
+function slReportSummary(){
+  const [from,to,label]=slRange();
+  const rows=slAll().filter(x=>x.c.date>=from&&x.c.date<=to);
+  const sum=a=>a.reduce((s,x)=>s+(Number(x.c.amount)||0),0);
+  const isC=x=>!x.adj&&ctIsDeal(x.c);
+  const UNIT={'장기':'월 보험료','자동차 DB':'연 보험료','자동차 BB':'연 보험료','일반 DB':'일시납','일반 타사':'일시납'};
+  const tiles=CT_CATS.map(k=>{const rs=rows.filter(x=>x.c.cat===k);
+    const lines=['신규','갱신','변경','미정'].map(b=>{const a=rs.filter(x=>!x.adj&&x.c.biz===b);return a.length?`· ${b} ${a.length}건 ${ctWon(sum(a))}`:'';})
+      .concat(['해지','감액','청약철회'].map(kd=>{const a=rs.filter(x=>x.adj&&x.c.kind===kd);return a.length?`· ${kd} ${a.length}건 ${ctWon(sum(a))}`:'';})).filter(Boolean);
+    return `<div class="rp-tile"><div style="font-weight:800;font-size:11.5px">${k}</div><b class="n">${ctWon(sum(rs))}원</b>
+      <div class="c">계약 ${rs.filter(isC).length} · 거래 ${rs.length}</div><div class="l">${lines.join('<br>')||'—'}</div></div>`;}).join('');
+  const prodRows=CT_CATS.map(k=>{const rs=rows.filter(x=>x.c.cat===k);if(!rs.length)return '';
+    const m={};rs.forEach(x=>{const p=x.c.product||'(상품 없음)';m[p]=m[p]||{c:0,t:0,s:0};if(isC(x))m[p].c++;m[p].t++;m[p].s+=Number(x.c.amount)||0;});
+    const body=Object.entries(m).sort((a,b)=>b[1].s-a[1].s).map(([p,t])=>`<tr><td></td><td>${esc(p)}</td><td class="r">${t.c}</td><td class="r">${t.t}</td><td class="r">${ctWon(t.s)}</td></tr>`).join('');
+    return `<tr class="grp"><td>${k} <span style="font-weight:400;color:#5e6c84">(${UNIT[k]})</span></td><td></td><td class="r">${rs.filter(isC).length}</td><td class="r">${rs.length}</td><td class="r">${ctWon(sum(rs))}</td></tr>${body}`;}).join('');
+  const neg=rows.filter(x=>x.adj||(x.c.biz==='변경'&&x.c.chg==='환급')).sort((a,b)=>a.c.date.localeCompare(b.c.date));
+  const negRows=neg.map(x=>`<tr><td>${esc(x.c.date)}</td><td>${esc(x.card.title)}</td><td>${esc(x.c.cat)}</td><td>${esc(x.c.kind)}</td><td>${esc(x.c.product||'')}</td><td class="r">${ctWon(x.c.amount)}</td></tr>`).join('');
+  const today=localDateStr(new Date());
+  return `<div class="rp-head"><h1>${esc(label)} 매출 요약</h1><div style="font-size:10px;color:#5e6c84">기간 ${esc(from)} ~ ${esc(to)} · 출력일 ${today}</div></div>
+    <div class="rp-tiles">${tiles}</div>
+    <h2>구분별 · 상품별</h2>
+    ${prodRows?`<table><thead><tr><th>구분</th><th>상품</th><th class="r">계약</th><th class="r">거래</th><th class="r">금액(원)</th></tr></thead><tbody>${prodRows}</tbody></table>`:'<div>이 기간에 기록이 없어요</div>'}
+    <h2>해지 · 감액 · 청약철회 · 환급 내역 <span style="font-weight:400;color:#5e6c84">${neg.length}건</span></h2>
+    ${neg.length?`<table><thead><tr><th>날짜</th><th>카드</th><th>구분</th><th>종류</th><th>상품</th><th class="r">금액(원)</th></tr></thead><tbody>${negRows}</tbody></table>`:'<div style="color:#5e6c84">없음</div>'}
+    <div class="rp-note">계약 = 신규·갱신(증권 발행) · 거래 = 계약 + 변경 + 해지·감액·청약철회 · 구분끼리는 단위가 달라 더하지 않아요 (장기=월, 자동차=연, 일반=일시납) · 해지·감액·철회는 그 일이 생긴 달에서 빼요</div>`;
 }
 function slExport(){
   const [from,to]=slRange();
