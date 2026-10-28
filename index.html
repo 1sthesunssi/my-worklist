@@ -9355,6 +9355,28 @@ document.addEventListener('keydown',e=>{
 .sl-cats{display:flex;flex-wrap:wrap;gap:12px}
 .sl-cat{flex:1 1 200px;text-align:left;font:inherit;color:#172b4d;background:#fff;border:2px solid #dfe1e6;border-radius:12px;padding:14px 16px;cursor:pointer;display:flex;flex-direction:column;gap:6px}
 .sl-cat.on{border-color:#0052cc}
+.sl-cat.wide{flex:1.6 1 320px}
+.sl-cat:focus-visible,.sl-sub:focus-visible{outline:2px solid #0c66e4;outline-offset:2px}
+.sl-subs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
+.sl-sub{border:1px solid #dfe1e6;border-radius:8px;padding:8px 10px;cursor:pointer;background:#fff;min-width:0}
+.sl-sub:hover{border-color:#8590a2}
+.sl-sub.on{background:#e9f2ff;border-color:#0c66e4}
+.sl-sub .a{font-size:17px;font-weight:800;margin:2px 0}.sl-sub .a small{font-size:12px}
+.sl-sub .cn{font-size:11.5px;color:#44546f}
+.sl-sub .ln{font-size:11.5px;color:#44546f;line-height:1.5}
+#sl-report .rp-tiles{grid-template-columns:1fr 1.5fr 1.5fr!important}
+#sl-report .rp-subs{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:5px;font-size:10px}
+#sl-report .rp-subs>div{border:1px solid #dfe1e6;border-radius:4px;padding:3px 5px}
+#sl-report .rp-subs span{color:#5e6c84}
+#sl-report tr.grp2 td{font-weight:700;color:#44546f}
+#sl-report .sl-card{border:1px solid #c1c7d0;border-radius:6px;padding:6px 10px!important;gap:4px!important;margin-bottom:4px}
+#sl-report .sl-card b{font-size:11.5px!important}
+#sl-report .sl-card span{font-size:10.5px!important}
+#sl-report .sl-card div[style*="height:12px"]{height:8px!important}
+#sl-report th,#sl-report td{padding:2px 5px!important}
+#sl-report h2{margin:8px 0 3px!important}
+#sl-report tr.sub td{color:#44546f}
+#sl-report .tr-charts{grid-template-columns:repeat(3,1fr)!important}
 .sl-bars{display:flex;align-items:flex-end;gap:6px;height:190px;border-bottom:1px solid #c1c7d0;padding:0 2px}
 .sl-bar{flex:1 1 0;min-width:0;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px}
 .sl-bar i{display:block;width:70%;max-width:38px;border-radius:4px 4px 0 0}
@@ -9622,6 +9644,10 @@ renderHome=function(){_ctRenderHome.apply(this,arguments);try{renderHomeSales();
 setTimeout(()=>{try{if(document.getElementById('home-screen').style.display!=='none')renderHomeSales();}catch(e){}},800);
 
 // ── 매출 화면
+// (10/28) 자동차 DB·BB는 둘 다 자동차(연 보험료), 일반 DB·타사는 둘 다 일반(일시납) — 합계로도, 따로도 봄
+const SL_GRP=[{k:'장기',cats:['장기']},{k:'자동차',cats:['자동차 DB','자동차 BB'],nm:['DB','BB']},{k:'일반',cats:['일반 DB','일반 타사'],nm:['DB','타사']}];
+const slCatsOf=k=>{const g=SL_GRP.find(g=>g.k===k);return g?g.cats:[k];};
+const slLabel=k=>k==='자동차'?'자동차 (DB+BB)':k==='일반'?'일반 (DB+타사)':k;
 let slPeriod='year',slCat='장기',slFrom='',slTo='',slBiz='all';
 function slAll(){
   const out=[];
@@ -9663,18 +9689,25 @@ function renderSales(){
   const sum=a=>a.reduce((s,x)=>s+(Number(x.c.amount)||0),0);
   const pills=[['year','올해'],['month','이번 달'],['last','지난달'],['custom','직접 지정']].map(([k,t])=>`<button type="button" class="sl-pill${k===slPeriod?' on':''}" onclick="slSet('p','${k}')">${t}</button>`).join('');
   const sub=CT_SUB;
-  const cats=CT_CATS.map(k=>{const rs=sel.filter(x=>x.c.cat===k);return `<button type="button" class="sl-cat${k===slCat?' on':''}" onclick="slSet('c','${k}')">
-    <span style="display:flex;gap:8px;align-items:center;width:100%"><b style="font-size:15px">${k}</b><span style="margin-left:auto;font-size:12px;color:#44546f;font-weight:700">계약 ${rs.filter(x=>!x.adj&&ctIsDeal(x.c)).length} · 거래 ${rs.length}</span></span>
-    <span style="font-size:24px;font-weight:800;${sum(rs)<0?'color:#44546f':''}">${ctWon(sum(rs))}<span style="font-size:13px">원</span></span>
-    ${(()=>{const r0=sel0.filter(x=>x.c.cat===k&&!x.adj),pt=b=>{const a=r0.filter(x=>x.c.biz===b);return a.length?`${b} ${a.length}건 ${ctWon(sum(a))}`:'';};const ps=[pt('신규'),pt('갱신'),pt('변경'),pt('미정')].filter(Boolean);return ps.length?`<span style="font-size:12px;color:#44546f;text-align:left;line-height:1.6;align-self:stretch">${ps.map(t=>`<span style="display:block">· ${t}</span>`).join('')}</span>`:'';})()}
-    ${rs.some(x=>x.adj)?`<span style="font-size:12px;color:#44546f;text-align:left;align-self:stretch;margin-top:-4px;line-height:1.6">${['해지','감액','청약철회'].map(kd=>{const a=rs.filter(x=>x.adj&&x.c.kind===kd);return a.length?`<span style="display:block">· ${kd} ${a.length}건 ${ctWon(sum(a))}</span>`:'';}).join('')}</span>`:''}</button>`;}).join('');
-  const mine=sel.filter(x=>x.c.cat===slCat);
+  // (10/28) 칸 3개: 장기 / 자동차(DB+BB) / 일반(DB+타사). 큰 칸 = 합계, 안쪽 작은 칸 = 그것만
+  const lineOf=cs=>{const r0=sel0.filter(x=>cs.includes(x.c.cat)&&!x.adj),rs=sel.filter(x=>cs.includes(x.c.cat));
+    return ['신규','갱신','변경','미정'].map(b=>{const a=r0.filter(x=>x.c.biz===b);return a.length?`${b} ${a.length}건 ${ctWon(sum(a))}`:'';})
+      .concat(['해지','감액','청약철회'].map(kd=>{const a=rs.filter(x=>x.adj&&x.c.kind===kd);return a.length?`${kd} ${a.length}건 ${ctWon(sum(a))}`:'';})).filter(Boolean);};
+  const cntOf=cs=>{const rs=sel.filter(x=>cs.includes(x.c.cat));return `계약 ${rs.filter(x=>!x.adj&&ctIsDeal(x.c)).length} · 거래 ${rs.length}`;};
+  const totOf=cs=>sum(sel.filter(x=>cs.includes(x.c.cat)));
+  const cats=SL_GRP.map(g=>{const multi=g.cats.length>1,on=slCat===g.k||g.cats.includes(slCat);const L=lineOf(g.cats);
+    const subs=multi?`<div class="sl-subs">${g.cats.map((c,i)=>{const l2=lineOf([c]);return `<div class="sl-sub${slCat===c?' on':''}" role="button" tabindex="0" onclick="event.stopPropagation();slSet('c','${c}')"><div><b>${g.nm[i]}</b> <span class="cn">${cntOf([c])}</span></div><div class="a">${ctWon(totOf([c]))}<small>원</small></div>${l2.length?`<div class="ln">${l2.map(t=>'· '+t).join('<br>')}</div>`:''}</div>`;}).join('')}</div>`:'';
+    return `<div class="sl-cat${on?' on':''}${multi?' wide':''}" role="button" tabindex="0" onclick="slSet('c','${g.k}')">
+    <span style="display:flex;gap:8px;align-items:center;width:100%"><b style="font-size:16px">${g.k}</b><span style="margin-left:auto;font-size:12px;color:#44546f;font-weight:700">${cntOf(g.cats)}</span></span>
+    <span style="font-size:26px;font-weight:800">${ctWon(totOf(g.cats))}<span style="font-size:13px">원</span></span>
+    ${L.length?`<span style="font-size:12px;color:#44546f;line-height:1.6">${L.map(t=>`<span style="display:block">· ${t}</span>`).join('')}</span>`:''}${subs}</div>`;}).join('');
+  const mine=sel.filter(x=>slCatsOf(slCat).includes(x.c.cat));
   const Y=Number(from.slice(0,4));
   const months=[];for(let m=1;m<=12;m++){const key=`${Y}-${String(m).padStart(2,'0')}`;
-    const v=sum(all.filter(x=>x.c.cat===slCat&&x.c.date.startsWith(key)));
+    const v=sum(all.filter(x=>slCatsOf(slCat).includes(x.c.cat)&&x.c.date.startsWith(key)));
     const mEnd=localDateStr(new Date(Y,m,0));months.push({m,v,on:!(mEnd<from||`${key}-01`>to)});}
   const max=Math.max(1,...months.map(x=>Math.abs(x.v)));
-  const bars=months.map(x=>`<div class="sl-bar" title="${x.m}월 ${slCat} ${ctWon(x.v)}원"><span>${x.v?(x.v/10000).toFixed(1):''}</span><i style="height:${Math.round(Math.abs(x.v)/max*150)}px;background:${x.v<0?(x.on?'#8590a2':'#dcdfe4'):(x.on?'#0052cc':'#b3c7ee')}"></i></div>`).join('');
+  const bars=months.map(x=>`<div class="sl-bar" title="${x.m}월 ${slLabel(slCat)} ${ctWon(x.v)}원"><span>${x.v?(x.v/10000).toFixed(1):''}</span><i style="height:${Math.round(Math.abs(x.v)/max*150)}px;background:${x.v<0?(x.on?'#8590a2':'#dcdfe4'):(x.on?'#0052cc':'#b3c7ee')}"></i></div>`).join('');
   const tm={};mine.forEach(x=>{const p=x.c.product||'(상품 없음)';tm[p]=tm[p]||{n:0,s:0};if(!x.adj&&ctIsDeal(x.c))tm[p].n++;tm[p].s+=Number(x.c.amount)||0;});
   const tl=Object.entries(tm).sort((a,b)=>b[1].s-a[1].s),tmax=Math.max(1,...tl.map(t=>t[1].s));
   const types=tl.length?tl.map(([p,t])=>`<div style="display:flex;flex-direction:column;gap:4px"><div style="display:flex;gap:8px;font-size:13px"><b style="flex:1">${esc(p)}</b><span style="color:#44546f">${t.n}건</span><b>${ctWon(t.s)}원</b></div><div style="height:8px;background:#f1f2f4;border-radius:4px"><div style="height:8px;width:${Math.max(2,Math.round(t.s/tmax*100))}%;background:#0052cc;border-radius:4px"></div></div></div>`).join(''):'<div style="font-size:13px;color:#5e6c84">이 기간에 확정된 계약이 없어요</div>';
@@ -9689,15 +9722,15 @@ function renderSales(){
     ${nUnk&&slBiz!=='미정'?`<div class="sl-card" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#fff7d6;border-color:#f5cd47;font-size:13px"><b style="color:#7f5f01">신규·갱신·변경 중 무엇인지 모르는 계약이 ${nUnk}건 있어요</b><span style="color:#5e6c84">카드를 열고 계약 '수정'에서 골라 주세요</span><button type="button" class="ct-btn" style="margin-left:auto;min-height:32px;font-size:12.5px" onclick="slSet('b','미정')">미정만 보기</button></div>`:''}
     ${slGoalHtml(from,to)}
     <div class="sl-cats">${cats}</div>
-    <div class="sl-noprint" style="font-size:12px;color:#5e6c84;margin-top:-6px">칸을 누르면 아래가 그 구분으로 바뀌어요. 구분끼리는 서로 더하지 않아요 (자동차 DB·BB, 일반 DB·타사도 따로).</div>
+    <div class="sl-noprint" style="font-size:12px;color:#5e6c84;margin-top:-6px">큰 칸을 누르면 합계, 안쪽 작은 칸(DB·BB·타사)을 누르면 그것만 아래에 보여요. 장기·자동차·일반은 단위가 달라(월·연·일시납) 서로 더하지 않아요.</div>
     <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start">
-      <div class="sl-card" style="flex:999 1 520px;min-width:0"><div style="font-size:15px;font-weight:800">월별 ${slCat} 보험료 (${Y}년)</div><div style="font-size:12px;color:#5e6c84;margin:2px 0 12px">고른 기간의 달은 진하게 · 숫자는 만 원 단위</div>
+      <div class="sl-card" style="flex:999 1 520px;min-width:0"><div style="font-size:15px;font-weight:800">월별 ${slLabel(slCat)} 보험료 (${Y}년)</div><div style="font-size:12px;color:#5e6c84;margin:2px 0 12px">고른 기간의 달은 진하게 · 숫자는 만 원 단위</div>
         <div class="sl-bars">${bars}</div><div class="sl-months">${months.map(x=>`<div>${x.m}월</div>`).join('')}</div></div>
-      <div class="sl-card" style="flex:1 1 300px;min-width:0;display:flex;flex-direction:column;gap:10px"><div style="font-size:15px;font-weight:800">${slCat} · 상품별</div>${types}</div>
+      <div class="sl-card" style="flex:1 1 300px;min-width:0;display:flex;flex-direction:column;gap:10px"><div style="font-size:15px;font-weight:800">${slLabel(slCat)} · 상품별</div>${types}</div>
     </div>
-    <div class="sl-card"><div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap"><div style="font-size:15px;font-weight:800">${slCat} 거래 목록 <span style="font-size:12px;color:#5e6c84;font-weight:400">계약 ${mine.filter(x=>!x.adj&&ctIsDeal(x.c)).length}건 · 거래 ${mine.length}건 · 누르면 카드가 열려요</span></div>
+    <div class="sl-card"><div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap"><div style="font-size:15px;font-weight:800">${slLabel(slCat)} 거래 목록 <span style="font-size:12px;color:#5e6c84;font-weight:400">계약 ${mine.filter(x=>!x.adj&&ctIsDeal(x.c)).length}건 · 거래 ${mine.length}건 · 누르면 카드가 열려요</span></div>
       <button type="button" class="ct-btn sl-noprint" style="margin-left:auto;min-height:36px;font-size:12.5px" onclick="slPrint()" title="지금 보는 매출 화면 그대로 인쇄 (PDF 저장도 돼요)">🖨 인쇄</button><button type="button" class="ct-btn sl-noprint" style="min-height:36px;font-size:12.5px" onclick="slExport()">엑셀(CSV)로 내보내기</button></div>
-      <div style="overflow-x:auto">${mine.length?`<table class="sl-table"><thead><tr><th>날짜</th><th>카드</th><th>종류</th><th>상품</th><th style="text-align:right">${CT_UNIT[slCat]}</th></tr></thead><tbody id="sl-tbody">${rows}</tbody></table>`:'<div style="font-size:13px;color:#5e6c84;padding:8px 0">이 기간에 확정된 계약이 없어요</div>'}</div></div>`;
+      <div style="overflow-x:auto">${mine.length?`<table class="sl-table"><thead><tr><th>날짜</th><th>카드</th><th>종류</th><th>상품</th><th style="text-align:right">${CT_UNIT[slCatsOf(slCat)[0]]}</th></tr></thead><tbody id="sl-tbody">${rows}</tbody></table>`:'<div style="font-size:13px;color:#5e6c84;padding:8px 0">이 기간에 확정된 계약이 없어요</div>'}</div></div>`;
   const tb=document.getElementById('sl-tbody');
   if(tb)tb.addEventListener('click',e=>{const tr=e.target.closest('tr[data-i]');if(!tr)return;const x=window.__slRows[Number(tr.dataset.i)];if(!x)return;
     closeSales();openBoard(x.board.id);setTimeout(()=>openModal(x.card.id,x.col.id),200);});
@@ -9754,7 +9787,7 @@ function slPrint(){
   p.innerHTML=`<div class="box" role="dialog" aria-label="인쇄 고르기"><div style="font-size:16px;font-weight:800">무엇을 인쇄할까요?</div>
     <label><input type="radio" name="slpk" value="sum" checked><span><b>기간 전체 요약</b><small>${esc(label)} · 5개 구분 + 상품별 요약 + 해지·감액·철회·환급 내역</small></span></label>
     <label><input type="radio" name="slpk" value="trend"><span><b>월별 추이</b><small>${esc(slRange()[0].slice(0,4))}년 1~12월 · 구분별 보험료·건수·그래프 (가로 인쇄)</small></span></label>
-    <label><input type="radio" name="slpk" value="screen"><span><b>지금 보는 화면 그대로</b><small>${esc(slCat)} 그래프·상품별·거래 목록</small></span></label>
+    <label><input type="radio" name="slpk" value="screen"><span><b>지금 보는 화면 그대로</b><small>${esc(slLabel(slCat))} 그래프·상품별·거래 목록</small></span></label>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px"><button type="button" class="ct-btn" onclick="document.getElementById('sl-pick').classList.remove('open')">취소</button><button type="button" class="ct-btn go" onclick="slPrintGo()">인쇄</button></div></div>`;
   p.classList.add('open');
 }
@@ -9772,8 +9805,8 @@ function slPrintRun(cls){
 }
 // ── (10/28) ④ 목표 대비 실적 — 사업단 월 목표(장기 월납·자동차 DB). 거의 안 바뀌어서 '적용 시작 달'부터 계속 씀
 // state.salesGoals = [ { from:'YYYY-MM', '장기':원, '자동차 DB':원 }, ... ]  바꾸면 그 달부터 새 목표, 지난 달은 옛 목표 그대로
-const GOAL_CATS=['장기','자동차 DB'];
-function goalFor(cat,ym){let v=0;(state.salesGoals||[]).slice().sort((a,b)=>a.from.localeCompare(b.from)).forEach(g=>{if(g.from<=ym&&g[cat]>0)v=g[cat];else if(g.from<=ym&&g[cat]===0)v=0;});return v;}
+const GOAL_CATS=['장기','자동차'];   // 자동차 목표는 DB+BB 합계와 비교 (옛 '자동차 DB' 키도 읽음)
+function goalFor(cat,ym){let v=0;(state.salesGoals||[]).slice().sort((a,b)=>a.from.localeCompare(b.from)).forEach(g=>{const x=g[cat]!==undefined?g[cat]:(cat==='자동차'?g['자동차 DB']:undefined);if(g.from<=ym&&x!==undefined)v=Number(x)||0;});return v;}
 function goalMonths(from,to){const out=[];let y=Number(from.slice(0,4)),m=Number(from.slice(5,7));const end=to.slice(0,7),now=localDateStr(new Date()).slice(0,7);
   while(true){const ym=`${y}-${String(m).padStart(2,'0')}`;if(ym>end)break;if(ym<=now)out.push(ym);m++;if(m>12){m=1;y++;}if(out.length>240)break;}return out;}
 function slGoalHtml(from,to,forPrint){
@@ -9782,9 +9815,9 @@ function slGoalHtml(from,to,forPrint){
   const ms=goalMonths(from,to);if(!ms.length)return '';
   const all=slAll();const now=new Date();const curYm=localDateStr(now).slice(0,7);
   const rows=GOAL_CATS.map(k=>{const tg=ms.reduce((s,ym)=>s+goalFor(k,ym),0);if(!tg)return '';
-    const act=all.filter(x=>x.c.cat===k&&ms.includes(x.c.date.slice(0,7))).reduce((s,x)=>s+(Number(x.c.amount)||0),0);
+    const act=all.filter(x=>slCatsOf(k).includes(x.c.cat)&&ms.includes(x.c.date.slice(0,7))).reduce((s,x)=>s+(Number(x.c.amount)||0),0);
     const pct=Math.round(act/tg*100);const ok=pct>=100;
-    return `<div style="display:grid;grid-template-columns:96px 1fr auto;gap:10px;align-items:center;font-size:13px"><b>${k}</b>
+    return `<div style="display:grid;grid-template-columns:96px 1fr auto;gap:10px;align-items:center;font-size:13px"><b>${k}${k==='자동차'?' <span style="font-weight:400;font-size:11.5px;color:#5e6c84">DB+BB</span>':''}</b>
       <div style="height:12px;background:#f1f2f4;border-radius:6px;overflow:hidden"><div style="height:12px;width:${Math.max(0,Math.min(100,pct))}%;background:${ok?'#1f845a':'#0c66e4'};border-radius:6px"></div></div>
       <span style="white-space:nowrap"><b style="font-size:15px">${pct}%</b> <span style="color:#44546f">${ctWon(act)} / ${ctWon(tg)}원${ok?' ✓':''}</span></span></div>`;}).filter(Boolean);
   if(!rows.length)return '';
@@ -9797,12 +9830,12 @@ function slGoalEdit(){
   let p=document.getElementById('sl-goal');
   if(!p){p=document.createElement('div');p.id='sl-goal';p.className='sl-goalbox';p.onclick=e=>{if(e.target===p)p.classList.remove('open');};document.body.appendChild(p);}
   const ym=localDateStr(new Date()).slice(0,7);
-  const hist=(state.salesGoals||[]).slice().sort((a,b)=>b.from.localeCompare(a.from)).map(g=>`<div>${g.from.replace('-','.')}부터 · 장기 ${ctWon(g['장기']||0)} · 자동차 DB ${ctWon(g['자동차 DB']||0)}</div>`).join('');
+  const hist=(state.salesGoals||[]).slice().sort((a,b)=>b.from.localeCompare(a.from)).map(g=>`<div>${g.from.replace('-','.')}부터 · 장기 ${ctWon(g['장기']||0)} · 자동차 ${ctWon((g['자동차']!==undefined?g['자동차']:g['자동차 DB'])||0)}</div>`).join('');
   const inp=(id,v)=>`<input class="ct-in" id="${id}" inputmode="numeric" value="${v?ctWon(v):''}" placeholder="0" oninput="this.value=this.value.replace(/[^0-9]/g,'').replace(/\\B(?=(\\d{3})+(?!\\d))/g,',')" style="text-align:right;width:100%;box-sizing:border-box;min-height:40px">`;
   p.innerHTML=`<div class="box" role="dialog" aria-label="월 목표"><div style="font-size:16px;font-weight:800">🎯 월 목표</div>
     <div style="font-size:12.5px;color:#5e6c84">한 번 적으면 다음 달에도 계속 써요. 목표가 바뀌면 그 달부터 새로 적어 주세요. 지난 달은 옛 목표 그대로예요.</div>
     <label style="display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:700;color:#44546f"><span>장기 월납 보험료 (원)</span>${inp('gl-long',goalFor('장기',ym))}</label>
-    <label style="display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:700;color:#44546f"><span>자동차 DB 보험료 (원)</span>${inp('gl-car',goalFor('자동차 DB',ym))}</label>
+    <label style="display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:700;color:#44546f"><span>자동차 보험료 — DB+BB 합계 (원)</span>${inp('gl-car',goalFor('자동차',ym))}</label>
     <label style="display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:700;color:#44546f"><span>적용 시작 달</span><input class="ct-in" type="month" id="gl-from" value="${ym}" style="width:100%;box-sizing:border-box;min-height:40px"></label>
     ${hist?`<div style="font-size:12px;color:#5e6c84;line-height:1.6;border-top:1px solid #dfe1e6;padding-top:6px">지금까지 목표<br>${hist}</div>`:''}
     <div style="display:flex;gap:8px;justify-content:flex-end"><button type="button" class="ct-btn" onclick="document.getElementById('sl-goal').classList.remove('open')">취소</button><button type="button" class="ct-btn go" onclick="slGoalSave()">저장</button></div></div>`;
@@ -9811,31 +9844,36 @@ function slGoalEdit(){
 function slGoalSave(){
   const n=id=>Number((document.getElementById(id).value||'').replace(/[^0-9]/g,''))||0;
   const from=document.getElementById('gl-from').value;if(!/^\d{4}-\d{2}$/.test(from)){showToast('⚠️','적용 시작 달을 골라 주세요.',3000);return;}
-  const g={from,'장기':n('gl-long'),'자동차 DB':n('gl-car')};
+  const g={from,'장기':n('gl-long'),'자동차':n('gl-car')};
   state.salesGoals=(state.salesGoals||[]).filter(x=>x.from!==from).concat([g]).sort((a,b)=>a.from.localeCompare(b.from));
   saveState();document.getElementById('sl-goal').classList.remove('open');renderSales();showToast('🎯',`${from.replace('-','.')}부터 목표를 저장했어요`,2500);
 }
 // ③ 월별 추이 (그 해 1~12월) — 작년 자료가 있으면 작년 같은 달을 회색으로 같이 보여 줌
+// (10/28) 장기 / 자동차(DB+BB) / 일반(DB+타사) 합계 줄 + 그 아래 DB·BB·타사 줄
 function slReportTrend(Y){
   Y=Y||Number(slRange()[0].slice(0,4));
   const all=slAll();const sum=a=>a.reduce((s,x)=>s+(Number(x.c.amount)||0),0);const isC=x=>!x.adj&&ctIsDeal(x.c);
   const M=[...Array(12)].map((_,i)=>String(i+1).padStart(2,'0'));
   const inM=(y,m)=>all.filter(x=>x.c.date.startsWith(`${y}-${m}`));
+  const inC=(a,cs)=>a.filter(x=>cs.includes(x.c.cat));
   const hasPrev=all.some(x=>x.c.date.startsWith(String(Y-1)));
   const man=n=>n?(Math.round(n/1000)/10).toLocaleString('ko-KR',{minimumFractionDigits:1,maximumFractionDigits:1}):'-';
-  const UNIT={'장기':'월','자동차 DB':'연','자동차 BB':'연','일반 DB':'일시납','일반 타사':'일시납'};
-  const amtRows=CT_CATS.map(k=>{const v=M.map(m=>sum(inM(Y,m).filter(x=>x.c.cat===k)));const tot=v.reduce((a,b)=>a+b,0);
-    let r=`<tr><td><b>${k}</b> <span style="color:#7a8794">(${UNIT[k]})</span></td>${v.map(n=>`<td class="r">${man(n)}</td>`).join('')}<td class="r"><b>${man(tot)}</b></td></tr>`;
-    if(hasPrev){const pv=M.map(m=>sum(inM(Y-1,m).filter(x=>x.c.cat===k)));const pt=pv.reduce((a,b)=>a+b,0);
+  const UNIT={'장기':'월','자동차':'연','일반':'일시납'};
+  // 줄 목록: 합계 줄(굵게) + 하위 줄(들여쓰기). 작년 줄은 합계 줄에만
+  const lines=[];SL_GRP.forEach(g=>{lines.push({nm:`${g.k}${g.cats.length>1?' 합계':''}`,unit:UNIT[g.k],cs:g.cats,top:1});
+    if(g.cats.length>1)g.cats.forEach((c,i)=>lines.push({nm:`　${g.k} ${g.nm[i]}`,cs:[c],top:0}));});
+  const amtRows=lines.map(L=>{const v=M.map(m=>sum(inC(inM(Y,m),L.cs)));const tot=v.reduce((a,b)=>a+b,0);
+    let r=`<tr${L.top?'':' class="sub"'}><td>${L.top?`<b>${L.nm}</b> <span style="color:#7a8794">(${L.unit})</span>`:L.nm}</td>${v.map(n=>`<td class="r">${man(n)}</td>`).join('')}<td class="r"><b>${man(tot)}</b></td></tr>`;
+    if(hasPrev&&L.top){const pv=M.map(m=>sum(inC(inM(Y-1,m),L.cs)));const pt=pv.reduce((a,b)=>a+b,0);
       r+=`<tr><td class="prev">　작년</td>${pv.map(n=>`<td class="r prev">${man(n)}</td>`).join('')}<td class="r prev">${man(pt)}${pt?` <b style="color:#172b4d">(${tot>=pt?'+':''}${Math.round((tot-pt)/pt*100)}%)</b>`:''}</td></tr>`;}
     return r;}).join('');
-  const cntRows=CT_CATS.map(k=>{const v=M.map(m=>{const a=inM(Y,m).filter(x=>x.c.cat===k);return [a.filter(isC).length,a.length];});
+  const cntRows=lines.map(L=>{const v=M.map(m=>{const a=inC(inM(Y,m),L.cs);return [a.filter(isC).length,a.length];});
     const tc=v.reduce((s,x)=>s+x[0],0),tt=v.reduce((s,x)=>s+x[1],0);
-    return `<tr><td><b>${k}</b></td>${v.map(([c,t])=>`<td class="r">${t?c+' / '+t:'-'}</td>`).join('')}<td class="r"><b>${tc} / ${tt}</b></td></tr>`;}).join('');
-  const charts=CT_CATS.map(k=>{const v=M.map(m=>sum(inM(Y,m).filter(x=>x.c.cat===k))),pv=hasPrev?M.map(m=>sum(inM(Y-1,m).filter(x=>x.c.cat===k))):null;
+    return `<tr${L.top?'':' class="sub"'}><td>${L.top?`<b>${L.nm}</b>`:L.nm}</td>${v.map(([c,t])=>`<td class="r">${t?c+' / '+t:'-'}</td>`).join('')}<td class="r"><b>${tc} / ${tt}</b></td></tr>`;}).join('');
+  const charts=SL_GRP.map(g=>{const v=M.map(m=>sum(inC(inM(Y,m),g.cats))),pv=hasPrev?M.map(m=>sum(inC(inM(Y-1,m),g.cats))):null;
     const mx=Math.max(1,...v.map(Math.abs),...(pv||[]).map(Math.abs));
     const bars=M.map((m,i)=>`${pv?`<i class="p" style="height:${Math.round(Math.max(0,pv[i])/mx*100)}%"></i>`:''}<i style="height:${Math.round(Math.max(0,v[i])/mx*100)}%"></i>`).join('<span style="width:3px"></span>');
-    return `<div class="tr-ch"><div style="font-weight:800;font-size:10.5px;margin-bottom:4px">${k}</div><div class="tr-bars">${bars}</div><div class="tr-m">${M.map(m=>`<span>${Number(m)}</span>`).join('')}</div></div>`;}).join('');
+    return `<div class="tr-ch"><div style="font-weight:800;font-size:10.5px;margin-bottom:4px">${slLabel(g.k)}</div><div class="tr-bars">${bars}</div><div class="tr-m">${M.map(m=>`<span>${Number(m)}</span>`).join('')}</div></div>`;}).join('');
   const hd=`<th>구분</th>${M.map(m=>`<th class="r">${Number(m)}월</th>`).join('')}<th class="r">합계</th>`;
   return `<div class="rp-head"><h1>${Y}년 월별 매출 추이</h1><div style="font-size:10px;color:#5e6c84">출력일 ${localDateStr(new Date())}</div></div>
     <h2 style="margin-top:0">보험료 <span style="font-weight:400;color:#5e6c84">단위: 만 원${hasPrev?' · 회색 = 작년 같은 달, 괄호 = 작년 대비':''}</span></h2>
@@ -9843,11 +9881,11 @@ function slReportTrend(Y){
     <h2>건수 <span style="font-weight:400;color:#5e6c84">계약 / 거래</span></h2>
     <table class="tr-t"><thead><tr>${hd}</tr></thead><tbody>${cntRows}</tbody></table>
     ${(()=>{if(!(state.salesGoals||[]).length)return '';const ms=goalMonths(`${Y}-01-01`,`${Y}-12-31`);
-      const rs=GOAL_CATS.map(k=>{if(!ms.some(ym=>goalFor(k,ym)))return '';return `<tr><td><b>${k}</b></td>${M.map(m=>{const ym=`${Y}-${m}`,tg=goalFor(k,ym);if(!ms.includes(ym)||!tg)return '<td class="r">-</td>';
-        const p=Math.round(sum(inM(Y,m).filter(x=>x.c.cat===k))/tg*100);return `<td class="r"${p>=100?' style="color:#1f845a;font-weight:700"':''}>${p}%</td>`;}).join('')}<td></td></tr>`;}).join('');
+      const rs=GOAL_CATS.map(k=>{if(!ms.some(ym=>goalFor(k,ym)))return '';return `<tr><td><b>${slLabel(k)}</b></td>${M.map(m=>{const ym=`${Y}-${m}`,tg=goalFor(k,ym);if(!ms.includes(ym)||!tg)return '<td class="r">-</td>';
+        const p=Math.round(sum(inC(inM(Y,m),slCatsOf(k)))/tg*100);return `<td class="r"${p>=100?' style="color:#1f845a;font-weight:700"':''}>${p}%</td>`;}).join('')}<td></td></tr>`;}).join('');
       return rs?`<h2>목표 달성률</h2><table class="tr-t"><thead><tr>${hd}</tr></thead><tbody>${rs}</tbody></table>`:'';})()}
     <div class="tr-charts">${charts}</div>
-    <div class="rp-note">${hasPrev?'막대: 파랑 = 올해, 회색 = 작년 · ':''}계약 = 신규·갱신 · 거래 = 계약 + 변경 + 해지·감액·청약철회 · 금액은 해지·감액·철회·환급을 뺀 순금액 · 구분끼리는 단위가 달라 더하지 않아요</div>`;
+    <div class="rp-note">${hasPrev?'막대: 파랑 = 올해, 회색 = 작년 · ':''}계약 = 신규·갱신 · 거래 = 계약 + 변경 + 해지·감액·청약철회 · 금액은 해지·감액·철회·환급을 뺀 순금액 · 장기·자동차·일반은 단위가 달라(월·연·일시납) 서로 더하지 않아요</div>`;
 }
 // ① 기간 전체 요약 — 화면의 '신규·갱신·변경' 거르기와 상관없이 그 기간 전부
 function slReportSummary(){
@@ -9855,16 +9893,22 @@ function slReportSummary(){
   const rows=slAll().filter(x=>x.c.date>=from&&x.c.date<=to);
   const sum=a=>a.reduce((s,x)=>s+(Number(x.c.amount)||0),0);
   const isC=x=>!x.adj&&ctIsDeal(x.c);
-  const UNIT={'장기':'월 보험료','자동차 DB':'연 보험료','자동차 BB':'연 보험료','일반 DB':'일시납','일반 타사':'일시납'};
-  const tiles=CT_CATS.map(k=>{const rs=rows.filter(x=>x.c.cat===k);
-    const lines=['신규','갱신','변경','미정'].map(b=>{const a=rs.filter(x=>!x.adj&&x.c.biz===b);return a.length?`· ${b} ${a.length}건 ${ctWon(sum(a))}`:'';})
+  const inC=cs=>rows.filter(x=>cs.includes(x.c.cat));
+  const UNIT={'장기':'월 보험료','자동차':'연 보험료','일반':'일시납'};
+  const lineOf=rs=>['신규','갱신','변경','미정'].map(b=>{const a=rs.filter(x=>!x.adj&&x.c.biz===b);return a.length?`· ${b} ${a.length}건 ${ctWon(sum(a))}`:'';})
       .concat(['해지','감액','청약철회'].map(kd=>{const a=rs.filter(x=>x.adj&&x.c.kind===kd);return a.length?`· ${kd} ${a.length}건 ${ctWon(sum(a))}`:'';})).filter(Boolean);
-    return `<div class="rp-tile"><div style="font-weight:800;font-size:11.5px">${k}</div><b class="n">${ctWon(sum(rs))}원</b>
-      <div class="c">계약 ${rs.filter(isC).length} · 거래 ${rs.length}</div><div class="l">${lines.join('<br>')||'—'}</div></div>`;}).join('');
-  const prodRows=CT_CATS.map(k=>{const rs=rows.filter(x=>x.c.cat===k);if(!rs.length)return '';
+  const tiles=SL_GRP.map(g=>{const rs=inC(g.cats);
+    const subs=g.cats.length>1?`<div class="rp-subs">${g.cats.map((c,i)=>{const r2=inC([c]);return `<div><b>${g.nm[i]}</b> ${ctWon(sum(r2))}원<br><span>계약 ${r2.filter(isC).length} · 거래 ${r2.length}</span></div>`;}).join('')}</div>`:'';
+    return `<div class="rp-tile"><div style="font-weight:800;font-size:11.5px">${slLabel(g.k)}</div><b class="n">${ctWon(sum(rs))}원</b>
+      <div class="c">계약 ${rs.filter(isC).length} · 거래 ${rs.length}</div><div class="l">${lineOf(rs).join('<br>')||'—'}</div>${subs}</div>`;}).join('');
+  const catBlock=k=>{const rs=inC([k]);if(!rs.length)return '';
     const m={};rs.forEach(x=>{const p=x.c.product||'(상품 없음)';m[p]=m[p]||{c:0,t:0,s:0};if(isC(x))m[p].c++;m[p].t++;m[p].s+=Number(x.c.amount)||0;});
     const body=Object.entries(m).sort((a,b)=>b[1].s-a[1].s).map(([p,t])=>`<tr><td></td><td>${esc(p)}</td><td class="r">${t.c}</td><td class="r">${t.t}</td><td class="r">${ctWon(t.s)}</td></tr>`).join('');
-    return `<tr class="grp"><td>${k} <span style="font-weight:400;color:#5e6c84">(${UNIT[k]})</span></td><td></td><td class="r">${rs.filter(isC).length}</td><td class="r">${rs.length}</td><td class="r">${ctWon(sum(rs))}</td></tr>${body}`;}).join('');
+    return `<tr class="grp2"><td>${k}</td><td></td><td class="r">${rs.filter(isC).length}</td><td class="r">${rs.length}</td><td class="r">${ctWon(sum(rs))}</td></tr>${body}`;};
+  const prodRows=SL_GRP.map(g=>{const rs=inC(g.cats);if(!rs.length)return '';
+    const head=`<tr class="grp"><td>${slLabel(g.k)} <span style="font-weight:400;color:#5e6c84">(${UNIT[g.k]})</span></td><td></td><td class="r">${rs.filter(isC).length}</td><td class="r">${rs.length}</td><td class="r">${ctWon(sum(rs))}</td></tr>`;
+    if(g.cats.length===1){const b=catBlock(g.cats[0]);return head+b.replace(/^<tr class="grp2">.*?<\/tr>/,'');}
+    return head+g.cats.map(catBlock).join('');}).join('');
   const neg=rows.filter(x=>x.adj||(x.c.biz==='변경'&&x.c.chg==='환급')).sort((a,b)=>a.c.date.localeCompare(b.c.date));
   const negRows=neg.map(x=>`<tr><td>${esc(x.c.date)}</td><td>${esc(x.card.title)}</td><td>${esc(x.c.cat)}</td><td>${esc(x.c.kind)}</td><td>${esc(x.c.product||'')}</td><td class="r">${ctWon(x.c.amount)}</td></tr>`).join('');
   const today=localDateStr(new Date());
@@ -9877,7 +9921,7 @@ function slReportSummary(){
     ${!neg.length?'<div style="color:#5e6c84">없음</div>':from.slice(0,7)===to.slice(0,7)?`<table><thead><tr><th>날짜</th><th>카드</th><th>구분</th><th>종류</th><th>상품</th><th class="r">금액(원)</th></tr></thead><tbody>${negRows}</tbody></table>`
       :`<table><thead><tr><th>구분</th><th>종류</th><th class="r">건수</th><th class="r">금액(원)</th></tr></thead><tbody>${(()=>{const g={};neg.forEach(x=>{const key=x.c.cat+'|'+x.c.kind;g[key]=g[key]||{n:0,s:0};g[key].n++;g[key].s+=Number(x.c.amount)||0;});
         return CT_CATS.flatMap(k=>['해지','감액','청약철회','변경·환급'].filter(kd=>g[k+'|'+kd]).map(kd=>`<tr><td>${k}</td><td>${kd}</td><td class="r">${g[k+'|'+kd].n}</td><td class="r">${ctWon(g[k+'|'+kd].s)}</td></tr>`)).join('');})()}</tbody></table><div class="rp-note" style="margin-top:3px">기간이 두 달 이상이라 종류별 합계만 보여요. 한 건씩 보려면 한 달만 골라 인쇄하세요.</div>`}
-    <div class="rp-note">계약 = 신규·갱신(증권 발행) · 거래 = 계약 + 변경 + 해지·감액·청약철회 · 구분끼리는 단위가 달라 더하지 않아요 (장기=월, 자동차=연, 일반=일시납) · 해지·감액·철회는 그 일이 생긴 달에서 빼요</div>`;
+    <div class="rp-note">계약 = 신규·갱신(증권 발행) · 거래 = 계약 + 변경 + 해지·감액·청약철회 · 장기·자동차·일반은 단위가 달라 서로 더하지 않아요 (장기=월, 자동차=연, 일반=일시납) · 해지·감액·철회는 그 일이 생긴 달에서 빼요</div>`;
 }
 function slExport(){
   const [from,to]=slRange();
