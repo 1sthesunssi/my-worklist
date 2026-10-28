@@ -9294,6 +9294,16 @@ document.addEventListener('keydown',e=>{
 @media(max-width:600px){.ct-grid{grid-template-columns:1fr}.ct-cats{grid-template-columns:repeat(3,minmax(0,1fr))}}
 #sales-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);z-index:150;overflow-y:auto;padding:28px 12px 60px}
 #sales-overlay.open{display:flex;justify-content:center;align-items:flex-start}
+@media print{
+  body.sl-printing>*:not(#sales-overlay){display:none!important}
+  body.sl-printing #sales-overlay{position:static!important;display:block!important;background:none!important;backdrop-filter:none!important;padding:0!important;overflow:visible!important}
+  body.sl-printing #sales-panel{max-width:none!important;box-shadow:none!important;border-radius:0!important;background:#fff!important;padding:0!important;gap:10px!important}
+  body.sl-printing .sl-noprint,body.sl-printing #sales-close{display:none!important}
+  body.sl-printing .sl-card:not(:last-child),body.sl-printing .sl-cat{break-inside:avoid;box-shadow:none!important}
+  body.sl-printing .sl-table tr{break-inside:avoid}
+  body.sl-printing *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  @page{size:A4;margin:12mm}
+}
 #sales-panel{background:#e9edf2;border-radius:14px;width:100%;max-width:1100px;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.35);padding:20px;display:flex;flex-direction:column;gap:16px;color:#172b4d;box-sizing:border-box}
 #sales-close{position:absolute;top:12px;right:12px;width:38px;height:38px;border-radius:50%;border:0;background:rgba(9,30,66,.08);font-size:18px;cursor:pointer}
 .sl-card{background:#fff;border:1px solid #dfe1e6;border-radius:12px;padding:14px 16px;box-sizing:border-box}
@@ -9628,19 +9638,19 @@ function renderSales(){
   panel.innerHTML=`<button id="sales-close" type="button" onclick="closeSales()" aria-label="닫기">✕</button>
     <div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;padding-right:44px">
       <div><div style="font-size:22px;font-weight:800">💰 매출</div><div style="font-size:12.5px;color:#5e6c84;margin-top:4px">계약 확정일 · 해지·감액·철회일 기준 · ${esc(label)}${slBiz==='all'?'':' · '+esc(slBiz)+'만'} · 장기/자동차/일반 따로 집계</div></div>
-      <div style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">${pills}</div></div>
+      <div class="sl-noprint" style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">${pills}<button type="button" class="sl-pill" onclick="slPrint()" title="지금 보는 화면 그대로 인쇄 (PDF 저장도 돼요)">🖨 인쇄</button></div></div>
     ${slPeriod==='custom'?`<div class="sl-card" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:13px"><label>시작일 <input type="date" id="sl-from" value="${from}" onchange="slDates()" style="font:inherit;min-height:36px;border:1px solid #c1c7d0;border-radius:8px;padding:0 8px"></label> ~ <label>끝일 <input type="date" id="sl-to" value="${to}" onchange="slDates()" style="font:inherit;min-height:36px;border:1px solid #c1c7d0;border-radius:8px;padding:0 8px"></label></div>`:''}
-    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-size:13px;font-weight:700;color:#44546f">신규 · 갱신 · 변경</span>${bizPills}<span style="font-size:12px;color:#5e6c84">변경의 환급은 빼기(−) · 해지·감액·철회는 '전체'에서만 보여요</span></div>
+    <div class="sl-noprint" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-size:13px;font-weight:700;color:#44546f">신규 · 갱신 · 변경</span>${bizPills}<span style="font-size:12px;color:#5e6c84">변경의 환급은 빼기(−) · 해지·감액·철회는 '전체'에서만 보여요</span></div>
     ${nUnk&&slBiz!=='미정'?`<div class="sl-card" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#fff7d6;border-color:#f5cd47;font-size:13px"><b style="color:#7f5f01">신규·갱신·변경 중 무엇인지 모르는 계약이 ${nUnk}건 있어요</b><span style="color:#5e6c84">카드를 열고 계약 '수정'에서 골라 주세요</span><button type="button" class="ct-btn" style="margin-left:auto;min-height:32px;font-size:12.5px" onclick="slSet('b','미정')">미정만 보기</button></div>`:''}
     <div class="sl-cats">${cats}</div>
-    <div style="font-size:12px;color:#5e6c84;margin-top:-6px">칸을 누르면 아래가 그 구분으로 바뀌어요. 구분끼리는 서로 더하지 않아요 (자동차 DB·BB, 일반 DB·타사도 따로).</div>
+    <div class="sl-noprint" style="font-size:12px;color:#5e6c84;margin-top:-6px">칸을 누르면 아래가 그 구분으로 바뀌어요. 구분끼리는 서로 더하지 않아요 (자동차 DB·BB, 일반 DB·타사도 따로).</div>
     <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start">
       <div class="sl-card" style="flex:999 1 520px;min-width:0"><div style="font-size:15px;font-weight:800">월별 ${slCat} 보험료 (${Y}년)</div><div style="font-size:12px;color:#5e6c84;margin:2px 0 12px">고른 기간의 달은 진하게 · 숫자는 만 원 단위</div>
         <div class="sl-bars">${bars}</div><div class="sl-months">${months.map(x=>`<div>${x.m}월</div>`).join('')}</div></div>
       <div class="sl-card" style="flex:1 1 300px;min-width:0;display:flex;flex-direction:column;gap:10px"><div style="font-size:15px;font-weight:800">${slCat} · 상품별</div>${types}</div>
     </div>
     <div class="sl-card"><div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap"><div style="font-size:15px;font-weight:800">${slCat} 계약 목록 <span style="font-size:12px;color:#5e6c84;font-weight:400">계약 ${mine.filter(x=>!x.adj).length}건${mine.some(x=>x.adj)?` · <b style="color:#44546f">해지·감액·철회 ${mine.filter(x=>x.adj).length}건</b>`:''} · 누르면 카드가 열려요</span></div>
-      <button type="button" class="ct-btn" style="margin-left:auto;min-height:36px;font-size:12.5px" onclick="slExport()">엑셀(CSV)로 내보내기</button></div>
+      <button type="button" class="ct-btn sl-noprint" style="margin-left:auto;min-height:36px;font-size:12.5px" onclick="slExport()">엑셀(CSV)로 내보내기</button></div>
       <div style="overflow-x:auto">${mine.length?`<table class="sl-table"><thead><tr><th>날짜</th><th>카드</th><th>종류</th><th>상품</th><th style="text-align:right">${CT_UNIT[slCat]}</th></tr></thead><tbody id="sl-tbody">${rows}</tbody></table>`:'<div style="font-size:13px;color:#5e6c84;padding:8px 0">이 기간에 확정된 계약이 없어요</div>'}</div></div>`;
   const tb=document.getElementById('sl-tbody');
   if(tb)tb.addEventListener('click',e=>{const tr=e.target.closest('tr[data-i]');if(!tr)return;const x=window.__slRows[Number(tr.dataset.i)];if(!x)return;
@@ -9689,6 +9699,13 @@ async function exportAllXlsx(){
   per.forEach(([b,rows])=>X.utils.book_append_sheet(wb,xlSheet(X,rows),xlSheetName(b.title,used)));
   X.writeFile(wb,`MyWorklist_${localDateStr(new Date())}.xlsx`);
   showToast('✅',`보드 ${per.length}개 · 카드 ${all.length}장을 엑셀로 내보냈어요 (다운로드 폴더)`,3500);
+}
+// (10/28) 매출 화면 인쇄 — 지금 보는 기간·구분 그대로, 매출 화면만 A4로
+function slPrint(){
+  document.body.classList.add('sl-printing');
+  const done=()=>{document.body.classList.remove('sl-printing');window.removeEventListener('afterprint',done);};
+  window.addEventListener('afterprint',done);
+  setTimeout(()=>{try{window.print();}finally{setTimeout(done,1500);}},50);
 }
 function slExport(){
   const [from,to]=slRange();
