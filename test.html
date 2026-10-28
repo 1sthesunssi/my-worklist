@@ -9984,8 +9984,8 @@ function renderSales(){
   const cats=CT_CATS.map(k=>{const rs=sel.filter(x=>x.c.cat===k);return `<button type="button" class="sl-cat${k===slCat?' on':''}" onclick="slSet('c','${k}')">
     <span style="display:flex;gap:8px;align-items:center;width:100%"><b style="font-size:15px">${k}</b><span style="margin-left:auto;font-size:12px;color:#44546f;font-weight:700">${rs.filter(x=>!x.adj).length}건</span></span>
     <span style="font-size:24px;font-weight:800;${sum(rs)<0?'color:#44546f':''}">${ctWon(sum(rs))}<span style="font-size:13px">원</span></span>
-    ${k==='장기'?'':(()=>{const r0=sel0.filter(x=>x.c.cat===k&&!x.adj),pt=b=>{const a=r0.filter(x=>x.c.biz===b);return a.length?`${b} ${a.length}건 ${ctWon(sum(a))}`:'';};const ps=[pt('신규'),pt('갱신'),pt('변경'),pt('미정')].filter(Boolean);return ps.length?`<span style="font-size:12px;color:#44546f">${ps.join(' · ')}</span>`:'';})()}
-    ${rs.some(x=>x.adj)?`<span style="font-size:12px;color:#44546f"><b>해지·감액 ${ctWon(sum(rs.filter(x=>x.adj)))}</b></span>`:''}</button>`;}).join('');
+    ${k==='장기'?'':(()=>{const r0=sel0.filter(x=>x.c.cat===k&&!x.adj),pt=b=>{const a=r0.filter(x=>x.c.biz===b);return a.length?`${b} ${a.length}건 ${ctWon(sum(a))}`:'';};const ps=[pt('신규'),pt('갱신'),pt('변경'),pt('미정')].filter(Boolean);return ps.length?`<span style="font-size:12px;color:#44546f;text-align:left;line-height:1.6;align-self:stretch">${ps.map(t=>`<span style="display:block">· ${t}</span>`).join('')}</span>`:'';})()}
+    ${rs.some(x=>x.adj)?`<span style="font-size:12px;color:#44546f;text-align:left;align-self:stretch;margin-top:-4px">· 해지·감액 ${ctWon(sum(rs.filter(x=>x.adj)))}</span>`:''}</button>`;}).join('');
   const mine=sel.filter(x=>x.c.cat===slCat);
   const Y=Number(from.slice(0,4));
   const months=[];for(let m=1;m<=12;m++){const key=`${Y}-${String(m).padStart(2,'0')}`;
