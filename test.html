@@ -9685,6 +9685,17 @@ document.addEventListener('keydown',e=>{
 #sl-pick label:has(input:checked){border-color:#0c66e4;background:#e9f2ff}
 #sl-pick small{display:block;color:#5e6c84;font-size:12px}
 #sl-report{display:none}
+#sl-report.trend{page:land}
+@page land{size:A4 landscape;margin:10mm}
+#sl-report .tr-t td,#sl-report .tr-t th{padding:3px 4px;font-size:9.5px}
+#sl-report .tr-t td.prev{color:#7a8794;font-size:8.5px}
+#sl-report .tr-charts{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:6px}
+#sl-report .tr-ch{border:1px solid #dfe1e6;border-radius:6px;padding:6px;break-inside:avoid}
+#sl-report .tr-bars{display:flex;align-items:flex-end;gap:2px;height:70px;border-bottom:1px solid #c1c7d0}
+#sl-report .tr-bars i{flex:1;background:#0c66e4;border-radius:2px 2px 0 0;position:relative}
+#sl-report .tr-bars i.p{background:#c1c7d0}
+#sl-report .tr-m{display:flex;gap:2px;font-size:7.5px;color:#5e6c84}
+#sl-report .tr-m span{flex:1;text-align:center}
 @media print{
   body.sl-printing-report>*:not(#sl-report){display:none!important}
   body.sl-printing-report #sl-report{display:block!important}
@@ -10111,6 +10122,7 @@ function slPrint(){
   const [,,label]=slRange();
   p.innerHTML=`<div class="box" role="dialog" aria-label="인쇄 고르기"><div style="font-size:16px;font-weight:800">무엇을 인쇄할까요?</div>
     <label><input type="radio" name="slpk" value="sum" checked><span><b>기간 전체 요약</b><small>${esc(label)} · 5개 구분 + 상품별 요약 + 해지·감액·철회·환급 내역</small></span></label>
+    <label><input type="radio" name="slpk" value="trend"><span><b>월별 추이</b><small>${esc(slRange()[0].slice(0,4))}년 1~12월 · 구분별 보험료·건수·그래프 (가로 인쇄)</small></span></label>
     <label><input type="radio" name="slpk" value="screen"><span><b>지금 보는 화면 그대로</b><small>${esc(slCat)} 그래프·상품별·거래 목록</small></span></label>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px"><button type="button" class="ct-btn" onclick="document.getElementById('sl-pick').classList.remove('open')">취소</button><button type="button" class="ct-btn go" onclick="slPrintGo()">인쇄</button></div></div>`;
   p.classList.add('open');
@@ -10119,13 +10131,43 @@ function slPrintGo(){
   const p=document.getElementById('sl-pick');const v=(p.querySelector('input[name=slpk]:checked')||{}).value||'sum';p.classList.remove('open');
   if(v==='screen')return slPrintRun('sl-printing');
   let r=document.getElementById('sl-report');if(!r){r=document.createElement('div');r.id='sl-report';document.body.appendChild(r);}
-  r.innerHTML=slReportSummary();slPrintRun('sl-printing-report');
+  r.className=v==='trend'?'trend':'';r.innerHTML=v==='trend'?slReportTrend():slReportSummary();slPrintRun('sl-printing-report');
 }
 function slPrintRun(cls){
   document.body.classList.add(cls);
   const done=()=>{document.body.classList.remove(cls);window.removeEventListener('afterprint',done);};
   window.addEventListener('afterprint',done);
   setTimeout(()=>{try{window.print();}finally{setTimeout(done,1500);}},80);
+}
+// ③ 월별 추이 (그 해 1~12월) — 작년 자료가 있으면 작년 같은 달을 회색으로 같이 보여 줌
+function slReportTrend(Y){
+  Y=Y||Number(slRange()[0].slice(0,4));
+  const all=slAll();const sum=a=>a.reduce((s,x)=>s+(Number(x.c.amount)||0),0);const isC=x=>!x.adj&&ctIsDeal(x.c);
+  const M=[...Array(12)].map((_,i)=>String(i+1).padStart(2,'0'));
+  const inM=(y,m)=>all.filter(x=>x.c.date.startsWith(`${y}-${m}`));
+  const hasPrev=all.some(x=>x.c.date.startsWith(String(Y-1)));
+  const man=n=>n?(Math.round(n/1000)/10).toLocaleString('ko-KR',{minimumFractionDigits:1,maximumFractionDigits:1}):'-';
+  const UNIT={'장기':'월','자동차 DB':'연','자동차 BB':'연','일반 DB':'일시납','일반 타사':'일시납'};
+  const amtRows=CT_CATS.map(k=>{const v=M.map(m=>sum(inM(Y,m).filter(x=>x.c.cat===k)));const tot=v.reduce((a,b)=>a+b,0);
+    let r=`<tr><td><b>${k}</b> <span style="color:#7a8794">(${UNIT[k]})</span></td>${v.map(n=>`<td class="r">${man(n)}</td>`).join('')}<td class="r"><b>${man(tot)}</b></td></tr>`;
+    if(hasPrev){const pv=M.map(m=>sum(inM(Y-1,m).filter(x=>x.c.cat===k)));const pt=pv.reduce((a,b)=>a+b,0);
+      r+=`<tr><td class="prev">　작년</td>${pv.map(n=>`<td class="r prev">${man(n)}</td>`).join('')}<td class="r prev">${man(pt)}${pt?` <b style="color:#172b4d">(${tot>=pt?'+':''}${Math.round((tot-pt)/pt*100)}%)</b>`:''}</td></tr>`;}
+    return r;}).join('');
+  const cntRows=CT_CATS.map(k=>{const v=M.map(m=>{const a=inM(Y,m).filter(x=>x.c.cat===k);return [a.filter(isC).length,a.length];});
+    const tc=v.reduce((s,x)=>s+x[0],0),tt=v.reduce((s,x)=>s+x[1],0);
+    return `<tr><td><b>${k}</b></td>${v.map(([c,t])=>`<td class="r">${t?c+' / '+t:'-'}</td>`).join('')}<td class="r"><b>${tc} / ${tt}</b></td></tr>`;}).join('');
+  const charts=CT_CATS.map(k=>{const v=M.map(m=>sum(inM(Y,m).filter(x=>x.c.cat===k))),pv=hasPrev?M.map(m=>sum(inM(Y-1,m).filter(x=>x.c.cat===k))):null;
+    const mx=Math.max(1,...v.map(Math.abs),...(pv||[]).map(Math.abs));
+    const bars=M.map((m,i)=>`${pv?`<i class="p" style="height:${Math.round(Math.max(0,pv[i])/mx*100)}%"></i>`:''}<i style="height:${Math.round(Math.max(0,v[i])/mx*100)}%"></i>`).join('<span style="width:3px"></span>');
+    return `<div class="tr-ch"><div style="font-weight:800;font-size:10.5px;margin-bottom:4px">${k}</div><div class="tr-bars">${bars}</div><div class="tr-m">${M.map(m=>`<span>${Number(m)}</span>`).join('')}</div></div>`;}).join('');
+  const hd=`<th>구분</th>${M.map(m=>`<th class="r">${Number(m)}월</th>`).join('')}<th class="r">합계</th>`;
+  return `<div class="rp-head"><h1>${Y}년 월별 매출 추이</h1><div style="font-size:10px;color:#5e6c84">출력일 ${localDateStr(new Date())}</div></div>
+    <h2 style="margin-top:0">보험료 <span style="font-weight:400;color:#5e6c84">단위: 만 원${hasPrev?' · 회색 = 작년 같은 달, 괄호 = 작년 대비':''}</span></h2>
+    <table class="tr-t"><thead><tr>${hd}</tr></thead><tbody>${amtRows}</tbody></table>
+    <h2>건수 <span style="font-weight:400;color:#5e6c84">계약 / 거래</span></h2>
+    <table class="tr-t"><thead><tr>${hd}</tr></thead><tbody>${cntRows}</tbody></table>
+    <div class="tr-charts">${charts}</div>
+    <div class="rp-note">${hasPrev?'막대: 파랑 = 올해, 회색 = 작년 · ':''}계약 = 신규·갱신 · 거래 = 계약 + 변경 + 해지·감액·청약철회 · 금액은 해지·감액·철회·환급을 뺀 순금액 · 구분끼리는 단위가 달라 더하지 않아요</div>`;
 }
 // ① 기간 전체 요약 — 화면의 '신규·갱신·변경' 거르기와 상관없이 그 기간 전부
 function slReportSummary(){
@@ -10151,7 +10193,9 @@ function slReportSummary(){
     <h2>구분별 · 상품별</h2>
     ${prodRows?`<table><thead><tr><th>구분</th><th>상품</th><th class="r">계약</th><th class="r">거래</th><th class="r">금액(원)</th></tr></thead><tbody>${prodRows}</tbody></table>`:'<div>이 기간에 기록이 없어요</div>'}
     <h2>해지 · 감액 · 청약철회 · 환급 내역 <span style="font-weight:400;color:#5e6c84">${neg.length}건</span></h2>
-    ${neg.length?`<table><thead><tr><th>날짜</th><th>카드</th><th>구분</th><th>종류</th><th>상품</th><th class="r">금액(원)</th></tr></thead><tbody>${negRows}</tbody></table>`:'<div style="color:#5e6c84">없음</div>'}
+    ${!neg.length?'<div style="color:#5e6c84">없음</div>':from.slice(0,7)===to.slice(0,7)?`<table><thead><tr><th>날짜</th><th>카드</th><th>구분</th><th>종류</th><th>상품</th><th class="r">금액(원)</th></tr></thead><tbody>${negRows}</tbody></table>`
+      :`<table><thead><tr><th>구분</th><th>종류</th><th class="r">건수</th><th class="r">금액(원)</th></tr></thead><tbody>${(()=>{const g={};neg.forEach(x=>{const key=x.c.cat+'|'+x.c.kind;g[key]=g[key]||{n:0,s:0};g[key].n++;g[key].s+=Number(x.c.amount)||0;});
+        return CT_CATS.flatMap(k=>['해지','감액','청약철회','변경·환급'].filter(kd=>g[k+'|'+kd]).map(kd=>`<tr><td>${k}</td><td>${kd}</td><td class="r">${g[k+'|'+kd].n}</td><td class="r">${ctWon(g[k+'|'+kd].s)}</td></tr>`)).join('');})()}</tbody></table><div class="rp-note" style="margin-top:3px">기간이 두 달 이상이라 종류별 합계만 보여요. 한 건씩 보려면 한 달만 골라 인쇄하세요.</div>`}
     <div class="rp-note">계약 = 신규·갱신(증권 발행) · 거래 = 계약 + 변경 + 해지·감액·청약철회 · 구분끼리는 단위가 달라 더하지 않아요 (장기=월, 자동차=연, 일반=일시납) · 해지·감액·철회는 그 일이 생긴 달에서 빼요</div>`;
 }
 function slExport(){
