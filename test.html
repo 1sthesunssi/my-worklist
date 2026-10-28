@@ -9746,7 +9746,7 @@ function ctFindPlace(card){for(const b of (state.boards||[]))for(const col of (b
 
 function contractBadgeHtml(card){
   const cl=ctList(card),c=cl[cl.length-1];const aj=ctAdj(card);const nB=cl.length>1?` ·${cl.length}건`:'';
-  const ajB=aj.length?`<span class="card-contract-badge" style="background:#ffebe6;color:#ae2a19" title="${aj.map(a=>a.kind+' '+a.date+' −'+ctWon(a.amount)+'원').join(' / ')}">${aj.some(a=>a.kind==='해지')?'해지':'감액'}<span class="ccb-full"> ${ctMD(aj[aj.length-1].date)}</span></span>`:'';
+  const ajB=aj.length?`<span class="card-contract-badge" style="background:#f1f2f4;color:#44546f" title="${aj.map(a=>a.kind+' '+a.date+' −'+ctWon(a.amount)+'원').join(' / ')}">${aj.some(a=>a.kind==='해지')?'해지':'감액'}<span class="ccb-full"> ${ctMD(aj[aj.length-1].date)}</span></span>`:'';
   if(!c||!c.date)return ajB;
   const p=ctFindPlace(card),bz=ctBizOf(c,p.col&&p.col.title,p.b&&p.b.title);
   // 간편보기에서는 '✓갱'처럼 아주 짧게, 전체보기에서는 '✓ 일반 DB · 갱신 10/14' (10/14 제목이 가려지던 문제)
@@ -9780,9 +9780,9 @@ function renderContractSection(card){
     return;
   }
   const ajList=ctAdj(card).length?`<div style="display:flex;flex-direction:column;gap:4px;border-top:1px solid #dfe7e2;padding-top:8px">${ctAdj(card).map(a=>`<div style="display:flex;gap:10px;align-items:center;font-size:13px;flex-wrap:wrap">
-      <span style="font-size:11.5px;font-weight:800;padding:2px 8px;border-radius:4px;background:#ffebe6;color:#ae2a19">${esc(a.kind)}</span>
+      <span style="font-size:11.5px;font-weight:800;padding:2px 8px;border-radius:4px;background:#f1f2f4;color:#44546f">${esc(a.kind)}</span>
       <span style="color:#44546f">${esc(a.date)}</span><span style="color:#44546f">${esc(a.cat)} · ${esc(ctProd(a.product))}</span>
-      <b style="color:#ae2a19">−${ctWon(a.amount)}원</b>${a.memo?`<span style="color:#7a8794">${esc(a.memo)}</span>`:''}
+      <b style="color:#44546f">−${ctWon(a.amount)}원</b>${a.memo?`<span style="color:#7a8794">${esc(a.memo)}</span>`:''}
       <button type="button" class="ct-btn" style="margin-left:auto;min-height:28px;height:28px;padding:0 10px;font-size:12px" onclick="ajRemove('${a.id}')">지우기</button></div>`).join('')}</div>`:'';
   const ajBtns=`<span style="display:flex;gap:6px"><button type="button" class="ct-btn" style="min-height:30px;height:30px;padding:0 12px;font-size:12.5px;color:#ae2a19;border-color:#f1c4bd" onclick="ajEdit('해지')">해지</button><button type="button" class="ct-btn" style="min-height:30px;height:30px;padding:0 12px;font-size:12.5px;color:#ae2a19;border-color:#f1c4bd" onclick="ajEdit('감액')">감액</button></span>`;
   if(ctEditing){
@@ -9813,7 +9813,7 @@ function renderContractSection(card){
     const rows=cl.slice().reverse().map(x=>{const bz=ctBizOf(x,p.col&&p.col.title,p.b&&p.b.title);
       return `<div class="ct-row"><span class="ct-ok">✓</span><b class="ct-d">${esc(x.date)}</b>
         <span class="ct-m">${esc(ctCat(x.cat))}${ctIsLong(x.cat)?'':' · '+(bz==='미정'?'<span style="color:#a54800">신규·갱신·변경 미정</span>':esc(bz)+(bz==='변경'&&x.chg?'('+esc(x.chg)+')':''))} · ${esc(ctProd(x.product)||'-')}</span>
-        <b${ctSigned(x)<0?' style="color:#ae2a19"':''}>${ctSigned(x)<0?'−':''}${ctWon(x.amount)}원</b><small class="ct-m">${esc(CT_UNIT[ctCat(x.cat)]||'')}</small>
+        <b${ctSigned(x)<0?' style="color:#44546f"':''}>${ctSigned(x)<0?'−':''}${ctWon(x.amount)}원</b><small class="ct-m">${esc(CT_UNIT[ctCat(x.cat)]||'')}</small>
         <span class="ct-r"><button type="button" class="ct-btn ct-sm" onclick="ctEdit('${esc(x.id)}')">수정</button><button type="button" class="ct-btn ct-sm" onclick="ctRemove('${esc(x.id)}')">지우기</button></span>
         ${x.memo?`<div class="ct-memo">${esc(x.memo)}</div>`:''}</div>`;}).join('');
     box.innerHTML=`<div class="ct-box ct-done">
@@ -9924,7 +9924,7 @@ function renderHomeSales(){
     const sum=a=>a.reduce((s,x)=>s+(Number(x.c.amount)||0),0);
     return `<button type="button" class="hs-tile" onclick="slCat='${k}';slPeriod='month';openSales()">
       <span class="hs-name">${k}</span><span class="hs-amt">${ctWon(sum(mo))}<small>원</small></span>
-      <span class="hs-sub">이번 달 ${mo.filter(x=>!x.adj).length}건${neg?` · <b style="color:#ae2a19">${ctWon(neg)}</b>`:''} · 올해 ${ctWon(sum(yr))}원</span></button>`;
+      <span class="hs-sub">이번 달 ${mo.filter(x=>!x.adj).length}건${neg?` · <b style="color:#44546f">${ctWon(neg)}</b>`:''} · 올해 ${ctWon(sum(yr))}원</span></button>`;
   };
   // 평소에는 버튼만. 누를 때만 금액을 펼쳐 보여 줌 (앱을 다시 열면 다시 접힘)
   box.innerHTML=`<div class="hs-head"><button type="button" class="hs-toggle" onclick="slPeriod='month';openSales()">💰 매출 보기</button></div>`;
@@ -9982,22 +9982,21 @@ function renderSales(){
   const pills=[['year','올해'],['month','이번 달'],['last','지난달'],['custom','직접 지정']].map(([k,t])=>`<button type="button" class="sl-pill${k===slPeriod?' on':''}" onclick="slSet('p','${k}')">${t}</button>`).join('');
   const sub=CT_SUB;
   const cats=CT_CATS.map(k=>{const rs=sel.filter(x=>x.c.cat===k);return `<button type="button" class="sl-cat${k===slCat?' on':''}" onclick="slSet('c','${k}')">
-    <span style="display:flex;gap:8px;align-items:center;width:100%"><b style="font-size:15px">${k}</b><span style="font-size:11.5px;color:#5e6c84">${sub[k]}</span><span style="margin-left:auto;font-size:12px;color:#44546f;font-weight:700">${rs.filter(x=>!x.adj).length}건</span></span>
-    <span style="font-size:24px;font-weight:800;${sum(rs)<0?'color:#ae2a19':''}">${ctWon(sum(rs))}<span style="font-size:13px">원</span></span>
+    <span style="display:flex;gap:8px;align-items:center;width:100%"><b style="font-size:15px">${k}</b><span style="margin-left:auto;font-size:12px;color:#44546f;font-weight:700">${rs.filter(x=>!x.adj).length}건</span></span>
+    <span style="font-size:24px;font-weight:800;${sum(rs)<0?'color:#44546f':''}">${ctWon(sum(rs))}<span style="font-size:13px">원</span></span>
     ${k==='장기'?'':(()=>{const r0=sel0.filter(x=>x.c.cat===k&&!x.adj),pt=b=>{const a=r0.filter(x=>x.c.biz===b);return a.length?`${b} ${a.length}건 ${ctWon(sum(a))}`:'';};const ps=[pt('신규'),pt('갱신'),pt('변경'),pt('미정')].filter(Boolean);return ps.length?`<span style="font-size:12px;color:#44546f">${ps.join(' · ')}</span>`:'';})()}
-    ${rs.some(x=>x.adj)?`<span style="font-size:12px;color:#ae2a19"><b>해지·감액 ${ctWon(sum(rs.filter(x=>x.adj)))}</b></span>`:''}
-    <span style="font-size:12px;color:#5e6c84">${CT_UNIT[k]} 순합계</span></button>`;}).join('');
+    ${rs.some(x=>x.adj)?`<span style="font-size:12px;color:#44546f"><b>해지·감액 ${ctWon(sum(rs.filter(x=>x.adj)))}</b></span>`:''}</button>`;}).join('');
   const mine=sel.filter(x=>x.c.cat===slCat);
   const Y=Number(from.slice(0,4));
   const months=[];for(let m=1;m<=12;m++){const key=`${Y}-${String(m).padStart(2,'0')}`;
     const v=sum(all.filter(x=>x.c.cat===slCat&&x.c.date.startsWith(key)));
     const mEnd=localDateStr(new Date(Y,m,0));months.push({m,v,on:!(mEnd<from||`${key}-01`>to)});}
   const max=Math.max(1,...months.map(x=>Math.abs(x.v)));
-  const bars=months.map(x=>`<div class="sl-bar" title="${x.m}월 ${slCat} ${ctWon(x.v)}원"><span>${x.v?(x.v/10000).toFixed(1):''}</span><i style="height:${Math.round(Math.abs(x.v)/max*150)}px;background:${x.v<0?(x.on?'#c9372c':'#f1c4bd'):(x.on?'#0052cc':'#b3c7ee')}"></i></div>`).join('');
+  const bars=months.map(x=>`<div class="sl-bar" title="${x.m}월 ${slCat} ${ctWon(x.v)}원"><span>${x.v?(x.v/10000).toFixed(1):''}</span><i style="height:${Math.round(Math.abs(x.v)/max*150)}px;background:${x.v<0?(x.on?'#8590a2':'#dcdfe4'):(x.on?'#0052cc':'#b3c7ee')}"></i></div>`).join('');
   const tm={};mine.forEach(x=>{const p=x.c.product||'(상품 없음)';tm[p]=tm[p]||{n:0,s:0};if(!x.adj)tm[p].n++;tm[p].s+=Number(x.c.amount)||0;});
   const tl=Object.entries(tm).sort((a,b)=>b[1].s-a[1].s),tmax=Math.max(1,...tl.map(t=>t[1].s));
   const types=tl.length?tl.map(([p,t])=>`<div style="display:flex;flex-direction:column;gap:4px"><div style="display:flex;gap:8px;font-size:13px"><b style="flex:1">${esc(p)}</b><span style="color:#44546f">${t.n}건</span><b>${ctWon(t.s)}원</b></div><div style="height:8px;background:#f1f2f4;border-radius:4px"><div style="height:8px;width:${Math.max(2,Math.round(t.s/tmax*100))}%;background:#0052cc;border-radius:4px"></div></div></div>`).join(''):'<div style="font-size:13px;color:#5e6c84">이 기간에 확정된 계약이 없어요</div>';
-  const rows=mine.slice().sort((a,b)=>b.c.date.localeCompare(a.c.date)).map((x,i)=>`<tr class="go" data-i="${i}" title="카드 열기"><td style="white-space:nowrap">${esc(x.c.date)}</td><td><b>${esc(x.card.title)}</b><div style="font-size:11.5px;color:#5e6c84">${esc(x.board.title)} › ${esc(x.col.title)}</div></td><td style="white-space:nowrap"><span style="font-size:11px;font-weight:800;padding:1px 6px;border-radius:4px;${x.adj?'background:#ffebe6;color:#ae2a19':ctBizStyle(x.c.biz)}">${esc(x.c.kind)}</span></td><td>${esc(x.c.product||'')}</td><td style="text-align:right;font-weight:700;white-space:nowrap;${x.adj?'color:#ae2a19':''}">${ctWon(x.c.amount)}원</td></tr>`).join('');
+  const rows=mine.slice().sort((a,b)=>b.c.date.localeCompare(a.c.date)).map((x,i)=>`<tr class="go" data-i="${i}" title="카드 열기"><td style="white-space:nowrap">${esc(x.c.date)}</td><td><b>${esc(x.card.title)}</b><div style="font-size:11.5px;color:#5e6c84">${esc(x.board.title)} › ${esc(x.col.title)}</div></td><td style="white-space:nowrap"><span style="font-size:11px;font-weight:800;padding:1px 6px;border-radius:4px;${x.adj?'background:#f1f2f4;color:#44546f':ctBizStyle(x.c.biz)}">${esc(x.c.kind)}</span></td><td>${esc(x.c.product||'')}</td><td style="text-align:right;font-weight:700;white-space:nowrap;${x.adj?'color:#44546f':''}">${ctWon(x.c.amount)}원</td></tr>`).join('');
   window.__slRows=mine.slice().sort((a,b)=>b.c.date.localeCompare(a.c.date));
   panel.innerHTML=`<button id="sales-close" type="button" onclick="closeSales()" aria-label="닫기">✕</button>
     <div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;padding-right:44px">
@@ -10013,7 +10012,7 @@ function renderSales(){
         <div class="sl-bars">${bars}</div><div class="sl-months">${months.map(x=>`<div>${x.m}월</div>`).join('')}</div></div>
       <div class="sl-card" style="flex:1 1 300px;min-width:0;display:flex;flex-direction:column;gap:10px"><div style="font-size:15px;font-weight:800">${slCat} · 상품별</div>${types}</div>
     </div>
-    <div class="sl-card"><div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap"><div style="font-size:15px;font-weight:800">${slCat} 계약 목록 <span style="font-size:12px;color:#5e6c84;font-weight:400">계약 ${mine.filter(x=>!x.adj).length}건${mine.some(x=>x.adj)?` · <b style="color:#ae2a19">해지·감액 ${mine.filter(x=>x.adj).length}건</b>`:''} · 누르면 카드가 열려요</span></div>
+    <div class="sl-card"><div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap"><div style="font-size:15px;font-weight:800">${slCat} 계약 목록 <span style="font-size:12px;color:#5e6c84;font-weight:400">계약 ${mine.filter(x=>!x.adj).length}건${mine.some(x=>x.adj)?` · <b style="color:#44546f">해지·감액 ${mine.filter(x=>x.adj).length}건</b>`:''} · 누르면 카드가 열려요</span></div>
       <button type="button" class="ct-btn" style="margin-left:auto;min-height:36px;font-size:12.5px" onclick="slExport()">엑셀(CSV)로 내보내기</button></div>
       <div style="overflow-x:auto">${mine.length?`<table class="sl-table"><thead><tr><th>날짜</th><th>카드</th><th>종류</th><th>상품</th><th style="text-align:right">${CT_UNIT[slCat]}</th></tr></thead><tbody id="sl-tbody">${rows}</tbody></table>`:'<div style="font-size:13px;color:#5e6c84;padding:8px 0">이 기간에 확정된 계약이 없어요</div>'}</div></div>`;
   const tb=document.getElementById('sl-tbody');
