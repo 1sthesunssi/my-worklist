@@ -1,0 +1,161 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="strict-origin-when-cross-origin"><title>My Worklist 고객정보 테스트</title><script src="https://accounts.google.com/gsi/client" async defer></script><style>body{margin:0;font:16px/1.6 system-ui;background:#edf1f9;color:#23324d}main{max-width:720px;margin:10vh auto;padding:30px}button{cursor:pointer}a{color:#265ac7}.hdr-btn{padding:14px 20px;background:#265ac7;border:0;border-radius:10px;color:white;font-size:16px}#mw-customers{border:0;border-radius:20px;padding:0;width:min(1100px,96vw);max-width:none;max-height:94vh;background:#f6f7fb;color:#202839;box-shadow:0 24px 90px #101b3855;font:14px/1.55 system-ui,sans-serif}#mw-customers::backdrop{background:#17223c80}#mw-customers *{box-sizing:border-box}#mw-customers header{display:flex;justify-content:space-between;align-items:center;padding:18px 24px;background:white;border-bottom:1px solid #e3e6ef}#mw-customers h2{font-size:21px;margin:0}#mw-customers h3{margin:0 0 10px;font-size:16px}#mw-customers .mw-sub{font-size:12px;color:#68738a}#mw-customers .mw-body{padding:20px;overflow:auto;max-height:calc(94vh - 87px)}#mw-customers .mw-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:15px}#mw-customers button{border:1px solid #dce1ed;background:white;color:#27364c;border-radius:9px;padding:9px 12px;cursor:pointer;font:inherit}#mw-customers button:disabled{opacity:.5;cursor:wait}#mw-customers button.mw-primary{background:#265ac7;color:white;border-color:#265ac7}#mw-customers button.mw-selected{background:#e8efff;border-color:#265ac7}#mw-customers input:not([type=checkbox]),#mw-customers textarea{width:100%;border:1px solid #d9deeb;border-radius:8px;padding:9px 10px;font:inherit;color:#202839;background:white}#mw-customers textarea{resize:vertical}#mw-customers .mw-search{flex:1;min-width:180px}#mw-customers .mw-layout{display:grid;grid-template-columns:minmax(220px,.75fr) minmax(0,1.7fr);gap:16px}#mw-customers .mw-card{background:white;border:1px solid #e0e5ef;border-radius:13px;padding:18px;margin-bottom:12px}#mw-customers .mw-record{display:block;text-align:left;width:100%;margin:8px 0}#mw-customers .mw-record strong{display:block}#mw-customers .mw-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}#mw-customers label{display:block;font-size:12px;color:#5a6780}#mw-customers label input,#mw-customers label textarea{margin-top:4px}#mw-customers .mw-wide{grid-column:1/-1}#mw-customers .mw-message{padding:10px 14px;background:#eaf0fd;color:#284e92;border-radius:9px;margin:10px 0;white-space:pre-wrap}#mw-customers .mw-error{background:#fff0eb;color:#a53924}#mw-customers .mw-steps{color:#53617c;margin:8px 0 14px}#mw-customers .mw-candidates{max-height:190px;overflow:auto}#mw-customers .mw-preview{max-width:100%;max-height:220px;object-fit:contain;display:block;margin:10px auto}#mw-customers .mw-diff{padding:8px;background:#f3f5fa;border-radius:8px;margin:7px 0;overflow-wrap:anywhere}#mw-customers .mw-diff input{margin-right:8px}#mw-customers .mw-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}#mw-customers .mw-empty{padding:25px 8px;color:#758096;text-align:center}#mw-customers details{margin:12px 0}#mw-customers summary{cursor:pointer;font-weight:600}#mw-customers .mw-pill{display:inline-block;border-radius:20px;background:#e9effa;padding:2px 8px;font-size:11px;margin-left:6px}@media(max-width:700px){#mw-customers .mw-layout,#mw-customers .mw-fields{grid-template-columns:1fr}#mw-customers .mw-body{padding:12px}#mw-customers header{padding:14px}#mw-customers .mw-wide{grid-column:auto}}
+
+/* 기존 앱의 전역 margin 초기화와 구분하여 dialog를 중앙에 배치 */
+#mw-customers{margin:auto}
+#mw-customers aside.mw-card{position:sticky;top:0;align-self:start;max-height:calc(94vh - 220px);overflow:auto}
+@media(max-width:700px){#mw-customers aside.mw-card{position:static;max-height:240px}}
+</style></head><body><main><h1>My Worklist · 고객정보 테스트</h1><p>고객정보 파일을 선택하고 확인한 뒤 저장해 보세요.<br>구글 로그인이 필요하면 본인 계정을 선택해 주세요.</p><p>이 테스트는 별도 고객정보 파일을 사용합니다. 실제 자료를 넣기 전 연습용 자료로 확인해 주세요.</p><span id="sales-btn"></span><p><a href="./">My Worklist로 돌아가기</a></p></main><script>window.MW_CUSTOMER_GOOGLE_CLIENT_ID="636547414704-d9n4ieqjhui710250a2e10jcbrht1hkf.apps.googleusercontent.com";
+/* 별도 테스트 페이지용. 기존 앱의 저장소와 토큰을 읽거나 변경하지 않습니다. */
+(function(){
+  'use strict';
+  const clientId=window.MW_CUSTOMER_GOOGLE_CLIENT_ID;
+  const scopes={drive:'https://www.googleapis.com/auth/drive.file',contacts:'https://www.googleapis.com/auth/contacts.readonly'};
+  const sessions={};
+  function signedIn(kind){return !!sessions[kind]&&Date.now()<sessions[kind].expires;}
+  function acquire(kind){
+    if(location.origin!=='https://1sthesunssi.github.io')return Promise.reject(Error('이 테스트 주소에서는 구글 로그인이 안 돼요. 안내받은 My Worklist 테스트 링크를 열어 주세요.'));
+    if(signedIn(kind))return Promise.resolve(sessions[kind].token);
+    if(!window.google?.accounts?.oauth2)return Promise.reject(Error('구글 연결을 준비 중이에요. 잠시 후 버튼을 다시 눌러 주세요.'));
+    return new Promise((resolve,reject)=>{
+      let done=false;const timer=setTimeout(()=>finish(Error('로그인 창을 닫았거나 시간이 지났어요. 다시 눌러 주세요.')),60000);
+      function finish(error,value){if(done)return;done=true;clearTimeout(timer);if(error)reject(error);else resolve(value);}
+      const client=google.accounts.oauth2.initTokenClient({client_id:clientId,scope:scopes[kind],include_granted_scopes:true,
+        callback:response=>{if(response.error||!response.access_token){finish(Error('구글 연결을 완료하지 못했어요. 다시 눌러 주세요.'));return;}if(!google.accounts.oauth2.hasGrantedAllScopes(response,scopes[kind])){finish(Error('필요한 구글 접근을 허용하지 않아 연결하지 못했어요.'));return;}sessions[kind]={token:response.access_token,expires:Date.now()+Math.max(0,(Number(response.expires_in)||3600)-60)*1000};finish(null,response.access_token);},
+        error_callback:()=>finish(Error('구글 로그인 창을 닫았거나 열지 못했어요. 팝업 허용 후 다시 눌러 주세요.'))});
+      try{client.requestAccessToken({prompt:''});}catch{finish(Error('구글 로그인 창을 열지 못했어요. 다시 눌러 주세요.'));}
+    });
+  }
+  window.ensureDriveToken=()=>acquire('drive');
+  window.gcontactSignedIn=()=>signedIn('contacts');
+  window.peopleApiFetch=async url=>{
+    if(!url.startsWith('https://people.googleapis.com/v1/people/me/connections?'))throw Error('지원하지 않는 주소록 요청이에요.');
+    const token=await acquire('contacts');const response=await fetch(url,{headers:{Authorization:'Bearer '+token}});
+    if(response.status===401){delete sessions.contacts;throw Error('주소록 연결이 만료됐어요. 주소록 연결을 다시 눌러 주세요.');}
+    if(!response.ok)throw Error('주소록을 불러오지 못했어요 ('+response.status+').');return response.json();
+  };
+})();
+
+;
+(function(root,factory){
+  const api=factory();
+  if(typeof module==='object'&&module.exports)module.exports=api;
+  else root.MWCustomerCore=api;
+})(typeof globalThis!=='undefined'?globalThis:this,function(){
+  'use strict';
+  const fields=['name','phone','homePhone','homeAddress','workAddress','email','vehicle','vehicleExpiry','insurer','family','notes'];
+  const labels={name:'고객명',phone:'휴대전화',homePhone:'자택전화',homeAddress:'자택주소',workAddress:'직장주소',email:'이메일',vehicle:'차량번호',vehicleExpiry:'차량 만기일',insurer:'가입 보험사',family:'확인한 가족 메모',notes:'메모'};
+  const aliases={name:['name','고객명','이름'],phone:['phone','휴대전화','휴대폰','전화번호'],homePhone:['homePhone','자택전화'],homeAddress:['homeAddress','자택주소','주소'],workAddress:['workAddress','직장주소'],email:['email','이메일'],vehicle:['vehicle','차량번호','자동차번호'],vehicleExpiry:['vehicleExpiry','차량 만기일','만기일'],insurer:['insurer','가입 보험사','보험사'],family:['family','가족','배우자','가족 메모'],notes:['notes','메모']};
+  function clean(v){if(v==null)return '';if(typeof v!=='string'&&typeof v!=='number')throw Error('각 항목은 글자 또는 숫자로 입력해 주세요.');return String(v).trim().slice(0,2000);}
+  function normPhone(v){let s=String(v||'').replace(/\D/g,'');if(s.startsWith('0082'))s='0'+s.slice(4);else if(s.startsWith('82'))s='0'+s.slice(2);return s;}
+  function normText(v){return String(v||'').normalize('NFKC').toLowerCase().replace(/[\s\-().+]/g,'');}
+  function rejectSensitive(v){if(/\b\d{6}[\s-]*[1-8]\d{6}\b/.test(v))throw Error('주민등록번호로 보이는 내용이 있어 가져오기를 중단했어요. 해당 부분을 지워 주세요.');}
+  function normalize(obj){
+    if(!obj||typeof obj!=='object'||Array.isArray(obj))throw Error('고객 한 명의 분석 결과를 붙여넣어 주세요.');
+    const out={};for(const f of fields){const key=aliases[f].find(k=>Object.prototype.hasOwnProperty.call(obj,k));out[f]=clean(key?obj[key]:'');rejectSensitive(out[f]);}
+    if(!out.name)throw Error('고객명이 필요해요. 이름 항목을 확인해 주세요.');
+    return out;
+  }
+  function parse(text){
+    let s=String(text||'').trim();if(s.length>50000)throw Error('분석 결과가 너무 길어요. 고객 한 명만 가져와 주세요.');
+    s=s.replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,'');
+    try{return normalize(JSON.parse(s));}catch(e){if(s.startsWith('{')||s.startsWith('['))throw e;}
+    const obj={};for(const line of s.split(/\r?\n/)){const m=line.replace(/^\s*[-*]\s*/,'').replace(/\*\*/g,'').match(/^([^:：]+)[:：]\s*(.*)$/);if(m)obj[m[1].trim()]=m[2].trim();}
+    return normalize(obj);
+  }
+  function contacts(people){return people.filter(p=>/^people\//.test(p.resourceName||'')).map(p=>({id:p.resourceName,name:(p.names||[]).map(n=>n.displayName).filter(Boolean).join(' / ')||'이름 없음',phones:(p.phoneNumbers||[]).map(p=>p.value).filter(Boolean)}));}
+  function matches(customer,list,query){
+    const nums=[customer.phone,customer.homePhone].map(normPhone).filter(Boolean);const q=normText(query||'');
+    return list.map(c=>({...c,exact:c.phones.some(p=>nums.includes(normPhone(p))&&normPhone(p).length>=9)}))
+      .filter(c=>q?normText(c.name+' '+c.phones.join(' ')).includes(q):c.exact)
+      .sort((a,b)=>Number(b.exact)-Number(a.exact)||a.name.localeCompare(b.name,'ko'));
+  }
+  function search(records,q){const n=normText(q);return records.filter(r=>normText(fields.map(f=>r[f]).join(' ')+' '+(r.contact?.name||'')).includes(n));}
+  function changes(old,next){return fields.filter(f=>next[f]&&next[f]!==old[f]).map(f=>({field:f,before:old[f]||'',after:next[f]}));}
+  function existing(data,records){const nums=[data.phone,data.homePhone].map(normPhone).filter(n=>n.length>=9);const matches=records.filter(r=>r.name===data.name&&[r.phone,r.homePhone].map(normPhone).some(n=>nums.includes(n)));return matches.length===1?matches[0]:null;}
+  function merge(old,next,selected){const out={...old};for(const f of selected)if(fields.includes(f)&&next[f])out[f]=next[f];return out;}
+  function validateRecord(r){const data=normalize(r);if(!/^[a-zA-Z0-9_-]{1,100}$/.test(r.id||''))throw Error('저장된 고객 ID가 올바르지 않아요.');return {...data,id:r.id,updatedAt:clean(r.updatedAt),contact:r.contact&&/^people\/[a-zA-Z0-9_-]+$/.test(r.contact.id||'')?{id:r.contact.id,name:clean(r.contact.name)}:null};}
+  const prompt='첨부한 보험 고객 화면에서 보이는 정보만 읽어 아래 JSON 한 개로 출력해 주세요. 추측하지 말고 안 보이는 값은 빈 문자열로 두세요. 주민등록번호, 생년월일, 계좌번호는 출력하지 마세요. 가족은 메모에 명시된 관계와 이름만 쓰고 다른 사람의 정보를 추정하지 마세요. JSON 앞뒤 설명은 넣지 마세요.\n'+JSON.stringify(Object.fromEntries(fields.map(f=>[f,''])),null,2)+'\n항목 뜻: '+fields.map(f=>f+'='+labels[f]).join(', ');
+  return {fields,labels,normPhone,normText,normalize,parse,contacts,matches,search,changes,existing,merge,validateRecord,prompt};
+});
+
+;
+(function(){
+  'use strict';
+  const C=window.MWCustomerCore;
+  const $=id=>document.getElementById(id);
+  let records=[],contactList=[],selectedContact=null,editingId=null,dirty=false,previewURL=null,busy=false,loaded=false,demo=false;
+  let remoteBase=null;
+  const DNAME='MyWorklist_Customers_Test';
+  const safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const stamp=()=>new Date().toISOString();
+  const uid=()=>crypto.randomUUID();
+  const sample={name:'테스트고객',phone:'010-0000-1234',homePhone:'',homeAddress:'테스트시 예시로 10',workAddress:'',email:'',vehicle:'테스트차량',vehicleExpiry:'2027-10-31',insurer:'테스트보험사',family:'배우자: 예시가족',notes:'실제 고객이 아닌 테스트 자료'};
+  const commonFields=['name','phone','homeAddress','vehicle','family'];
+  const fieldHTML=f=>`<label class="${['homeAddress','workAddress','family','notes'].includes(f)?'mw-wide':''}">${C.labels[f]}<input id="mwc-f-${f}" maxlength="2000" autocomplete="off"></label>`;
+  const dialog=document.createElement('dialog');dialog.id='mw-customers';
+  dialog.innerHTML=`<header><div><h2>고객정보 <span class="mw-pill">테스트</span></h2><div class="mw-sub">이름이 달라도, 같은 고객을 한곳에서</div></div><button id="mwc-close" aria-label="고객정보 닫기">닫기</button></header>
+  <div class="mw-body"><div class="mw-toolbar"><button id="mwc-load">저장한 고객 불러오기</button><button id="mwc-demo">연습해 보기</button><span class="mw-sub" id="mwc-storage">처음에는 구글 로그인이 필요해요</span></div>
+  <div id="mwc-message" role="status" aria-live="polite" class="mw-message">사진은 Codex 채팅에 보내 주세요. 받은 고객정보 파일을 여기에서 선택하면 돼요. 별도 유료 API는 쓰지 않아요.</div>
+  <div class="mw-layout"><aside class="mw-card"><h3>고객 찾기</h3><input id="mwc-search" aria-label="고객 검색" placeholder="이름 · 연락처 이름 · 번호 · 차량"><div id="mwc-list"></div><button id="mwc-new">＋ 고객정보 가져오기</button></aside>
+  <section><div class="mw-card"><h3>고객정보 파일 가져오기</h3><p class="mw-steps">Codex 채팅에 고객 사진을 보내고 <b>“고객정보 파일로 만들어줘”</b>라고 말해 주세요. 받은 파일을 선택하면 아래 정보가 채워져요.</p>
+  <input id="mwc-customer-file" type="file" accept=".json,application/json" hidden><button id="mwc-choose-file" class="mw-primary">📂 받은 고객정보 파일 선택</button><div id="mwc-file-name" class="mw-sub"></div>
+  <details id="mwc-advanced"><summary>제미나이·ChatGPT 답변을 직접 가져오려면</summary><p class="mw-sub">이 채팅에서 파일을 받았다면 이 부분은 건너뛰세요.</p>
+  <div class="mw-actions"><button id="mwc-prompt">분석 요청문 복사</button><a href="https://gemini.google.com/" target="_blank" rel="noopener noreferrer">제미나이 열기 ↗</a><a href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer">ChatGPT 열기 ↗</a></div>
+  <details><summary>원본 이미지 보며 확인하기 (선택)</summary><p class="mw-sub">이미지는 이 화면에서만 보여요. 자동 분석·전송·저장하지 않아요. 제미나이에는 직접 올려 주세요.</p><input id="mwc-image" type="file" accept="image/png,image/jpeg,image/webp" aria-label="확인용 이미지 선택"><img id="mwc-preview" class="mw-preview" hidden alt="고객정보 대조용 이미지"></details>
+  <textarea id="mwc-import" rows="5" aria-label="분석 답변" placeholder="제미나이 또는 ChatGPT 답변을 붙여넣으세요."></textarea><div class="mw-actions"><button id="mwc-parse">답변 가져오기</button></div></details></div>
+  <div class="mw-card"><h3>내용이 맞는지 확인해 주세요</h3><div class="mw-fields">${commonFields.map(fieldHTML).join('')}</div><details><summary>전화·직장주소·이메일·보험정보 더 보기</summary><div class="mw-fields">${C.fields.filter(f=>!commonFields.includes(f)).map(fieldHTML).join('')}</div></details>
+  <details id="mwc-diff-wrap" hidden open><summary>기존 정보와 비교 · 반영할 항목 선택</summary><div id="mwc-diffs"></div></details>
+  </div><div class="mw-card"><h3>내 주소록에서 같은 사람 찾기</h3><div class="mw-sub">이름이 달라도 전화번호로 찾아요. 같은 사람인지 처음 한 번만 골라 주세요.</div><div class="mw-actions"><button id="mwc-contacts">내 구글 주소록 연결</button></div><details id="mwc-manual-contact"><summary>다른 이름으로 직접 찾기</summary><div class="mw-toolbar"><input id="mwc-contact-q" class="mw-search" aria-label="주소록 후보 검색" placeholder="주소록에 저장한 이름이나 번호"><button id="mwc-match">찾기</button></div><button id="mwc-unlink">연결 해제</button></details><div id="mwc-linked" class="mw-sub">주소록 연결 없이도 저장할 수 있어요</div><div id="mwc-candidates" class="mw-candidates"></div></div>
+  <div class="mw-card"><label><input id="mwc-confirm" type="checkbox"> 원본과 비교해 이름·번호·주소를 확인했어요.</label><div class="mw-actions"><button id="mwc-save" class="mw-primary">확인한 고객정보 저장</button></div><div class="mw-sub">드라이브에 별도 테스트 파일로 저장해요. 기존 보드·주소록을 변경하지 않아요.</div></div></section></div></div>`;
+  document.body.appendChild(dialog);
+  const button=document.createElement('button');button.type='button';button.className='hdr-btn';button.id='customer-info-btn';button.textContent='👤 고객정보';button.addEventListener('click',()=>{dialog.showModal();renderList();});
+  const anchor=$('sales-btn');if(anchor)anchor.before(button);else document.body.appendChild(button);
+  function message(text,error=false){$('mwc-message').textContent=text;$('mwc-message').classList.toggle('mw-error',error);}
+  async function run(fn){if(busy)return;busy=true;dialog.querySelectorAll('button,input,textarea').forEach(b=>b.disabled=true);try{await fn();}catch(e){message(e.message||'처리하지 못했어요. 다시 확인해 주세요.',true);}finally{busy=false;dialog.querySelectorAll('button,input,textarea').forEach(b=>b.disabled=false);}}
+  function form(){return C.normalize(Object.fromEntries(C.fields.map(f=>[f,$('mwc-f-'+f).value])));}
+  function fill(data){for(const f of C.fields)$('mwc-f-'+f).value=data[f]||'';$('mwc-confirm').checked=false;}
+  function markDirty(){dirty=true;$('mwc-confirm').checked=false;}
+  function canDiscard(){return !dirty||window.confirm('아직 저장하지 않은 내용이 있어요. 저장하지 않고 다른 고객을 볼까요?');}
+  function clearDraft(){editingId=null;selectedContact=null;fill({});$('mwc-import').value='';$('mwc-contact-q').value='';$('mwc-customer-file').value='';$('mwc-file-name').textContent='';$('mwc-diff-wrap').hidden=true;$('mwc-candidates').replaceChildren();$('mwc-linked').textContent='주소록 연결 없이도 저장할 수 있어요';dirty=false;clearPreview();}
+  function clearPreview(){if(previewURL)URL.revokeObjectURL(previewURL);previewURL=null;$('mwc-preview').hidden=true;$('mwc-preview').removeAttribute('src');$('mwc-image').value='';}
+  function renderList(){const list=$('mwc-list');list.replaceChildren();const found=C.search(records,$('mwc-search').value);if(!found.length){const e=document.createElement('div');e.className='mw-empty';e.textContent='저장한 고객이 없거나 검색 결과가 없어요.';list.appendChild(e);return;}for(const r of found){const b=document.createElement('button');b.className='mw-record'+(r.id===editingId?' mw-selected':'');b.innerHTML=`<strong>${safe(r.name)}</strong><span>${safe(r.phone||r.homePhone||'전화번호 없음')}</span><div class="mw-sub">${safe(r.contact?.name||'주소록 미연결')}</div>`;b.onclick=()=>{if(canDiscard())openRecord(r);};list.appendChild(b);}}
+  function openRecord(r){clearDraft();editingId=r.id;selectedContact=r.contact;fill(r);showLinked();renderList();message('저장된 고객정보를 열었어요. 변경 후 확인하면 새 기록으로 저장돼요.');}
+  function showLinked(){$('mwc-linked').textContent=selectedContact?'연결할 연락처: '+selectedContact.name+' · 저장하면 이 연결을 기억해요.':'연결한 연락처 없음';}
+  function renderCandidates(){const data=form();const candidates=C.matches(data,contactList,$('mwc-contact-q').value);const el=$('mwc-candidates');el.replaceChildren();if(!candidates.length){el.textContent=contactList.length?'일치 후보가 없어요. 주소록에 저장한 이름이나 전화번호로 찾아보세요.':'구글 주소록을 먼저 불러와 주세요.';return;}for(const c of candidates.slice(0,50)){const b=document.createElement('button');b.className='mw-record';b.innerHTML=`<strong>${safe(c.name)} ${c.exact?'· 번호 일치':''}</strong><span>${safe(c.phones.join(' / ')||'번호 없음')}</span>`;b.onclick=()=>{selectedContact={id:c.id,name:c.name};showLinked();markDirty();};el.appendChild(b);}}
+  function updateDiff(){const previous=records.find(r=>r.id===editingId);const box=$('mwc-diffs');box.replaceChildren();$('mwc-diff-wrap').hidden=!previous;if(!previous)return;const next=form();for(const d of C.changes(previous,next)){const label=document.createElement('label');label.className='mw-diff';label.innerHTML=`<input type="checkbox" checked data-field="${d.field}"> ${safe(C.labels[d.field])}<div>기존: ${safe(d.before||'(없음)')}</div><div>새 값: ${safe(d.after)}</div>`;box.appendChild(label);}if(!box.children.length)box.textContent='변경할 항목이 없어요. 빈 항목으로 기존 값을 지우지 않아요.';}
+  function importData(){const data=C.parse($('mwc-import').value);if(!editingId){const found=C.existing(data,records);if(found){editingId=found.id;selectedContact=found.contact;showLinked();}}const previous=records.find(r=>r.id===editingId);fill(previous?{...previous,...Object.fromEntries(Object.entries(data).filter(([,v])=>v))}:data);markDirty();updateDiff();message(previous?'이미 저장한 고객이에요. 바뀐 내용만 확인한 뒤 저장해 주세요.':'고객정보를 채웠어요. 내용이 맞으면 확인란을 체크하고 저장해 주세요.');if(contactList.length)renderCandidates();renderList();}
+  async function getContacts(){if(demo){renderCandidates();return;}if(typeof peopleApiFetch!=='function')throw Error('기존 구글 주소록 연결 기능을 찾지 못했어요.');let all=[],page='';for(let i=0;i<100;i++){const u='https://people.googleapis.com/v1/people/me/connections?personFields=names,phoneNumbers&pageSize=1000'+(page?'&pageToken='+encodeURIComponent(page):'');const data=await peopleApiFetch(u);all.push(...(data.connections||[]));page=data.nextPageToken||'';if(!page)break;}if(page)throw Error('주소록이 너무 많아 전부 불러오지 못했어요.');contactList=C.contacts(all);renderCandidates();message('주소록을 불러왔어요. 이름이 달라도 전화번호가 같은 후보를 표시해요.');}
+  async function token(){if(typeof ensureDriveToken!=='function')throw Error('기존 구글드라이브 연결 기능을 찾지 못했어요.');return ensureDriveToken();}
+  async function request(url,t,options={}){const response=await fetch(url,{...options,headers:{Authorization:'Bearer '+t,...options.headers}});if(!response.ok)throw Error(response.status===401?'구글 연결이 만료됐어요. 다시 연결해 주세요.':'구글드라이브 요청 실패 ('+response.status+')');return response;}
+  async function latest(t){const q="trashed=false and appProperties has { key='mwCustomerTest' and value='v1' }";const u='https://www.googleapis.com/drive/v3/files?'+new URLSearchParams({q,pageSize:'1',orderBy:'createdTime desc',fields:'files(id,name,createdTime)'});const data=await(await request(u,t)).json();return data.files?.[0]||null;}
+  async function readCloud(){const t=await token();const file=await latest(t);let next=[];if(file){const doc=await(await request('https://www.googleapis.com/drive/v3/files/'+encodeURIComponent(file.id)+'?alt=media',t)).json();if(doc.schema!==1||!Array.isArray(doc.customers)||doc.customers.length>20000)throw Error('저장 파일 형식이 올바르지 않아요.');next=doc.customers.map(C.validateRecord);if(new Set(next.map(r=>r.id)).size!==next.length)throw Error('중복 고객 ID가 있어 불러오기를 중단했어요.');}return {customers:next,fileId:file?.id||null};}
+  async function loadCloud(){if(!canDiscard())return;if(demo&&records.length&&!window.confirm('가상 체험을 끝내고 실제 드라이브의 테스트 자료를 불러올까요?'))return;const state=await readCloud();records=state.customers;remoteBase=state.fileId;loaded=true;demo=false;contactList=[];clearDraft();renderList();$('mwc-storage').textContent='저장한 고객 · '+records.length+'명';message('고객정보를 불러왔어요. 이름이나 전화번호로 찾아보세요.');}
+  async function persist(next){const t=await token();const current=await latest(t);if((current?.id||null)!==remoteBase)throw Error('다른 기기에서 저장한 새 자료가 있어요. 입력한 내용을 복사해 둔 뒤 드라이브를 다시 불러와 주세요.');const meta={name:DNAME+'_'+stamp().replace(/[:.]/g,'-')+'.json',mimeType:'application/json',appProperties:{mwCustomerTest:'v1'}};const boundary='mw_customer_'+uid().replace(/-/g,'');const body='--'+boundary+'\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n'+JSON.stringify(meta)+'\r\n--'+boundary+'\r\nContent-Type: application/json\r\n\r\n'+JSON.stringify({schema:1,savedAt:stamp(),previousFileId:remoteBase,customers:next})+'\r\n--'+boundary+'--';if(new Blob([body]).size>4500000)throw Error('고객 데이터가 커서 이번 테스트 버전에서는 저장할 수 없어요.');const data=await(await request('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',t,{method:'POST',headers:{'Content-Type':'multipart/related; boundary='+boundary},body})).json();if(!data.id)throw Error('저장 결과를 확인하지 못했어요. 드라이브를 다시 불러와 주세요.');remoteBase=data.id;}
+  async function save(){if(!$('mwc-confirm').checked)throw Error('원본과 비교한 뒤 확인란을 체크해 주세요.');const data=form();if(!loaded&&!demo){const state=await readCloud();records=state.customers;remoteBase=state.fileId;loaded=true;const existing=C.existing(data,records);if(existing){editingId=existing.id;selectedContact=selectedContact||existing.contact;fill({...existing,...Object.fromEntries(Object.entries(data).filter(([,v])=>v))});showLinked();markDirty();updateDiff();renderList();message('이미 저장한 고객을 찾았어요. 바뀐 내용을 한 번 확인하고 저장해 주세요.');return;}}const previous=records.find(r=>r.id===editingId);let nextData=data;
+    if(previous){const changed=C.changes(previous,data);const checks=[...$('mwc-diffs').querySelectorAll('input[data-field]')];const selected=checks.length?checks.filter(e=>e.checked).map(e=>e.dataset.field):changed.map(d=>d.field);nextData=C.merge(previous,data,selected);}
+    if(!previous){const same=records.filter(r=>selectedContact&&r.contact?.id===selectedContact.id||[data.phone,data.homePhone].map(C.normPhone).filter(n=>n.length>=9).some(n=>[r.phone,r.homePhone].map(C.normPhone).includes(n)));if(same.length)throw Error('같은 연락처 또는 번호의 고객이 이미 있어요. 왼쪽에서 기존 고객을 열고 답변을 가져와 주세요.');}
+    const record=C.validateRecord({...nextData,id:editingId||uid(),updatedAt:stamp(),contact:selectedContact});const next=records.filter(r=>r.id!==record.id).concat(record);if(!demo)await persist(next);records=next;editingId=record.id;dirty=false;fill(record);$('mwc-diff-wrap').hidden=true;renderList();$('mwc-storage').textContent=(demo?'가상 체험 · 브라우저를 닫으면 사라져요':'드라이브 저장 완료')+' · '+records.length+'명';message(demo?'가상 고객을 저장했어요. 실제 드라이브·주소록에는 쓰지 않았어요.':'구글드라이브에 새 테스트 파일로 저장했어요. 이전 파일과 주소록은 그대로예요.');}
+  $('mwc-close').onclick=()=>{if(canDiscard()){clearDraft();dialog.close();}};
+  dialog.addEventListener('cancel',e=>{if(!canDiscard())e.preventDefault();else clearDraft();});
+  $('mwc-new').onclick=()=>{if(canDiscard()){clearDraft();renderList();message('위의 받은 고객정보 파일 선택 버튼을 눌러 주세요.');}};
+  $('mwc-choose-file').onclick=()=>$('mwc-customer-file').click();
+  $('mwc-customer-file').onchange=()=>run(async()=>{const file=$('mwc-customer-file').files[0];if(!file)return;if(file.size>100000)throw Error('고객 한 명의 고객정보 파일을 선택해 주세요.');const text=await file.text();C.parse(text);if(!canDiscard())return;clearDraft();$('mwc-import').value=text;importData();$('mwc-file-name').textContent='가져온 파일: '+file.name;if(!demo&&!contactList.length&&typeof gcontactSignedIn==='function'&&gcontactSignedIn()){try{await getContacts();}catch{message('정보를 가져왔어요. 주소록 연결은 나중에 다시 할 수 있어요.');}}});
+  $('mwc-search').oninput=renderList;
+  $('mwc-parse').onclick=()=>run(importData);
+  $('mwc-contacts').onclick=()=>run(getContacts);
+  $('mwc-match').onclick=()=>run(renderCandidates);
+  $('mwc-contact-q').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();run(renderCandidates);}};
+  $('mwc-unlink').onclick=()=>{selectedContact=null;showLinked();markDirty();};
+  $('mwc-load').onclick=()=>run(loadCloud);
+  $('mwc-save').onclick=()=>run(save);
+  $('mwc-import').oninput=markDirty;
+  C.fields.forEach(f=>$('mwc-f-'+f).addEventListener('input',()=>{markDirty();try{updateDiff();}catch{}}));
+  $('mwc-diffs').addEventListener('change',markDirty);
+  $('mwc-image').onchange=()=>{const file=$('mwc-image').files[0];if(!file)return;if(!['image/png','image/jpeg','image/webp'].includes(file.type)||file.size>15000000){message('15MB 이하 PNG·JPG·WebP 이미지를 선택해 주세요.',true);return;}if(previewURL)URL.revokeObjectURL(previewURL);previewURL=URL.createObjectURL(file);$('mwc-preview').src=previewURL;$('mwc-preview').hidden=false;};
+  $('mwc-prompt').onclick=()=>run(async()=>{try{await navigator.clipboard.writeText(C.prompt);message('요청문을 복사했어요. 제미나이에 이미지와 함께 붙여넣어 주세요.');}catch{const area=$('mwc-import');area.value=C.prompt;area.focus();area.select();message('자동 복사가 안 되어 요청문을 선택했어요. Ctrl+C로 복사해 주세요.');}});
+  $('mwc-demo').onclick=()=>{if(!canDiscard())return;demo=true;loaded=false;remoteBase=null;records=[];clearDraft();contactList=[{id:'people/demo_1',name:'예시고객님 자동차보험',phones:['02-000-0000','+82 10-0000-1234']},{id:'people/demo_2',name:'동명이인 예시',phones:['010-0000-9999']}];$('mwc-import').value=JSON.stringify(sample,null,2);importData();$('mwc-storage').textContent='가상 체험 · 실제 구글 데이터 사용 안 함';renderList();message('가상 고객 자료를 채웠어요. 번호가 같은 주소록 후보를 선택하고 저장해 보세요.');};
+  window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue='';}});
+  renderList();
+})();
+
+document.getElementById('customer-info-btn').click();</script></body></html>
