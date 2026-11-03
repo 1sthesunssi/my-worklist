@@ -53,6 +53,10 @@ body{font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFo
 .hsr-snippet{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hsr-snippet b{color:var(--accent);font-weight:700}
 .hsr-meta{font-size:11px;color:var(--muted);white-space:nowrap;flex-shrink:0;border-left:3px solid transparent;padding-left:6px}
+.hsr-summary{font-size:11.5px;color:var(--muted);padding:2px 10px 6px;font-weight:600}
+.hsr-summary b{color:var(--text);font-weight:800}
+.hsr-fold{display:flex;align-items:center;gap:6px;margin-top:6px;padding:9px 10px;border-top:1px solid #e9ecef;font-size:12px;font-weight:700;color:var(--muted);cursor:pointer;border-radius:8px;user-select:none}
+.hsr-fold:hover{background:#f4f5f7}
 .hsr-empty{padding:16px;text-align:center;color:var(--muted);font-size:13px}
 /* 검색 결과에서 보드가 바뀌는 지점 */
 .hsr-group{
@@ -6690,15 +6694,17 @@ function findAllCardMatches(term,scope){
           const end=Math.min(descPlain.length,idx+t.length+34);
           snippet=(start>0?'…':'')+descPlain.slice(start,end)+(end<descPlain.length?'…':'');
         }
-        out.push({card,board,col,matchIn,snippet});
+        const isDone=!!card.done||wvIsDoneList(col);
+        out.push({card,board,col,matchIn,snippet,isDone});
       });
     });
   });
   out.sort((a,b)=>{
     const rank=x=>{const tt=x.card.title.toLowerCase();return tt===t?0:tt.startsWith(t)?1:tt.includes(t)?2:3;};
+    if(a.isDone!==b.isDone)return a.isDone?1:-1; // 진행 중 먼저, 완료는 맨 뒤
     return rank(a)-rank(b);
   });
-  return out.slice(0,30);
+  return out.slice(0,200);
 }
 function positionHdrSearchResults(){
   const box=document.getElementById('hdr-search-results');
@@ -6708,11 +6714,13 @@ function positionHdrSearchResults(){
   box.style.left=r.left+'px';
   box.style.top=(r.bottom+6)+'px';
   box.style.width=r.width+'px';
+  box.style.maxHeight=Math.max(240,window.innerHeight-r.bottom-6-16)+'px'; // 화면 아래까지
 }
+let hdrSearchDoneOpen=false; // 검색 결과의 '완료된 카드' 펼침 여부
 function renderHdrSearchResults(term){
   const box=document.getElementById('hdr-search-results');if(!box)return;
   const t=term.trim();
-  if(!t){box.classList.remove('open');box.innerHTML='';return;}
+  if(!t){hdrSearchDoneOpen=false;box.classList.remove('open');box.innerHTML='';return;}
   const matches=findAllCardMatches(t,hdrSearchScope);
   // 메모도 함께 찾습니다 (제목만 검색할 땐 제외 — 메모는 제목이 따로 없음)
   const lower=t.toLowerCase();
@@ -6757,8 +6765,14 @@ function renderHdrSearchResults(term){
       });
       box.appendChild(row);
     });
+    const active=matches.filter(m=>!m.isDone);
+    const doneList=matches.filter(m=>m.isDone);
+    // 요약 줄: 몇 건인지 한눈에 (스크롤 안 해도 '더 있다'는 걸 알 수 있게)
+    const sum=document.createElement('div');sum.className='hsr-summary';
+    sum.innerHTML=`진행 중 <b>${active.length}</b> · 완료 <b>${doneList.length}</b>`+(memoHits.length?` · 메모 <b>${memoHits.length}</b>`:'');
+    box.insertBefore(sum,box.children[1]||null);
     let lastBoardId=null;
-    matches.forEach(({card,board,col,matchIn,snippet})=>{
+    const addCardRow=({card,board,col,matchIn,snippet,isDone})=>{
       // 보드가 바뀌면 구분선과 보드 이름을 넣어 어디 것인지 바로 보이게 합니다
       if(board.id!==lastBoardId){
         lastBoardId=board.id;
@@ -6771,16 +6785,27 @@ function renderHdrSearchResults(term){
       const snippetHtml=matchIn==='desc'&&snippet
         ? `<div class="hsr-snippet">📝 ${esc(snippet)}</div>`
         : '';
-      row.innerHTML=`<span style="font-size:15px;flex-shrink:0">${card.done?'✅':'📄'}</span><div class="hsr-body"><div class="hsr-title${card.done?' hsr-done':''}">${esc(card.title)}</div>${snippetHtml}</div><span class="hsr-meta" style="border-left-color:${getBoardColor(board)}">${esc(col.title)}</span>`;
+      row.innerHTML=`<span style="font-size:15px;flex-shrink:0">${isDone?'✅':'📄'}</span><div class="hsr-body"><div class="hsr-title${isDone?' hsr-done':''}">${esc(card.title)}</div>${snippetHtml}</div><span class="hsr-meta" style="border-left-color:${getBoardColor(board)}">${esc(col.title)}</span>`;
       row.addEventListener('click',()=>{
         box.classList.remove('open');
         document.getElementById('hdr-search').value='';
         searchCards('');
+        hdrSearchDoneOpen=false;
         openBoard(board.id);
         setTimeout(()=>openModal(card.id,col.id),200);
       });
       box.appendChild(row);
-    });
+    };
+    active.forEach(addCardRow);
+    if(doneList.length){
+      // 진행 중이 하나도 없으면 완료 카드를 바로 펼쳐 보여 줍니다
+      const open=hdrSearchDoneOpen||!active.length;
+      const fold=document.createElement('div');fold.className='hsr-fold';
+      fold.innerHTML=`<span>${open?'▼':'▶'}</span><span>완료된 카드 ${doneList.length}건${open?'':' (눌러서 펼치기)'}</span>`;
+      fold.addEventListener('click',e=>{e.stopPropagation();hdrSearchDoneOpen=!open;renderHdrSearchResults(term);});
+      box.appendChild(fold);
+      if(open){lastBoardId=null;doneList.forEach(addCardRow);}
+    }
   }
   positionHdrSearchResults();
   box.classList.add('open');
