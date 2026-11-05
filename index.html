@@ -332,6 +332,13 @@ body{font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFo
 #memo-recent.memo-mini{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;height:86px;margin-top:8px;border:none;border-radius:0;overflow:visible}
 .memo-mini-note{border-radius:4px;padding:9px 10px;font-size:12.5px;line-height:1.45;color:#172b4d;box-shadow:0 2px 5px rgba(0,0,0,.09);cursor:pointer;overflow:hidden;display:-webkit-box;-webkit-line-clamp:4;user-select:none;-webkit-box-orient:vertical;white-space:pre-wrap;word-break:break-word;text-align:left;border:none;font-family:inherit}
 .memo-mini-note:hover{box-shadow:0 4px 10px rgba(0,0,0,.14)}
+.memo-mini-note.mmn-rich{display:flex;flex-direction:column;white-space:normal;-webkit-line-clamp:unset}
+.mmn-top{display:flex;gap:7px;align-items:flex-start;min-height:0;flex:1}
+.mmn-th{position:relative;flex:none;width:34px;height:34px;border-radius:5px;overflow:hidden;background:#eef0f3}
+.mmn-th img{width:100%;height:100%;object-fit:cover;display:block}
+.mmn-play{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:16px;height:11px;border-radius:3px;background:#ff0033;color:#fff;font-size:6px;display:flex;align-items:center;justify-content:center}
+.mmn-t{min-width:0;font-weight:700;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.mmn-sub{font-size:11px;color:#5e6c84;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:none}
 .memo-mini-empty{grid-column:1/-1;font-size:12.5px;color:var(--muted);display:flex;align-items:center;justify-content:center;border:1px dashed #d5d9e0;border-radius:8px}
 #__memolist .mb-panel{background:#fff;border-radius:16px;width:100%;max-width:1240px;height:88vh;display:flex;flex-direction:column;box-shadow:0 24px 60px rgba(0,0,0,.3);overflow:hidden}
 .mb-head{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;padding:16px 22px;border-bottom:1px solid #e4e7ea}
@@ -368,6 +375,131 @@ body{font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFo
 .mb-edit-row span{font-size:11px;color:#5e6c84;margin-right:auto}
 .mb-empty{text-align:center;color:var(--muted);font-size:14px;padding:60px 0}
 @media (max-width:600px){#__memolist .mb-panel{height:94vh;border-radius:12px}.mb-head{padding:12px 14px}.mb-btns{margin-left:0}.mb-body{padding:16px}.mb-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.mb-note{height:170px;padding:12px}.mb-acts{opacity:1}.mb-q{width:100%}}
+/* ── 담벼락 (패들렛처럼) ── */
+#__memolist .wl-panel{max-width:1380px}
+.wl-types{display:flex;gap:6px;flex-wrap:wrap}
+.wl-types button{font:inherit;font-size:12.5px;font-weight:700;border:1px solid #dfe3e8;background:#fff;color:#172b4d;padding:6px 12px;border-radius:999px;cursor:pointer}
+.wl-types button:hover{border-color:#b3bac5}
+.wl-types button.on{background:#172b4d;color:#fff;border-color:#172b4d}
+.wl-body{flex:1;overflow:auto;background-color:#f6f5f1;background-image:radial-gradient(#d9dce1 1px,transparent 1px);background-size:22px 22px;padding:18px;display:grid;grid-template-columns:repeat(4,minmax(240px,1fr));gap:16px;align-items:start}
+.wl-col{display:flex;flex-direction:column;gap:10px;border-radius:12px;padding:4px;min-height:240px}
+.wl-col.wl-over{background:rgba(0,82,204,.06);outline:2px dashed #4c9aff}
+.wl-col-h{display:flex;align-items:center;gap:6px;font-size:15px;font-weight:800;color:#172b4d;padding:2px 4px}
+.wl-n{font-size:12px;color:#8a94a6;font-weight:600}
+.wl-add{border:1.5px dashed #b8c2d1;background:rgba(255,255,255,.6);border-radius:10px;padding:9px;font:inherit;font-size:13px;font-weight:700;color:#0052cc;cursor:pointer;transition:background .15s,border-color .15s}
+.wl-add:hover{background:#fff;border-color:#0052cc}
+.wl-cards{display:flex;flex-direction:column;gap:10px}
+.wl-empty{font-size:12.5px;color:#a5adba;text-align:center;padding:18px 0}
+.wl-card{position:relative;border-radius:10px;box-shadow:0 2px 6px rgba(0,0,0,.08);overflow:hidden;transition:box-shadow .15s,transform .15s}
+.wl-card:hover{box-shadow:0 8px 18px rgba(0,0,0,.14);transform:translateY(-1px)}
+.wl-card.m-dragging{opacity:.35}
+.wl-card.m-over{outline:2px dashed var(--accent);outline-offset:2px}
+.wl-card.wl-flash{animation:wlflash 1.8s}
+@keyframes wlflash{0%,45%{box-shadow:0 0 0 3px #4c9aff}100%{box-shadow:0 2px 6px rgba(0,0,0,.08)}}
+.wl-card .mb-acts{z-index:2}
+.wl-card:hover .mb-acts,.wl-card:focus-within .mb-acts{opacity:1}
+.wl-media{position:relative;display:block;background:#eef0f3;cursor:pointer}
+.wl-media img{display:block;width:100%;max-height:280px;object-fit:cover}
+.wl-yt{background:#1f1f1f;aspect-ratio:16/9}
+.wl-yt img{width:100%;height:100%;object-fit:cover;display:block;max-height:none}
+.wl-yt iframe{width:100%;height:100%;border:0;display:block}
+.wl-play{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:52px;height:36px;border-radius:10px;background:#ff0033;color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;pointer-events:none}
+.wl-in{padding:11px 12px;cursor:pointer}
+.wl-t{font-size:13.5px;font-weight:700;line-height:1.4;color:#172b4d;word-break:break-word}
+.wl-x{font-size:13.5px;line-height:1.55;color:#172b4d;white-space:pre-wrap;word-break:break-word;max-height:240px;overflow:hidden}
+.wl-t+.wl-x{font-size:12.5px;color:#42526e;margin-top:3px}
+.wl-site{display:block;font-size:12px;color:#0052cc;margin-top:5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+a.wl-site:hover{text-decoration:underline}
+.mb-dot[data-set="white"]:not(.on){border-color:#dfe1e6}
+.wl-lb{position:fixed;inset:0;z-index:420;background:rgba(0,0,0,.86);display:flex;align-items:center;justify-content:center;padding:24px;cursor:zoom-out;outline:none}
+.wl-lb img{max-width:100%;max-height:100%;border-radius:8px}
+.wl-lb-x{position:absolute;top:14px;right:16px;border:none;background:rgba(255,255,255,.15);color:#fff;font-size:20px;width:40px;height:40px;border-radius:50%;cursor:pointer}
+.wl-col-more{margin-left:auto;border:none;background:none;color:#8a94a6;font-size:16px;font-weight:800;letter-spacing:1px;cursor:pointer;padding:2px 8px;border-radius:7px;line-height:1}
+.wl-col-more:hover{background:rgba(9,30,66,.08);color:#172b4d}
+#__wallsec{position:fixed;inset:0;background:rgba(9,30,66,.55);z-index:405;display:flex;align-items:center;justify-content:center;padding:16px}
+.ws-box{width:100%;max-width:420px;background:#fff;border-radius:18px;box-shadow:0 24px 60px rgba(0,0,0,.3);padding:16px 20px 20px;display:flex;flex-direction:column;gap:10px}
+.ws-h{display:flex;align-items:center;font-size:17px;font-weight:800;color:#172b4d}
+.ws-h .mb-x{margin-left:auto}
+.ws-l{display:flex;flex-direction:column;gap:6px;font-size:12.5px;font-weight:700;color:#5e6c84}
+.ws-l input{border:1.5px solid #dfe3e8;border-radius:10px;padding:10px 12px;font:inherit;font-size:15px;font-weight:600;color:#172b4d;outline:none}
+.ws-l input:focus{border-color:#0052cc}
+.ws-icons{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:4px}
+.ws-icons button{border:2px solid transparent;background:#f4f5f7;border-radius:9px;font-size:18px;height:36px;cursor:pointer;padding:0}
+.ws-icons button:hover{background:#e9ebee}
+.ws-icons button.on{border-color:#0052cc;background:#eef4ff}
+.ws-row{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700;color:#5e6c84}
+.ws-row span{margin-right:auto}
+.ws-row .mb-btn:disabled{opacity:.4;cursor:default}
+.ws-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:6px}
+.ws-btns button{border:none;font:inherit;font-size:14px;font-weight:700;padding:10px 16px;border-radius:11px;cursor:pointer}
+.ws-del{background:none!important;color:#c9372c;margin-right:auto;padding-left:0!important}
+.ws-del:hover{text-decoration:underline}
+@media (max-width:640px){.ws-icons{grid-template-columns:repeat(5,minmax(0,1fr))}.ws-icons button{height:42px}}
+/* 붙이기 창 */
+#__wallc{position:fixed;inset:0;background:rgba(9,30,66,.55);z-index:400;display:flex;align-items:center;justify-content:center;padding:16px}
+.wc-box{--wc-bg:#fff;width:100%;max-width:600px;max-height:94vh;overflow:auto;background:#fff;border-radius:20px;box-shadow:0 24px 60px rgba(0,0,0,.3)}
+.wc-top{display:flex;align-items:center;gap:10px;padding:12px 12px 0 22px}
+.wc-sec{font-size:13px;font-weight:700;color:#5e6c84;display:flex;align-items:center;gap:6px}
+.wc-sec select{font:inherit;font-size:13px;font-weight:700;border:1px solid #dfe3e8;border-radius:8px;padding:5px 8px;color:#172b4d;background:#fff;cursor:pointer}
+.wc-top .mb-x{margin-left:auto}
+.wc-in{padding:4px 22px 16px;display:flex;flex-direction:column;gap:12px}
+.wc-title{border:none;outline:none;font:inherit;font-size:24px;font-weight:800;color:#172b4d;padding:4px 0;width:100%;background:transparent}
+.wc-title::placeholder{color:#c1c7d0}
+.wc-tiles{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));border-radius:14px;overflow:hidden;background:#f4f5f7;background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.55) 0 2px,transparent 2px 14px)}
+.wc-tile{position:relative;height:92px;border:none;background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;color:#5e6c84;font:inherit;font-size:11.5px;font-weight:700;transition:background .18s,color .18s;border-right:1px solid rgba(255,255,255,.8)}
+.wc-tile:last-child{border-right:none}
+.wc-tile span{opacity:0;transform:translateY(4px);transition:opacity .18s,transform .18s}
+.wc-tile:hover span,.wc-tile.on span,.wc-tile:focus-visible span{opacity:1;transform:none}
+.wc-tile:hover,.wc-tile.on,.wc-tile:focus-visible{color:#fff;outline:none}
+.wc-tile[data-k=up]:hover,.wc-tile[data-k=up].on,.wc-tile[data-k=up]:focus-visible{background:#0052cc}
+.wc-tile[data-k=cam]:hover,.wc-tile[data-k=cam].on,.wc-tile[data-k=cam]:focus-visible{background:#e8590c}
+.wc-tile[data-k=yt]:hover,.wc-tile[data-k=yt].on,.wc-tile[data-k=yt]:focus-visible{background:#c2255c}
+.wc-tile[data-k=link]:hover,.wc-tile[data-k=link].on,.wc-tile[data-k=link]:focus-visible{background:#0b7a55}
+.wc-tile[data-k=voice]:hover,.wc-tile[data-k=voice]:focus-visible{background:#7048e8}
+.wc-tile[data-k=loc]:hover,.wc-tile[data-k=loc]:focus-visible{background:#d9480f}
+.wc-tile.soon{color:#a5adba}
+.wc-tile i{position:absolute;top:6px;right:6px;font-style:normal;font-size:9.5px;font-weight:700;background:rgba(9,30,66,.08);border-radius:5px;padding:1px 5px}
+.wc-tile:hover i{background:rgba(255,255,255,.25)}
+.wc-hint{font-size:12px;color:#8a94a6;margin-top:-4px;min-height:16px}
+.wc-url{display:flex;gap:8px}
+.wc-url[hidden]{display:none}
+.wc-url input{flex:1;min-width:0;border:1.5px solid #dfe3e8;border-radius:10px;padding:10px 12px;font:inherit;font-size:14px;outline:none}
+.wc-url input:focus{border-color:#0052cc}
+.wc-url button{border:none;background:#0052cc;color:#fff;font:inherit;font-size:13.5px;font-weight:800;padding:0 16px;border-radius:10px;cursor:pointer}
+.wc-prev{position:relative;border:1px solid #e4e7ea;border-radius:12px;overflow:hidden;background:#fff}
+.wc-prev:empty{display:none}
+.wc-prev>img{display:block;width:100%;max-height:240px;object-fit:cover;background:#eef0f3}
+.wc-prev .wl-in{cursor:default}
+.wc-prev-x{position:absolute;top:8px;right:8px;width:30px;height:30px;border-radius:50%;border:none;background:rgba(23,43,77,.78);color:#fff;cursor:pointer;font-size:14px;line-height:1}
+.wc-text{border:none;outline:none;resize:none;font:inherit;font-size:15px;line-height:1.6;height:110px;padding:10px 12px;margin:0 -12px;color:#172b4d;background:var(--wc-bg);border-radius:10px;transition:background .15s}
+.wc-text::placeholder{color:#a5adba}
+.wc-foot{display:flex;align-items:center;gap:10px;border-top:1px solid #eef0f3;padding-top:12px;font-size:12.5px;font-weight:700;color:#5e6c84}
+.wc-dots{display:flex;gap:8px}
+.wc-foot .mb-dot{width:22px;height:22px}
+.wc-tip{margin-left:auto;font-weight:500;color:#a5adba}
+.wc-btns{display:flex;justify-content:flex-end;gap:10px;padding:0 22px 20px}
+.wc-btns button{border:none;font:inherit;font-size:14px;font-weight:700;padding:11px 18px;border-radius:12px;cursor:pointer}
+.wc-cancel{background:#f1f2f4;color:#42526e}
+.wc-go{background:#0052cc;color:#fff;font-weight:800!important;padding:11px 26px!important}
+.wc-go:disabled{opacity:.6;cursor:wait}
+@media (hover:none){.wc-tile span{opacity:1;transform:none}.wl-card .mb-acts{opacity:1}}
+@media (max-width:640px){
+  .wl-body{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;padding:12px;gap:12px;align-items:flex-start}
+  .wl-col{flex:0 0 84%;scroll-snap-align:start}
+  .wl-types{flex-wrap:nowrap;overflow-x:auto;width:100%}
+  .wl-panel .mb-head{position:relative;padding-right:14px}
+  .wl-panel .mb-btns{position:absolute;top:8px;right:8px;margin:0}
+  .wl-panel .mb-btns .mb-btn{padding:6px 10px;font-size:12.5px}
+  .wl-types button{white-space:nowrap}
+  #__memolist .wl-card .mb-acts{position:static;opacity:1;margin:0;border-radius:0;background:rgba(255,255,255,.7)}
+  .wc-tiles{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .wc-tile{height:76px;border-bottom:1px solid rgba(255,255,255,.8)}
+  .wc-tile span{opacity:1;transform:none}
+  .wc-title{font-size:20px}
+  .wc-tip{display:none}
+  #__wallc{padding:0;align-items:flex-end}
+  .wc-box{border-radius:18px 18px 0 0;max-height:96vh}
+}
 .diary-strip.empty{color:var(--muted)}
 .diary-strip-edit{color:var(--accent);font-weight:700;font-size:12px;flex-shrink:0}
 #quick-grid{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
@@ -2007,7 +2139,7 @@ body{font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFo
     </div>
     <!-- 메모 — 첫 화면에선 최근 3장만, 전체는 포스트잇 메모장(팝업) -->
     <div class="home-sec" id="memo-section" data-sec="memo">
-      <h2><span class="sec-caret">▾</span><span class="sec-ico" style="background:#fff4dc;color:#b8760a">📝</span><span class="sec-label">Memo</span> <span id="memo-count"></span> <button class="memo-open-btn" onclick="openMemoList()">메모장 열기</button></h2>
+      <h2><span class="sec-caret">▾</span><span class="sec-ico" style="background:#fff4dc;color:#b8760a">📝</span><span class="sec-label">Memo</span> <span id="memo-count"></span> <button class="memo-open-btn" onclick="openMemoList()">담벼락 열기</button></h2>
       <div class="sec-body">
         <div id="memo-input-row">
           <span class="memo-plus">＋</span>
@@ -2051,7 +2183,7 @@ body{font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFo
       <button type="button" onclick="mMore(false);openPlanner()"><span style="background:#eef4ff">✍️</span>플래너</button>
       <button type="button" onclick="mMore(false);openCalendar()"><span style="background:#e6f6ef">🗓️</span>캘린더</button>
       <button type="button" onclick="mMore(false);openDiaryList()"><span style="background:#fdeef3">📚</span>일기 전체</button>
-      <button type="button" onclick="mMore(false);openMemoList()"><span style="background:#fff8d6">📝</span>메모장</button>
+      <button type="button" onclick="mMore(false);openMemoList()"><span style="background:#fff8d6">📌</span>담벼락</button>
       <button type="button" onclick="mMore(false);openAiInbox()"><span style="background:#f4efff">📥</span>접수함</button>
       <button type="button" onclick="mMore(false);openSyncModal()"><span style="background:#f1f2f4">🔄</span>기기 연동</button>
       <button type="button" onclick="mMore(false);setTimeout(()=>toggleMoreMenu(),50)"><span style="background:#f1f2f4">⚙️</span>설정·백업</button>
@@ -3935,7 +4067,7 @@ function bindMemoRow(row){
 }
 
 // 포스트잇 색 — 메모마다 color 값(없으면 노랑)
-const MEMO_COLORS={yellow:{bg:'#fbee8f',fg:'#6b5c00',dot:'#f4d94a',name:'노랑'},pink:{bg:'#f9c9dc',fg:'#8c2c55',dot:'#f2a0c4',name:'분홍'},green:{bg:'#c9ebc6',fg:'#2c6b28',dot:'#8fd18b',name:'초록'},blue:{bg:'#cfe0fb',fg:'#1f4f99',dot:'#8fb7f2',name:'파랑'}};
+const MEMO_COLORS={white:{bg:'#ffffff',fg:'#5e6c84',dot:'#ffffff',name:'흰색'},yellow:{bg:'#fbee8f',fg:'#6b5c00',dot:'#f4d94a',name:'노랑'},pink:{bg:'#f9c9dc',fg:'#8c2c55',dot:'#f2a0c4',name:'분홍'},green:{bg:'#c9ebc6',fg:'#2c6b28',dot:'#8fd18b',name:'초록'},blue:{bg:'#cfe0fb',fg:'#1f4f99',dot:'#8fb7f2',name:'파랑'}};
 const memoColor=m=>MEMO_COLORS[m&&m.color]||MEMO_COLORS.yellow;
 const memoLive=()=>ensureMemos().filter(m=>!m.archived);
 // 첫 화면: 입력 줄 + 포스트잇 5장씩 (칸 높이 고정) · ‹ › 로 넘겨 보기 · 끌어서 순서 바꾸기
@@ -3943,7 +4075,7 @@ const MEMO_HOME_N=5;let memoHomePage=0,memoDragId=null;
 // ── 폰 전용 도우미 ──
 const mIsPhone=()=>window.matchMedia('(max-width:640px)').matches;
 function mOpenDiary(){const st=document.querySelector('#diary-collapsed-strip .diary-strip');if(st)st.click();else openDiaryList();}
-function mNewMemo(){openMemoList();memoNewDraft={color:'yellow'};renderMemoList();}
+function mNewMemo(){openMemoList();wallCompose({});}
 function mToggleSearch(){const on=document.body.classList.toggle('m-search');if(on)setTimeout(()=>{const q=document.getElementById('hdr-search');if(q)q.focus();},50);}
 function mMore(on){const m=document.getElementById('m-more');if(m)m.classList.toggle('open',!!on);}
 function mGoHome(){try{document.querySelectorAll('.overlay.open,#sch-overlay.open,#sales-overlay.open,#ai-overlay.open').forEach(o=>o.classList.remove('open'));}catch(e){}const ml=document.getElementById('__memolist');if(ml)ml.remove();goHome();window.scrollTo(0,0);}
@@ -3951,6 +4083,8 @@ function mTab(fn){mMore(false);try{fn();}catch(e){console.error(e);}}
 // 위쪽 버튼의 숫자(고객 할 일·나의 하루)를 아래 탭에도 똑같이
 setInterval(()=>{[['ai-badge','m-badge-ai'],['myday-badge','m-badge-myday']].forEach(([a,b])=>{const s=document.getElementById(a),d=document.getElementById(b);if(!s||!d)return;const t=s.style.display==='none'?'':s.textContent;if(d.textContent!==t)d.textContent=t;d.style.display=t?'':'none';});},2000);
 window.matchMedia('(max-width:640px)').addEventListener('change',()=>{try{renderMemos();}catch(e){}});
+// 앱을 켜자마자는 드라이브 연결 전이라 사진 썸네일을 못 받아올 수 있어요 → 연결된 뒤 한 번 더 그림
+window.addEventListener('load',()=>setTimeout(()=>{try{if(ensureMemos().some(m=>m.fileId))renderMemos();}catch(e){}},6000));
 function memoRenderPager(pages){
   const h=document.querySelector('#memo-section > h2');if(!h)return;
   let pg=h.querySelector('.memo-pager');
@@ -3966,7 +4100,8 @@ function memoRenderPager(pages){
 function memoReorder(fromId,toId){
   const arr=ensureMemos();const a=arr.findIndex(x=>x.id===fromId),b=arr.findIndex(x=>x.id===toId);
   if(a<0||b<0||a===b)return;
-  const [it]=arr.splice(a,1);arr.splice(b,0,it);it.updated=Date.now();
+  const target=arr[b];const [it]=arr.splice(a,1);arr.splice(b,0,it);it.updated=Date.now();
+  if(document.getElementById('__memolist'))it.sec=memoSec(target);
   saveState();renderMemos();
 }
 function memoBindDrag(el,id){
@@ -3992,8 +4127,20 @@ function renderMemos(){
   memos.slice(memoHomePage*PER,memoHomePage*PER+PER).forEach(m=>{
     const c=memoColor(m);
     const n=document.createElement('div');n.setAttribute('role','button');n.tabIndex=0;n.className='memo-mini-note';n.addEventListener('keydown',e=>{if(e.key==='Enter')openMemoList(m.id);});
-    n.style.background=c.bg;n.title='메모장에서 보기';
-    n.textContent=(m.text||'')+((m.tags||[]).length?'\n'+m.tags.map(t=>'#'+t).join(' '):'');
+    n.style.background=(!m.kind||(m.color&&m.color!=='white'))?c.bg:'#fff';n.title='담벼락에서 보기';
+    const k=m.kind||'text';
+    if(k==='text'){
+      n.textContent=(m.title?m.title+'\n':'')+(m.text||'')+((m.tags||[]).length?'\n'+m.tags.map(t=>'#'+t).join(' '):'');
+    }else{
+      // 사진·유튜브·링크: 왼쪽 위 작은 썸네일 + 제목 (시안 ⑤-③)
+      let th='';const y=k==='youtube'?ytId(m.url):'';const pi=m.preview&&m.preview.img;
+      if(k==='photo'&&m.fileId)th=`<img src="https://drive.google.com/thumbnail?id=${encodeURIComponent(m.fileId)}&sz=w120" alt="">`;
+      else if(y)th=`<img src="https://i.ytimg.com/vi/${y}/default.jpg" alt=""><span class="mmn-play" aria-hidden="true">▶</span>`;
+      else if(k==='link'&&pi&&wallIsUrl(pi))th=`<img src="${esc(pi)}" alt="" referrerpolicy="no-referrer" onerror="this.parentNode.remove()">`;
+      const sub=(k==='photo'?'🖼️ 사진':k==='youtube'?'▶️ 유튜브':'🔗 '+((m.preview&&m.preview.site)||wallHost(m.url)))+((m.tags||[]).length?' · '+m.tags.map(t=>'#'+t).join(' '):'');
+      n.classList.add('mmn-rich');
+      n.innerHTML=`<div class="mmn-top">${th?`<span class="mmn-th">${th}</span>`:''}<div class="mmn-t">${esc(memoLabel(m))}</div></div><div class="mmn-sub">${esc(sub)}</div>`;
+    }
     n.addEventListener('click',()=>openMemoList(m.id));
     memoBindDrag(n,m.id);
     wrap.appendChild(n);
@@ -4025,60 +4172,98 @@ function startMemoEdit(row,id){
 
 async function deleteMemo(id){
   const m=ensureMemos().find(x=>x.id===id);if(!m)return;
-  const ok=await confirm2('메모 삭제',`"${m.text.slice(0,40)}${m.text.length>40?'…':''}"\n삭제할까요?`,'삭제');
+  const ok=await confirm2('메모 삭제',`"${memoLabel(m).slice(0,40)}${memoLabel(m).length>40?'…':''}"\n삭제할까요?${m.fileId?'\n(사진은 드라이브 MyWorklist_담벼락 폴더에 그대로 남아요)':''}`,'삭제');
   if(!ok)return;
   state.memos=ensureMemos().filter(x=>x.id!==id);
   saveState();renderMemos();
   showToast('🗑️','메모를 지웠어요.',1800);
 }
 
-// ── 포스트잇 메모장 (쌤핀 메모장처럼) — 색·태그·검색으로 골라 보고, 그 자리에서 바로 고침 ──
-let memoListQuery='',memoBoardColor='',memoBoardArchive=false,memoEditId=null,memoNewDraft=null;
+// ── 담벼락 (패들렛처럼 직접 만든 것 — 패들렛 서비스는 쓰지 않음) ──
+//  칸 4개(고객·공부·성당·아이디어)에 글·링크·유튜브·사진을 붙입니다.
+//  글·태그·색·링크는 데이터 파일(state.memos)에, 사진은 드라이브 "MyWorklist_담벼락" 폴더에 저장.
+//  메모 한 장: {id,sec,kind:'text'|'link'|'youtube'|'photo',title,text,tags,url,preview:{title,desc,img,site},fileId,color,archived}
+const WALL_SECS_DEF=[{id:'cust',name:'고객',ico:'👥'},{id:'study',name:'공부',ico:'📚'},{id:'church',name:'성당',ico:'⛪'},{id:'idea',name:'아이디어',ico:'💡'}];
+function wallSecs(){if(!Array.isArray(state.wallSecs)||!state.wallSecs.length)state.wallSecs=WALL_SECS_DEF.map(x=>({...x}));return state.wallSecs;}
+// 칸이 정해지지 않은 예전 메모는 아이디어 칸에 보여요 (끌어서 다른 칸으로 옮길 수 있어요)
+function memoSec(m){const ss=wallSecs();if(m&&ss.some(x=>x.id===m.sec))return m.sec;return ss.some(x=>x.id==='idea')?'idea':ss[ss.length-1].id;}
+function ytId(u){const m=String(u||'').match(/(?:youtube\.com\/(?:watch\?(?:[^#]*&)?v=|shorts\/|embed\/|live\/)|youtu\.be\/)([\w-]{11})/);return m?m[1]:'';}
+function wallHost(u){try{return new URL(u).hostname.replace(/^www\./,'');}catch(e){return '';}}
+const wallIsUrl=u=>/^https?:\/\/[^\s<>"']+$/i.test(String(u||'').trim());
+function memoLabel(m){return String((m&&(m.title||m.text||(m.preview&&m.preview.title)||m.url))||(m&&m.kind==='photo'?'사진':'')||'');}
+const WALL_KIND_ICO={link:'🔗',youtube:'▶️',photo:'🖼️'};
+// 링크 미리보기 — 유튜브는 noembed, 그 밖의 주소는 microlink 에서 제목·대표 사진을 받아와요 (실패하면 주소만 보여요)
+async function wallFetchPreview(url){
+  const yt=ytId(url);
+  try{
+    if(yt){const r=await withTimeout(fetch('https://noembed.com/embed?url='+encodeURIComponent('https://www.youtube.com/watch?v='+yt)),7000,'t');const j=await r.json();return {title:j.title||'',site:j.author_name||'유튜브'};}
+    const r=await withTimeout(fetch('https://api.microlink.io/?url='+encodeURIComponent(url)),8000,'t');const j=await r.json();
+    if(j&&j.status==='success'){const d=j.data||{};return {title:d.title||'',desc:(d.description||'').slice(0,200),img:(d.image&&d.image.url)||'',site:d.publisher||''};}
+  }catch(e){}
+  return {};
+}
+let wallFolderId='';
+async function wallFolder(token){
+  if(wallFolderId)return wallFolderId;
+  const name=(typeof DS_FOLDER_NAME!=='undefined'&&DS_FOLDER_NAME==='MyWorklist_TEST')?'MyWorklist_TEST_담벼락':'MyWorklist_담벼락';
+  const q=encodeURIComponent(`name='${name}' and mimeType='application/vnd.google-apps.folder' and trashed=false`);
+  const lr=await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)`,{headers:{Authorization:`Bearer ${token}`}});
+  const ld=await lr.json();
+  if(ld.files&&ld.files.length){wallFolderId=ld.files[0].id;return wallFolderId;}
+  const cr=await fetch('https://www.googleapis.com/drive/v3/files',{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({name,mimeType:'application/vnd.google-apps.folder'})});
+  const cd=await cr.json();if(!cd.id)throw new Error('folder');
+  wallFolderId=cd.id;return wallFolderId;
+}
+
+let memoListQuery='',memoBoardArchive=false,wallType='',wallFocusId=null;
 function openMemoList(focusId){
   const old=document.getElementById('__memolist');if(old)old.remove();
-  memoEditId=focusId||null;memoNewDraft=null;
+  wallFocusId=focusId||null;
   const d=document.createElement('div');d.id='__memolist';
   d.style.cssText='position:fixed;inset:0;background:rgba(9,30,66,.5);z-index:390;display:flex;align-items:center;justify-content:center;padding:16px';
-  const dots=Object.entries(MEMO_COLORS).map(([k,c])=>`<button type="button" class="mb-dot" data-c="${k}" style="background:${c.dot}" aria-label="${c.name} 메모만" title="${c.name}"></button>`).join('');
-  d.innerHTML=`<div class="mb-panel" role="dialog" aria-label="나의 메모장">
+  const types=[['','전체'],['text','📝 글'],['link','🔗 링크'],['photo','🖼️ 사진'],['youtube','▶️ 영상']];
+  d.innerHTML=`<div class="mb-panel wl-panel" role="dialog" aria-label="나의 담벼락">
     <div class="mb-head">
-      <div class="mb-title">${svgIcon('note',22)} 나의 메모장 <span style="font-size:12px;font-weight:500;color:var(--muted)">끌어서 순서 바꾸기</span></div>
-      <div class="mb-colors">색상 <button type="button" class="mb-all" data-c="">전체</button>${dots}</div>
-      <input class="mb-q" id="__ml-q" type="text" placeholder="메모 검색" aria-label="메모 검색">
+      <div class="mb-title">📌 나의 담벼락</div>
+      <input class="mb-q" id="__ml-q" type="search" placeholder="검색 · #태그" aria-label="담벼락 검색">
+      <div class="wl-types" role="group" aria-label="종류로 골라 보기">${types.map(([k,n])=>`<button type="button" data-t="${k}">${n}</button>`).join('')}</div>
       <div class="mb-btns">
+        <button type="button" class="mb-btn" id="__mb-addsec">＋ 칸 추가</button>
         <button type="button" class="mb-btn" id="__mb-arch">보관함</button>
-        <button type="button" class="mb-btn go" id="__mb-new">＋ 새 메모</button>
         <button type="button" class="mb-x" id="__ml-close" aria-label="닫기">✕</button>
       </div>
     </div>
     <div class="mb-tags" id="__ml-tags"></div>
-    <div class="mb-body"><div class="mb-grid" id="__ml-body"></div></div>
+    <div class="wl-body" id="__ml-body"></div>
   </div>`;
   document.body.appendChild(d);
   bindOverlayClose(d,()=>d.remove());
   d.querySelector('#__ml-close').addEventListener('click',()=>d.remove());
-  d.querySelectorAll('.mb-colors [data-c]').forEach(b=>b.addEventListener('click',()=>{memoBoardColor=b.dataset.c;renderMemoList();}));
-  d.querySelector('#__mb-arch').addEventListener('click',()=>{memoBoardArchive=!memoBoardArchive;memoNewDraft=null;renderMemoList();});
-  d.querySelector('#__mb-new').addEventListener('click',()=>{memoBoardArchive=false;memoEditId=null;memoNewDraft={color:memoBoardColor||'yellow'};renderMemoList();});
+  d.querySelectorAll('.wl-types [data-t]').forEach(b=>b.addEventListener('click',()=>{wallType=b.dataset.t;renderMemoList();}));
+  d.querySelector('#__mb-arch').addEventListener('click',()=>{memoBoardArchive=!memoBoardArchive;renderMemoList();});
+  d.querySelector('#__mb-addsec').addEventListener('click',()=>wallSecDlg(null));
   const q=d.querySelector('#__ml-q');q.value=memoListQuery;
   q.addEventListener('input',()=>{memoListQuery=q.value;renderMemoList();});
-  d.addEventListener('keydown',e=>{if(e.key==='Escape'&&!e.target.closest('textarea'))d.remove();});
+  d.addEventListener('keydown',e=>{if(e.key==='Escape'&&!e.target.closest('textarea,input'))d.remove();});
   renderMemoList();
 }
 function memoSetColor(id,c){const m=ensureMemos().find(x=>x.id===id);if(!m)return;m.color=c;m.updated=Date.now();saveState();renderMemos();}
-function memoArchive(id,on){const m=ensureMemos().find(x=>x.id===id);if(!m)return;m.archived=on;m.updated=Date.now();saveState();renderMemos();showToast('📦',on?'보관함으로 옮겼어요.':'메모장으로 꺼냈어요.',1600);}
+function memoArchive(id,on){const m=ensureMemos().find(x=>x.id===id);if(!m)return;m.archived=on;m.updated=Date.now();saveState();renderMemos();showToast('📦',on?'보관함으로 옮겼어요.':'담벼락으로 꺼냈어요.',1600);}
+function wallFiltered(){
+  const term=memoListQuery.trim().toLowerCase().replace(/^#/,'');
+  let list=ensureMemos().filter(m=>!!m.archived===memoBoardArchive);
+  if(wallType)list=list.filter(m=>(m.kind||'text')===wallType);
+  if(memoTagFilter)list=list.filter(m=>(m.tags||[]).includes(memoTagFilter));
+  if(term)list=list.filter(m=>[m.text,m.title,m.url,m.preview&&m.preview.title].concat(m.tags||[]).some(v=>String(v||'').toLowerCase().includes(term)));
+  return list;
+}
 function renderMemoList(){
   const body=document.getElementById('__ml-body');const tagWrap=document.getElementById('__ml-tags');
   if(!body)return;
   const box=document.getElementById('__memolist');
-  box.querySelectorAll('.mb-colors [data-c]').forEach(b=>b.classList.toggle('on',b.dataset.c===memoBoardColor));
+  box.querySelectorAll('.wl-types [data-t]').forEach(b=>b.classList.toggle('on',b.dataset.t===wallType));
   const ab=box.querySelector('#__mb-arch');ab.classList.toggle('on',memoBoardArchive);
-  const nArch=ensureMemos().filter(m=>m.archived).length;ab.textContent=memoBoardArchive?'← 메모장으로':`보관함${nArch?' '+nArch:''}`;
-  const term=memoListQuery.trim().toLowerCase();
-  let list=ensureMemos().filter(m=>!!m.archived===memoBoardArchive);
-  if(memoBoardColor)list=list.filter(m=>(m.color||'yellow')===memoBoardColor);
-  if(memoTagFilter)list=list.filter(m=>(m.tags||[]).includes(memoTagFilter));
-  if(term)list=list.filter(m=>(m.text||'').toLowerCase().includes(term)||(m.tags||[]).some(t=>t.toLowerCase().includes(term)));
+  const nArch=ensureMemos().filter(m=>m.archived).length;ab.textContent=memoBoardArchive?'← 담벼락으로':`보관함${nArch?' '+nArch:''}`;
   tagWrap.innerHTML='';
   allMemoTags().forEach(([t,n])=>{
     const b=document.createElement('button');b.type='button';
@@ -4086,56 +4271,268 @@ function renderMemoList(){
     b.addEventListener('click',()=>{memoTagFilter=(memoTagFilter===t)?'':t;renderMemoList();});
     tagWrap.appendChild(b);
   });
+  const sc=body.scrollTop,sl=body.scrollLeft;
+  const list=wallFiltered();
   body.innerHTML='';
-  if(memoNewDraft)body.appendChild(memoNoteEl(null,0));
-  if(!list.length&&!memoNewDraft){body.innerHTML=`<div class="mb-empty" style="grid-column:1/-1">${memoBoardArchive?'보관한 메모가 없어요.':'메모가 없어요. ＋ 새 메모를 눌러 적어 보세요.'}</div>`;return;}
-  list.forEach((m,i)=>body.appendChild(memoNoteEl(m,i+(memoNewDraft?1:0))));
-  const f=body.querySelector('textarea');if(f){f.focus();f.setSelectionRange(f.value.length,f.value.length);}
+  wallSecs().forEach(sec=>{
+    const items=list.filter(m=>memoSec(m)===sec.id);
+    const col=document.createElement('section');col.className='wl-col';col.dataset.sec=sec.id;
+    col.innerHTML=`<div class="wl-col-h"><span aria-hidden="true">${sec.ico}</span>${esc(sec.name)} <span class="wl-n">${items.length||''}</span><button type="button" class="wl-col-more" aria-label="${esc(sec.name)} 칸 고치기" title="칸 이름 바꾸기 · 옮기기 · 지우기">···</button></div>${memoBoardArchive?'':`<button type="button" class="wl-add">＋ 붙이기</button>`}<div class="wl-cards"></div>`;
+    const add=col.querySelector('.wl-add');if(add)add.addEventListener('click',()=>wallCompose({sec:sec.id}));
+    col.querySelector('.wl-col-more').addEventListener('click',e=>{e.stopPropagation();wallSecDlg(sec);});
+    const cards=col.querySelector('.wl-cards');
+    items.forEach(m=>cards.appendChild(wallCardEl(m)));
+    if(!items.length)cards.innerHTML=`<div class="wl-empty">${memoBoardArchive?'보관한 것이 없어요':'비어 있어요'}</div>`;
+    // 다른 칸으로 끌어다 놓기
+    col.addEventListener('dragover',e=>{if(!memoDragId)return;e.preventDefault();col.classList.add('wl-over');});
+    col.addEventListener('dragleave',e=>{if(!col.contains(e.relatedTarget))col.classList.remove('wl-over');});
+    col.addEventListener('drop',e=>{col.classList.remove('wl-over');if(!memoDragId)return;e.preventDefault();const m=ensureMemos().find(x=>x.id===memoDragId);memoDragId=null;if(m&&memoSec(m)!==sec.id){m.sec=sec.id;m.updated=Date.now();saveState();renderMemos();}});
+    body.appendChild(col);
+  });
+  body.scrollTop=sc;body.scrollLeft=sl;
+  if(wallFocusId){const el=body.querySelector(`.wl-card[data-id="${wallFocusId}"]`);wallFocusId=null;if(el){el.scrollIntoView({block:'center',inline:'center'});el.classList.add('wl-flash');}}
 }
-// 포스트잇 한 장. m이 없으면 새 메모 쓰는 칸
-function memoNoteEl(m,i){
-  const isNew=!m,editing=isNew||memoEditId===(m&&m.id);
-  const colorKey=isNew?memoNewDraft.color:(m.color||'yellow');const c=MEMO_COLORS[colorKey]||MEMO_COLORS.yellow;
-  const el=document.createElement('div');el.className='mb-note';
-  el.style.background=c.bg;el.style.transform=editing?'none':`rotate(${[-1.2,.8,-.4,1.1,-.8,.5][i%6]}deg)`;
-  const dots=Object.entries(MEMO_COLORS).map(([k,cc])=>`<button type="button" class="mb-dot${k===colorKey?' on':''}" data-set="${k}" style="background:${cc.dot}" aria-label="${cc.name}으로 바꾸기" title="${cc.name}"></button>`).join('');
-  if(editing){
-    const val=isNew?'':((m.text||'')+((m.tags||[]).length?'\n'+m.tags.map(t=>'#'+t).join(' '):''));
-    el.innerHTML=`<div class="mb-edit-row" style="margin:0 0 6px;justify-content:flex-start">${dots}</div>
-      <textarea aria-label="메모 내용" placeholder="여기에 적어요 · #태그">${esc(val)}</textarea>
-      <div class="mb-edit-row"><span>Ctrl+Enter 저장 · Esc 취소</span><button type="button" class="mb-btn" data-a="cancel" style="padding:5px 10px;font-size:12px">취소</button><button type="button" class="mb-btn go" data-a="save" style="padding:5px 10px;font-size:12px">저장</button></div>`;
-    const ta=el.querySelector('textarea');
-    const save=()=>{
-      const {text,tags}=parseMemo(ta.value);
-      if(isNew){if(text||tags.length)ensureMemos().unshift({id:uid(),text:text||tags.map(t=>'#'+t).join(' '),tags,color:memoNewDraft.color,created:Date.now(),updated:Date.now()});memoNewDraft=null;}
-      else if(text||tags.length){m.text=text||m.text;m.tags=tags;m.updated=Date.now();}
-      memoEditId=null;saveState();renderMemos();renderMemoList();
-    };
-    const cancel=()=>{if(isNew)memoNewDraft=null;memoEditId=null;renderMemoList();};
-    el.querySelector('[data-a="save"]').addEventListener('click',save);
-    el.querySelector('[data-a="cancel"]').addEventListener('click',cancel);
-    ta.addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();save();}if(e.key==='Escape'){e.preventDefault();e.stopPropagation();cancel();}});
-    el.querySelectorAll('[data-set]').forEach(b=>b.addEventListener('click',()=>{
-      if(isNew){memoNewDraft.color=b.dataset.set;}else{m.color=b.dataset.set;}
-      el.style.background=MEMO_COLORS[b.dataset.set].bg;el.querySelectorAll('[data-set]').forEach(x=>x.classList.toggle('on',x===b));ta.focus();
-    }));
-    return el;
-  }
+// 담벼락 카드 한 장
+function wallCardEl(m){
+  const k=m.kind||'text';const c=memoColor(m);
+  const el=document.createElement('div');el.className='wl-card wl-k-'+k;el.dataset.id=m.id;
+  const plain=!(k==='text'||(m.color&&m.color!=='white'));
+  el.style.background=plain?'#fff':c.bg;
+  const ck=m.color||(k==='text'?'yellow':'white');
+  const dots=Object.entries(MEMO_COLORS).map(([key,cc])=>`<button type="button" class="mb-dot${key===ck?' on':''}" data-set="${key}" style="background:${cc.dot}" aria-label="${cc.name}으로 바꾸기" title="${cc.name}"></button>`).join('');
+  const p=m.preview||{};
+  let media='';
+  if(k==='photo'&&m.fileId)media=`<div class="wl-media wl-photo" title="크게 보기"><img src="https://drive.google.com/thumbnail?id=${encodeURIComponent(m.fileId)}&sz=w800" alt="${esc(m.title||'사진')}"></div>`;
+  else if(k==='youtube'){const y=ytId(m.url);if(y)media=`<div class="wl-media wl-yt" data-yt="${y}" title="여기서 바로 보기"><img src="https://i.ytimg.com/vi/${y}/hqdefault.jpg" alt=""><span class="wl-play" aria-hidden="true">▶</span></div>`;}
+  else if(k==='link'&&p.img&&wallIsUrl(p.img))media=`<a class="wl-media wl-linkimg" href="${esc(m.url)}" target="_blank" rel="noopener"><img src="${esc(p.img)}" alt="" referrerpolicy="no-referrer"></a>`;
+  const title=m.title||p.title||'';
   const tags=(m.tags||[]).map(t=>`<span class="mb-tag" data-tag="${esc(t)}">#${esc(t)}</span>`).join(' ');
+  const site=(k==='link'||k==='youtube')&&wallIsUrl(m.url)?`<a class="wl-site" href="${esc(m.url)}" target="_blank" rel="noopener">${k==='youtube'?'▶ 유튜브에서 보기':'🔗 '+esc(p.site||wallHost(m.url))} ›</a>`:'';
   el.innerHTML=`<div class="mb-acts">${dots}
+      <button type="button" class="memo-act" data-a="edit" title="고치기" aria-label="고치기">${svgIcon('pencil',15)}</button>
       <button type="button" class="memo-act" data-a="card" title="카드로 만들기" aria-label="카드로 만들기">${svgIcon('filecheck',15)}</button>
       <button type="button" class="memo-act" data-a="arch" title="${m.archived?'꺼내기':'보관하기'}" aria-label="${m.archived?'꺼내기':'보관하기'}">${svgIcon(m.archived?'refresh':'folder',15)}</button>
       <button type="button" class="memo-act del" data-a="del" title="삭제" aria-label="삭제">${svgIcon('trash',15)}</button></div>
-    <div class="mb-text" title="눌러서 고치기">${esc(m.text||'')}</div>
-    <div class="mb-meta" style="color:${c.fg}">${tags}<span class="mb-date">${memoDateLabel(m.created)}</span></div>`;
-  el.querySelector('.mb-text').addEventListener('click',()=>{memoEditId=m.id;memoNewDraft=null;renderMemoList();});
+    ${media}<div class="wl-in" title="눌러서 고치기">${title?`<div class="wl-t">${esc(title)}</div>`:''}${m.text?`<div class="wl-x">${esc(m.text)}</div>`:''}${site}
+    <div class="mb-meta" style="color:${plain||m.color==='white'?'#5e6c84':c.fg}">${tags}<span class="mb-date">${memoDateLabel(m.created)}</span></div></div>`;
   memoBindDrag(el,m.id);
-  el.querySelectorAll('.mb-tag').forEach(t=>t.addEventListener('click',()=>{memoTagFilter=memoTagFilter===t.dataset.tag?'':t.dataset.tag;renderMemoList();}));
-  el.querySelectorAll('[data-set]').forEach(b=>b.addEventListener('click',()=>{memoSetColor(m.id,b.dataset.set);renderMemoList();}));
+  el.querySelector('.wl-in').addEventListener('click',e=>{if(e.target.closest('a,.mb-tag'))return;wallCompose(m);});
+  el.querySelectorAll('.mb-tag').forEach(t=>t.addEventListener('click',e=>{e.stopPropagation();memoTagFilter=memoTagFilter===t.dataset.tag?'':t.dataset.tag;renderMemoList();}));
+  el.querySelectorAll('[data-set]').forEach(b=>b.addEventListener('click',()=>{memoSetColor(m.id,b.dataset.set);}));
+  el.querySelector('[data-a="edit"]').addEventListener('click',()=>wallCompose(m));
   el.querySelector('[data-a="card"]').addEventListener('click',()=>memoToCard(m.id));
-  el.querySelector('[data-a="arch"]').addEventListener('click',()=>{memoArchive(m.id,!m.archived);renderMemoList();});
-  el.querySelector('[data-a="del"]').addEventListener('click',()=>{deleteMemo(m.id).then(()=>renderMemoList());});
+  el.querySelector('[data-a="arch"]').addEventListener('click',()=>memoArchive(m.id,!m.archived));
+  el.querySelector('[data-a="del"]').addEventListener('click',()=>deleteMemo(m.id));
+  const yt=el.querySelector('.wl-yt');
+  if(yt)yt.addEventListener('click',()=>{if(yt.querySelector('iframe'))return;yt.innerHTML=`<iframe src="https://www.youtube-nocookie.com/embed/${yt.dataset.yt}?autoplay=1&rel=0" title="${esc(title||'유튜브 영상')}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>`;el.draggable=false;});
+  const ph=el.querySelector('.wl-photo');
+  if(ph)ph.addEventListener('click',()=>wallPhotoBig(m.fileId,m.title));
   return el;
+}
+function wallPhotoBig(fileId,title){
+  const d=document.createElement('div');d.className='wl-lb';d.setAttribute('role','dialog');d.setAttribute('aria-label','사진 크게 보기');
+  d.innerHTML=`<img src="https://drive.google.com/thumbnail?id=${encodeURIComponent(fileId)}&sz=w2000" alt="${esc(title||'사진')}"><button type="button" class="wl-lb-x" aria-label="닫기">✕</button>`;
+  d.addEventListener('click',()=>d.remove());
+  d.tabIndex=-1;d.addEventListener('keydown',e=>{if(e.key==='Escape')d.remove();});
+  document.body.appendChild(d);d.focus();
+}
+
+// ── 붙이기 창 (시안 ④ 아이콘 타일) ──
+let wcDraft=null;
+const WC_TILES=[
+  {k:'up',name:'올리기',hint:'사진을 골라 올려요 (파일은 2단계)',svg:'<path d="M12 16V4M7 9l5-5 5 5M5 20h14"/>'},
+  {k:'cam',name:'사진 찍기',hint:'폰 카메라로 바로 찍어요',svg:'<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>'},
+  {k:'yt',name:'유튜브',hint:'유튜브 주소를 붙이면 영상으로 보여요',svg:'<rect x="3" y="6" width="18" height="12" rx="3"/><path d="M10 9.5v5l4.5-2.5z" fill="currentColor"/>'},
+  {k:'link',name:'링크',hint:'주소를 붙이면 미리보기 카드로 바뀌어요',svg:'<path d="M10 14a4 4 0 0 0 6 0l3-3a4 4 0 0 0-6-6l-1 1"/><path d="M14 10a4 4 0 0 0-6 0l-3 3a4 4 0 0 0 6 6l1-1"/>'},
+  {k:'voice',name:'음성',hint:'음성 녹음은 2단계에서 만들어요',svg:'<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>',soon:1},
+  {k:'loc',name:'위치',hint:'위치는 2단계에서 만들어요',svg:'<path d="M12 21s-6-5.6-6-11a6 6 0 0 1 12 0c0 5.4-6 11-6 11z"/><circle cx="12" cy="10" r="2.2"/>',soon:1}
+];
+const WC_HINT0='붙일 것을 골라요 — 글은 그냥 적으면 되고, 링크·사진은 Ctrl+V 로 붙여 넣어도 돼요';
+function wallCompose(src){
+  const old=document.getElementById('__wallc');if(old)old.remove();
+  const isEdit=!!(src&&src.id);
+  wcDraft=isEdit?{id:src.id,sec:memoSec(src),kind:src.kind||'text',url:src.url||'',preview:src.preview||null,fileId:src.fileId||'',color:src.color||'',file:null,localUrl:''}
+    :{sec:(src&&src.sec)||memoSec(null),kind:'text',url:'',preview:null,fileId:'',color:'',file:null,localUrl:''};
+  const secOpts=wallSecs().map(x=>`<option value="${x.id}"${x.id===wcDraft.sec?' selected':''}>${x.ico} ${esc(x.name)}</option>`).join('');
+  const tiles=WC_TILES.map(t=>`<button type="button" class="wc-tile${t.soon?' soon':''}" data-k="${t.k}" aria-label="${t.name}${t.soon?' (2단계 준비 중)':''}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">${t.svg}</svg><span>${t.name}</span>${t.soon?'<i>2단계</i>':''}</button>`).join('');
+  const val=isEdit?((src.text||'')+((src.tags||[]).length?'\n'+src.tags.map(t=>'#'+t).join(' '):'')):'';
+  const d=document.createElement('div');d.id='__wallc';
+  d.innerHTML=`<div class="wc-box" role="dialog" aria-label="담벼락에 붙이기">
+    <div class="wc-top"><label class="wc-sec"><select id="__wc-sec" aria-label="어느 칸에">${secOpts}</select> 칸에 ${isEdit?'고치기':'붙이기'}</label><button type="button" class="mb-x" id="__wc-x" aria-label="닫기">✕</button></div>
+    <div class="wc-in">
+      <input id="__wc-title" class="wc-title" type="text" maxlength="120" placeholder="제목" aria-label="제목" value="${esc(isEdit?src.title||'':'')}">
+      <div class="wc-tiles" role="group" aria-label="붙일 것 고르기">${tiles}</div>
+      <div class="wc-hint" id="__wc-hint">${WC_HINT0}</div>
+      <div class="wc-url" id="__wc-urlrow" hidden><input id="__wc-url" type="url" inputmode="url" placeholder="주소를 붙여 넣으세요 (https://…)" aria-label="주소"><button type="button" id="__wc-urlok">넣기</button></div>
+      <div class="wc-prev" id="__wc-prev"></div>
+      <textarea id="__wc-text" class="wc-text" aria-label="내용" placeholder="무엇이든 적어 보세요… #태그도 여기에">${esc(val)}</textarea>
+      <div class="wc-foot"><span>색</span><span class="wc-dots"></span><span class="wc-tip">Ctrl+Enter 붙이기</span></div>
+    </div>
+    <div class="wc-btns"><button type="button" class="wc-cancel" id="__wc-cancel">취소</button><button type="button" class="wc-go" id="__wc-go">${isEdit?'저장':'붙이기'}</button></div>
+    <input type="file" id="__wc-file" accept="image/*" hidden><input type="file" id="__wc-cam" accept="image/*" capture="environment" hidden>
+  </div>`;
+  document.body.appendChild(d);
+  const close=()=>{if(wcDraft&&wcDraft.localUrl)URL.revokeObjectURL(wcDraft.localUrl);wcDraft=null;d.remove();};
+  bindOverlayClose(d,close);
+  d.querySelector('#__wc-x').addEventListener('click',close);
+  d.querySelector('#__wc-cancel').addEventListener('click',close);
+  const hint=d.querySelector('#__wc-hint'),urlRow=d.querySelector('#__wc-urlrow'),urlIn=d.querySelector('#__wc-url'),ta=d.querySelector('#__wc-text');
+  const setOn=k=>d.querySelectorAll('.wc-tile').forEach(b=>b.classList.toggle('on',b.dataset.k===k));
+  d.querySelectorAll('.wc-tile').forEach(b=>{
+    const t=WC_TILES.find(x=>x.k===b.dataset.k);
+    b.addEventListener('mouseenter',()=>{hint.textContent=t.hint;});
+    b.addEventListener('mouseleave',()=>{hint.textContent=d.querySelector('.wc-tile.on')?WC_TILES.find(x=>x.k===d.querySelector('.wc-tile.on').dataset.k).hint:WC_HINT0;});
+    b.addEventListener('click',()=>{
+      hint.textContent=t.hint;
+      if(t.soon){setOn('');showToast('🛠️',`${t.name}은(는) 2단계에서 만들어요.`,1800);return;}
+      setOn(t.k);
+      if(t.k==='up')d.querySelector('#__wc-file').click();
+      else if(t.k==='cam')d.querySelector('#__wc-cam').click();
+      else{urlRow.hidden=false;urlIn.placeholder=t.k==='yt'?'유튜브 주소를 붙여 넣으세요 (https://youtu.be/…)':'주소를 붙여 넣으세요 (https://…)';urlIn.focus();}
+    });
+  });
+  const onFile=inp=>inp.addEventListener('change',()=>{const f=inp.files&&inp.files[0];inp.value='';if(f)wcSetPhoto(f);});
+  onFile(d.querySelector('#__wc-file'));onFile(d.querySelector('#__wc-cam'));
+  const urlOk=()=>{const u=urlIn.value.trim();if(!wallIsUrl(u)){showToast('🔗','https:// 로 시작하는 주소를 넣어 주세요.',2000);urlIn.focus();return;}urlIn.value='';urlRow.hidden=true;wcSetUrl(u);};
+  d.querySelector('#__wc-urlok').addEventListener('click',urlOk);
+  urlIn.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();urlOk();}});
+  // 붙여넣기: 사진이면 사진으로, 주소 하나면 링크·유튜브로
+  d.addEventListener('paste',e=>{
+    const cd=e.clipboardData;if(!cd)return;
+    const img=[...(cd.items||[])].find(it=>it.kind==='file'&&/^image\//.test(it.type));
+    if(img){const f=img.getAsFile();if(f){e.preventDefault();wcSetPhoto(f);}return;}
+    if(e.target===urlIn)return;
+    const t=(cd.getData('text')||'').trim();
+    if(wallIsUrl(t)&&wcDraft&&wcDraft.kind==='text'){e.preventDefault();wcSetUrl(t);}
+  });
+  d.querySelector('#__wc-go').addEventListener('click',wcSave);
+  d.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();close();}if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();wcSave();}});
+  wcRenderDots();wcRenderPrev();
+  setTimeout(()=>(isEdit?ta:d.querySelector('#__wc-title')).focus(),30);
+}
+function wcColorKey(){return wcDraft.color||(wcDraft.kind==='text'?'yellow':'white');}
+function wcRenderDots(){
+  const w=document.querySelector('#__wallc .wc-dots');if(!w||!wcDraft)return;
+  const ck=wcColorKey();
+  w.innerHTML=Object.entries(MEMO_COLORS).map(([k,cc])=>`<button type="button" class="mb-dot${k===ck?' on':''}" data-set="${k}" style="background:${cc.dot}" aria-label="${cc.name}" title="${cc.name}"></button>`).join('');
+  w.querySelectorAll('[data-set]').forEach(b=>b.addEventListener('click',()=>{wcDraft.color=b.dataset.set;wcRenderDots();}));
+  const box=document.querySelector('#__wallc .wc-box');if(box)box.style.setProperty('--wc-bg',ck==='white'?'#fff':MEMO_COLORS[ck].bg);
+}
+function wcSetPhoto(f){
+  if(!wcDraft)return;
+  if(!/^image\//.test(f.type)){showToast('🖼️','1단계에서는 사진만 올릴 수 있어요. (파일은 2단계)',2400);return;}
+  if(f.size>20*1024*1024){showToast('⚠️','사진이 너무 커요 (20MB까지).',2400);return;}
+  if(wcDraft.localUrl)URL.revokeObjectURL(wcDraft.localUrl);
+  Object.assign(wcDraft,{kind:'photo',file:f,localUrl:URL.createObjectURL(f),url:'',preview:null,fileId:''});
+  wcRenderDots();wcRenderPrev();
+}
+async function wcSetUrl(u){
+  if(!wcDraft)return;
+  const yt=ytId(u);
+  if(wcDraft.localUrl)URL.revokeObjectURL(wcDraft.localUrl);
+  Object.assign(wcDraft,{kind:yt?'youtube':'link',url:u,preview:{loading:1},file:null,localUrl:'',fileId:''});
+  wcRenderDots();wcRenderPrev();
+  const p=await wallFetchPreview(u);
+  if(!wcDraft||wcDraft.url!==u)return;
+  wcDraft.preview=p;wcRenderPrev();
+  const ti=document.getElementById('__wc-title');if(ti&&!ti.value.trim()&&p.title)ti.placeholder=p.title;
+}
+function wcRenderPrev(){
+  const w=document.getElementById('__wc-prev');if(!w||!wcDraft)return;
+  const d=wcDraft,p=d.preview||{};
+  let h='';
+  if(d.kind==='photo'){const src=d.localUrl||(d.fileId?`https://drive.google.com/thumbnail?id=${encodeURIComponent(d.fileId)}&sz=w800`:'');h=`<img src="${src}" alt="붙일 사진">`;}
+  else if(d.kind==='youtube'){const y=ytId(d.url);h=`<div class="wl-yt" style="position:relative"><img src="https://i.ytimg.com/vi/${y}/hqdefault.jpg" alt=""><span class="wl-play" aria-hidden="true">▶</span></div><div class="wl-in"><div class="wl-t">${p.loading?'영상 이름을 찾는 중…':esc(p.title||'유튜브 영상')}</div><div class="wl-site">▶ 유튜브</div></div>`;}
+  else if(d.kind==='link'){h=`${p.img&&wallIsUrl(p.img)?`<img src="${esc(p.img)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">`:''}<div class="wl-in"><div class="wl-t">${p.loading?'미리보기를 만드는 중…':esc(p.title||wallHost(d.url))}</div>${p.desc?`<div class="wl-x">${esc(p.desc)}</div>`:''}<div class="wl-site">🔗 ${esc(p.site||wallHost(d.url))}</div></div>`;}
+  if(!h){w.innerHTML='';return;}
+  w.innerHTML=h+`<button type="button" class="wc-prev-x" aria-label="붙인 것 빼기" title="빼기">✕</button>`;
+  w.querySelector('.wc-prev-x').addEventListener('click',()=>{if(d.localUrl)URL.revokeObjectURL(d.localUrl);Object.assign(d,{kind:'text',url:'',preview:null,file:null,localUrl:'',fileId:''});document.querySelectorAll('#__wallc .wc-tile').forEach(b=>b.classList.remove('on'));wcRenderDots();wcRenderPrev();});
+}
+async function wcSave(){
+  const d=wcDraft;if(!d)return;
+  const box=document.getElementById('__wallc');if(!box)return;
+  const go=box.querySelector('#__wc-go');if(go.disabled)return;
+  const {text,tags}=parseMemo(box.querySelector('#__wc-text').value);
+  let title=box.querySelector('#__wc-title').value.trim();
+  if(d.kind==='text'&&!text&&!title&&!tags.length){showToast('✏️','내용을 적거나, 붙일 것을 골라 주세요.',1800);return;}
+  let fileId=d.fileId;
+  if(d.kind==='photo'&&d.file){
+    go.disabled=true;go.textContent='사진 올리는 중…';
+    try{
+      const token=await ensureDriveToken();
+      const folder=await wallFolder(token);
+      const ext=((d.file.type||'image/png').split('/')[1]||'png').replace('jpeg','jpg').replace(/[^\w]/g,'');
+      const nm=(d.file.name&&!/^image\.\w+$/.test(d.file.name))?d.file.name:`담벼락_${localDateStr(new Date())}_${String(Date.now()).slice(-5)}.${ext}`;
+      const r=await uploadFileToDrive(new File([d.file],nm,{type:d.file.type}),token,folder);
+      fileId=r.id;
+    }catch(e){console.error(e);go.disabled=false;go.textContent=d.id?'저장':'붙이기';showToast('⚠️','사진을 드라이브에 올리지 못했어요. 드라이브 연결을 확인해 주세요.',3200);return;}
+    if(!wcDraft||!document.getElementById('__wallc'))return;
+  }
+  const pv=d.preview&&!d.preview.loading?d.preview:null;
+  const rec={sec:box.querySelector('#__wc-sec').value,kind:d.kind,title,text,tags,url:(d.kind==='link'||d.kind==='youtube')?d.url:'',preview:(d.kind==='link'||d.kind==='youtube')?pv:null,fileId:d.kind==='photo'?fileId:'',color:d.color};
+  Object.keys(rec).forEach(k=>{if(rec[k]===''||rec[k]===null)delete rec[k];});
+  if(rec.kind==='text')delete rec.kind;
+  const now=Date.now();
+  if(d.id){
+    const m=ensureMemos().find(x=>x.id===d.id);
+    if(m){['kind','title','url','preview','fileId','color'].forEach(k=>delete m[k]);Object.assign(m,rec,{text:rec.text||'',updated:now});}
+  }else{
+    ensureMemos().unshift({id:uid(),...rec,text:rec.text||'',tags:rec.tags||[],created:now,updated:now});
+  }
+  if(d.localUrl)URL.revokeObjectURL(d.localUrl);
+  wcDraft=null;box.remove();
+  saveState();renderMemos();
+  showToast('📌',d.id?'고쳤어요.':'담벼락에 붙였어요.',1600);
+}
+
+// ── 칸 직접 만들기 · 이름 바꾸기 · 순서 옮기기 · 지우기 ──
+const WALL_ICONS=['👥','📚','⛪','💡','🏠','👨‍👩‍👦','🚗','🏥','💰','📋','🎬','✈️','🍽️','🛒','📸','⭐','📌','🎓','🙏','💼'];
+function wallSecDlg(sec){
+  const old=document.getElementById('__wallsec');if(old)old.remove();
+  const ss=wallSecs();const isNew=!sec;const idx=isNew?-1:ss.findIndex(x=>x.id===sec.id);
+  let ico=isNew?'📌':sec.ico;
+  const cnt=isNew?0:ensureMemos().filter(m=>memoSec(m)===sec.id).length;
+  const d=document.createElement('div');d.id='__wallsec';
+  d.innerHTML=`<div class="ws-box" role="dialog" aria-label="${isNew?'새 칸 만들기':'칸 고치기'}">
+    <div class="ws-h">${isNew?'＋ 새 칸 만들기':'칸 고치기'}<button type="button" class="mb-x" data-a="x" aria-label="닫기">✕</button></div>
+    <label class="ws-l">칸 이름<input id="__ws-name" type="text" maxlength="20" placeholder="예: 집안일, 보험 공부" value="${esc(isNew?'':sec.name)}"></label>
+    <div class="ws-l">아이콘</div>
+    <div class="ws-icons">${WALL_ICONS.map(i=>`<button type="button" data-i="${i}" class="${i===ico?'on':''}" aria-label="${i}">${i}</button>`).join('')}</div>
+    ${isNew?'':`<div class="ws-row"><span>순서</span><button type="button" class="mb-btn" data-a="left" ${idx<=0?'disabled':''}>← 왼쪽으로</button><button type="button" class="mb-btn" data-a="right" ${idx>=ss.length-1?'disabled':''}>오른쪽으로 →</button></div>`}
+    <div class="ws-btns">${isNew||ss.length<=1?'':`<button type="button" class="ws-del" data-a="del">칸 지우기</button>`}<button type="button" class="wc-cancel" data-a="x">취소</button><button type="button" class="wc-go" data-a="ok">${isNew?'만들기':'저장'}</button></div>
+  </div>`;
+  document.body.appendChild(d);
+  const close=()=>d.remove();
+  bindOverlayClose(d,close);
+  d.querySelectorAll('[data-a="x"]').forEach(b=>b.addEventListener('click',close));
+  d.querySelectorAll('.ws-icons [data-i]').forEach(b=>b.addEventListener('click',()=>{ico=b.dataset.i;d.querySelectorAll('.ws-icons [data-i]').forEach(x=>x.classList.toggle('on',x===b));}));
+  const nameIn=d.querySelector('#__ws-name');
+  const ok=()=>{
+    const name=nameIn.value.trim();
+    if(!name){showToast('✏️','칸 이름을 적어 주세요.',1600);nameIn.focus();return;}
+    if(ss.some(x=>x.name===name&&(!sec||x.id!==sec.id))){showToast('✏️','같은 이름의 칸이 이미 있어요.',1800);nameIn.focus();return;}
+    if(isNew)ss.push({id:'s'+uid(),name,ico});
+    else{sec.name=name;sec.ico=ico;}
+    close();saveState();renderMemoList();
+    showToast('📌',isNew?`"${name}" 칸을 만들었어요.`:'칸을 고쳤어요.',1600);
+  };
+  d.querySelector('[data-a="ok"]').addEventListener('click',ok);
+  nameIn.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();ok();}});
+  d.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();close();}});
+  const mv=dir=>{const nm=nameIn.value.trim();if(nm&&!ss.some(x=>x.name===nm&&x.id!==sec.id))sec.name=nm;sec.ico=ico;const i=ss.findIndex(x=>x.id===sec.id),j=i+dir;if(j<0||j>=ss.length)return;[ss[i],ss[j]]=[ss[j],ss[i]];saveState();renderMemoList();wallSecDlg(sec);};
+  const l=d.querySelector('[data-a="left"]'),r=d.querySelector('[data-a="right"]');
+  if(l)l.addEventListener('click',()=>mv(-1));if(r)r.addEventListener('click',()=>mv(1));
+  const del=d.querySelector('[data-a="del"]');
+  if(del)del.addEventListener('click',async()=>{
+    const rest=ss.filter(x=>x.id!==sec.id);const to=rest.find(x=>x.id==='idea')||rest[0];
+    const ok2=await confirm2('칸 지우기',cnt?`"${sec.name}" 칸을 지울까요?\n안에 있던 ${cnt}개는 "${to.name}" 칸으로 옮겨져요. (지워지지 않아요)`:`"${sec.name}" 칸을 지울까요?`,'지우기');
+    if(!ok2)return;
+    ensureMemos().forEach(m=>{if(memoSec(m)===sec.id){m.sec=to.id;m.updated=Date.now();}});
+    state.wallSecs=rest;
+    close();saveState();renderMemos();renderMemoList();
+    showToast('🗑️','칸을 지웠어요.',1600);
+  });
+  setTimeout(()=>nameIn.focus(),30);
 }
 
 // 메모를 카드로 — 적어둔 게 '할 일'이 되는 순간
@@ -4152,7 +4549,7 @@ function memoToCard(id){
   d.innerHTML=`<div style="background:#fff;border-radius:12px;padding:22px;max-width:420px;width:100%;box-shadow:0 20px 56px rgba(0,0,0,.3)">
     <div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:6px">카드로 만들기</div>
     <div style="font-size:12.5px;color:var(--muted);line-height:1.6;margin-bottom:14px">메모 내용이 카드 제목이 되고, 원래 메모는 그대로 남아요.</div>
-    <div style="background:#f7f8f9;border-radius:8px;padding:10px 12px;font-size:13px;color:var(--text);margin-bottom:14px;line-height:1.5;max-height:96px;overflow:auto">${esc(m.text)}</div>
+    <div style="background:#f7f8f9;border-radius:8px;padding:10px 12px;font-size:13px;color:var(--text);margin-bottom:14px;line-height:1.5;max-height:96px;overflow:auto;white-space:pre-wrap">${esc([m.title,m.text,m.url].filter(Boolean).join('\n')||memoLabel(m))}</div>
     <label style="font-size:12px;font-weight:700;color:var(--muted);display:block;margin-bottom:5px">어디에 넣을까요</label>
     <select id="__mc-dest" style="width:100%;border:1px solid #dfe1e6;border-radius:7px;padding:9px;font-size:13.5px;font-family:inherit;outline:none">${opts}</select>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px">
@@ -4170,8 +4567,9 @@ function memoToCard(id){
     const b=state.boards.find(x=>x.id===bid);
     const c=b&&(b.columns||[]).find(x=>x.id===cid);
     if(!c){d.remove();return;}
-    const card=mkCard(m.text.split('\n')[0].slice(0,120));
-    if(m.tags&&m.tags.length)card.desc='#'+m.tags.join(' #');
+    const card=mkCard(memoLabel(m).split('\n')[0].slice(0,120));
+    const descLines=[m.title&&m.text?m.text:'',m.url||'',m.tags&&m.tags.length?'#'+m.tags.join(' #'):''].filter(Boolean);
+    if(descLines.length)card.desc=descLines.map(esc).join('<br>');
     c.cards.push(card);
     saveState();d.remove();
     showToast('✅',`"${b.title} › ${c.title}" 에 카드를 만들었어요.`,3200);
@@ -6353,7 +6751,7 @@ function renderHdrSearchResults(term){
   // 메모도 함께 찾습니다 (제목만 검색할 땐 제외 — 메모는 제목이 따로 없음)
   const lower=t.toLowerCase();
   const memoHits=hdrSearchScope==='title'?[]:ensureMemos().filter(m=>
-    (m.text||'').toLowerCase().includes(lower)||
+    [m.text,m.title,m.url,m.preview&&m.preview.title].some(v=>String(v||'').toLowerCase().includes(lower))||
     (m.tags||[]).some(g=>g.toLowerCase().includes(lower))
   ).slice(0,5);
 
@@ -6381,7 +6779,7 @@ function renderHdrSearchResults(term){
     memoHits.forEach(m=>{
       const row=document.createElement('div');row.className='hsr-item';
       row.innerHTML=`<span style="flex-shrink:0;color:var(--muted);display:flex">${svgIcon('note',15)}</span>
-        <div class="hsr-body"><div class="hsr-title">${esc(m.text.slice(0,80))}</div></div>
+        <div class="hsr-body"><div class="hsr-title">${esc((WALL_KIND_ICO[m.kind]?WALL_KIND_ICO[m.kind]+' ':'')+memoLabel(m).slice(0,80))}</div></div>
         <span class="hsr-meta" style="border-left-color:#0052cc">메모${(m.tags||[]).length?' · '+esc(m.tags.join(', ')):''}</span>`;
       row.addEventListener('click',()=>{
         box.classList.remove('open');
