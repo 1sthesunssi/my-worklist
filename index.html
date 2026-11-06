@@ -4327,7 +4327,7 @@ function renderMemoList(){
   wallSecs().forEach(sec=>{
     const items=list.filter(m=>memoSec(m)===sec.id);
     const col=document.createElement('section');col.className='wl-col';col.dataset.sec=sec.id;
-    col.innerHTML=`<div class="wl-col-h"><span aria-hidden="true">${sec.ico}</span>${esc(sec.name)} <span class="wl-n">${items.length||''}</span><button type="button" class="wl-col-more" aria-label="${esc(sec.name)} 칸 고치기" title="칸 이름 바꾸기 · 옮기기 · 지우기">···</button></div>${memoBoardArchive?'':`<button type="button" class="wl-add">＋ 붙이기</button>`}<div class="wl-cards"></div>`;
+    col.innerHTML=`<div class="wl-col-h"><span aria-hidden="true">${sec.ico}</span>${esc(sec.name)} <span class="wl-n">${items.length||''}</span><button type="button" class="wl-col-more" aria-label="${esc(sec.name)} 칸 고치기" title="칸 이름 바꾸기 · 옮기기 · 지우기">···</button></div>${memoBoardArchive?'':`<button type="button" class="wl-add">＋ 새 메모</button>`}<div class="wl-cards"></div>`;
     const add=col.querySelector('.wl-add');if(add)add.addEventListener('click',()=>wallCompose({sec:sec.id}));
     col.querySelector('.wl-col-more').addEventListener('click',e=>{e.stopPropagation();wallSecDlg(sec);});
     const cards=col.querySelector('.wl-cards');
@@ -4407,8 +4407,8 @@ function wallCompose(src){
   const tiles=WC_TILES.map(t=>`<button type="button" class="wc-tile${t.soon?' soon':''}" data-k="${t.k}" aria-label="${t.name}${t.soon?' (2단계 준비 중)':''}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">${t.svg}</svg><span>${t.name}</span>${t.soon?'<i>2단계</i>':''}</button>`).join('');
   const val=isEdit?(src.text||''):'';
   const d=document.createElement('div');d.id='__wallc';
-  d.innerHTML=`<div class="wc-box" role="dialog" aria-label="메모 붙이기">
-    <div class="wc-top"><label class="wc-sec"><select id="__wc-sec" aria-label="어느 칸에">${secOpts}</select> ${isEdit?'칸 · 편집 중':'칸에 붙이기'}</label><button type="button" class="mb-x" id="__wc-x" aria-label="닫기">✕</button></div>
+  d.innerHTML=`<div class="wc-box" role="dialog" aria-label="새 메모">
+    <div class="wc-top"><label class="wc-sec"><select id="__wc-sec" aria-label="어느 칸에">${secOpts}</select> ${isEdit?'칸 · 편집 중':'칸에 새 메모'}</label><button type="button" class="mb-x" id="__wc-x" aria-label="닫기">✕</button></div>
     <div class="wc-in">
       <input id="__wc-title" class="wc-title" type="text" maxlength="120" placeholder="제목" aria-label="제목" value="${esc(isEdit?src.title||'':'')}">
       <div class="wc-tiles" role="group" aria-label="붙일 것 고르기">${tiles}</div>
@@ -4417,9 +4417,9 @@ function wallCompose(src){
       <div class="wc-prev" id="__wc-prev"></div>
       <textarea id="__wc-text" class="wc-text" aria-label="내용" placeholder="무엇이든 적어 보세요…">${esc(val)}</textarea>
       <div class="wc-tagbox"><div class="wc-tagl">태그</div><div class="wc-tags" id="__wc-tags"><input id="__wc-tagin" type="text" maxlength="20" placeholder="태그 입력 후 엔터 (# 안 써도 돼요)" aria-label="태그 입력"></div><div class="wc-sugg" id="__wc-sugg"></div></div>
-      <div class="wc-foot"><span>색</span><span class="wc-dots"></span><span class="wc-tip">Ctrl+Enter 붙이기</span></div>
+      <div class="wc-foot"><span>색</span><span class="wc-dots"></span><span class="wc-tip">Ctrl+Enter 저장</span></div>
     </div>
-    <div class="wc-btns"><button type="button" class="wc-cancel" id="__wc-cancel">취소</button><button type="button" class="wc-go" id="__wc-go">${isEdit?'저장':'붙이기'}</button></div>
+    <div class="wc-btns"><button type="button" class="wc-cancel" id="__wc-cancel">취소</button><button type="button" class="wc-go" id="__wc-go">저장</button></div>
     <input type="file" id="__wc-file" accept="image/*" hidden><input type="file" id="__wc-cam" accept="image/*" capture="environment" hidden>
   </div>`;
   document.body.appendChild(d);
@@ -4526,7 +4526,7 @@ async function wcSave(){
       const nm=(d.file.name&&!/^image\.\w+$/.test(d.file.name))?d.file.name:`메모_${localDateStr(new Date())}_${String(Date.now()).slice(-5)}.${ext}`;
       const r=await uploadFileToDrive(new File([d.file],nm,{type:d.file.type}),token,folder);
       fileId=r.id;
-    }catch(e){console.error(e);go.disabled=false;go.textContent=d.id?'저장':'붙이기';showToast('⚠️','사진을 드라이브에 올리지 못했어요. 드라이브 연결을 확인해 주세요.',3200);return;}
+    }catch(e){console.error(e);go.disabled=false;go.textContent='저장';showToast('⚠️','사진을 드라이브에 올리지 못했어요. 드라이브 연결을 확인해 주세요.',3200);return;}
     if(!wcDraft||!document.getElementById('__wallc'))return;
   }
   const pv=d.preview&&!d.preview.loading?d.preview:null;
@@ -4543,7 +4543,7 @@ async function wcSave(){
   if(d.localUrl)URL.revokeObjectURL(d.localUrl);
   wcDraft=null;box.remove();
   saveState();renderMemos();
-  showToast('📌',d.id?'고쳤어요.':'메모를 붙였어요.',1600);
+  showToast('📌',d.id?'고쳤어요.':'메모를 저장했어요.',1600);
 }
 
 // 태그 칸 — 칩으로 넣고 빼기, 내용을 보고 추천
