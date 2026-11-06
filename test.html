@@ -435,6 +435,45 @@ a.wl-site:hover{text-decoration:underline}
 .ws-del{background:none!important;color:#c9372c;margin-right:auto;padding-left:0!important}
 .ws-del:hover{text-decoration:underline}
 @media (max-width:640px){.ws-icons{grid-template-columns:repeat(5,minmax(0,1fr))}.ws-icons button{height:42px}}
+.memo-sec-sel{flex-shrink:0;border:none;background:#f4f5f7;border-radius:6px;font:inherit;font-size:12.5px;font-weight:700;color:#172b4d;padding:4px 4px 4px 6px;cursor:pointer;max-width:120px}
+.memo-sec-sel:hover{background:#ebecf0}
+.ws-note{margin-right:auto;font-size:12px;color:#8a94a6;align-self:center}
+.wc-tagbox{display:flex;flex-direction:column;gap:6px}
+.wc-tagl{font-size:12.5px;font-weight:800;color:#42526e}
+.wc-tags{display:flex;flex-wrap:wrap;gap:6px;align-items:center;border:1.5px solid #dfe3e8;border-radius:10px;padding:6px 8px;cursor:text;transition:border-color .15s}
+.wc-tags:focus-within{border-color:#0052cc}
+.wc-tags input{flex:1;min-width:140px;border:none;outline:none;font:inherit;font-size:13.5px;padding:3px 2px;color:#172b4d;background:transparent}
+.wc-tchip{display:inline-flex;align-items:center;gap:4px;font-size:12.5px;font-weight:700;padding:3px 4px 3px 10px;border-radius:999px;background:#e9f2ff;color:#0052cc}
+.wc-tchip button{border:none;background:none;color:#5e84c4;font-size:11px;cursor:pointer;padding:1px 4px;border-radius:50%}
+.wc-tchip button:hover{background:rgba(0,82,204,.12);color:#0052cc}
+.wc-sugg{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.wc-sugg:empty{display:none}
+.wc-sgl{font-size:12px;font-weight:700;color:#8a94a6}
+.wc-sg{font:inherit;font-size:12.5px;font-weight:700;color:#5e6c84;background:#fff;border:1.5px dashed #b3bac5;border-radius:999px;padding:3px 10px;cursor:pointer}
+.wc-sg:hover{border-style:solid;border-color:#0052cc;color:#0052cc;background:#f4f8ff}
+#__wallv{position:fixed;inset:0;background:rgba(9,30,66,.55);z-index:400;display:flex;align-items:center;justify-content:center;padding:16px;outline:none}
+.wv-box{width:100%;max-width:560px;max-height:94vh;overflow:auto;background:#fff;border-radius:18px;box-shadow:0 24px 60px rgba(0,0,0,.3)}
+.wv-top{display:flex;align-items:center;gap:8px;padding:12px 12px 8px 18px}
+.wv-sec{font-size:12.5px;font-weight:700;background:#f4f5f7;border-radius:7px;padding:4px 9px;color:#172b4d}
+.wv-date{font-size:12px;color:#8a94a6}
+.wv-top .mb-x{margin-left:auto}
+.wv-media{position:relative;display:block;background:#eef0f3;cursor:pointer}
+.wv-media img{display:block;width:100%;max-height:420px;object-fit:contain;background:#1f1f1f}
+.wv-media.wl-yt img{object-fit:cover}
+.wv-in{padding:14px 22px 16px;display:flex;flex-direction:column;gap:10px}
+.wv-t{margin:0;font-size:21px;font-weight:800;line-height:1.35;color:#172b4d;word-break:break-word}
+.wv-x{border-radius:12px;padding:13px 15px;font-size:14.5px;line-height:1.65;color:#172b4d;white-space:pre-wrap;word-break:break-word}
+.wv-site{font-size:13px;font-weight:700;color:#0052cc}
+.wv-site:hover{text-decoration:underline}
+.wv-tags{display:flex;flex-wrap:wrap;gap:6px}
+.wv-tag{font-size:12.5px;font-weight:700;color:#0052cc;background:#e9f2ff;border-radius:999px;padding:3px 10px}
+.wv-foot{display:flex;align-items:center;gap:4px;border-top:1px solid #eef0f3;padding:12px 16px}
+.wv-foot button{border:none;background:none;font:inherit;font-size:13px;font-weight:700;color:#42526e;padding:8px 10px;border-radius:9px;cursor:pointer}
+.wv-foot button:hover{background:#f1f2f4}
+.wv-foot .wv-del{color:#c9372c}
+.wv-foot .wc-go{margin-left:auto;background:#0052cc;color:#fff;font-size:14px;padding:10px 20px;border-radius:12px}
+.wv-foot .wc-go:hover{background:#0747a6}
+@media (max-width:640px){#__wallv{padding:0;align-items:flex-end}.wv-box{border-radius:18px 18px 0 0;max-height:94vh}}
 /* 붙이기 창 */
 #__wallc{position:fixed;inset:0;background:rgba(9,30,66,.55);z-index:400;display:flex;align-items:center;justify-content:center;padding:16px}
 .wc-box{--wc-bg:#fff;width:100%;max-width:600px;max-height:94vh;overflow:auto;background:#fff;border-radius:20px;box-shadow:0 24px 60px rgba(0,0,0,.3)}
@@ -2140,10 +2179,10 @@ a.wl-site:hover{text-decoration:underline}
     </div>
     <!-- 메모 — 첫 화면에선 최근 3장만, 전체는 포스트잇 메모장(팝업) -->
     <div class="home-sec" id="memo-section" data-sec="memo">
-      <h2><span class="sec-caret">▾</span><span class="sec-ico" style="background:#fff4dc;color:#b8760a">📝</span><span class="sec-label">Memo</span> <span id="memo-count"></span> <button class="memo-open-btn" onclick="openMemoList()">담벼락 열기</button></h2>
+      <h2><span class="sec-caret">▾</span><span class="sec-ico" style="background:#fff4dc;color:#b8760a">📝</span><span class="sec-label">Memo</span> <span id="memo-count"></span> <button class="memo-open-btn" onclick="openMemoList()">메모 열기</button></h2>
       <div class="sec-body">
         <div id="memo-input-row">
-          <span class="memo-plus">＋</span>
+          <select id="memo-sec" class="memo-sec-sel" aria-label="어느 칸에 넣을까요" title="어느 칸에 넣을지 골라요"></select>
           <input id="memo-input" type="text" maxlength="300" placeholder="메모 적고 엔터 · #태그">
           <span class="memo-enter">Enter</span>
         </div>
@@ -2184,7 +2223,7 @@ a.wl-site:hover{text-decoration:underline}
       <button type="button" onclick="mMore(false);openPlanner()"><span style="background:#eef4ff">✍️</span>플래너</button>
       <button type="button" onclick="mMore(false);openCalendar()"><span style="background:#e6f6ef">🗓️</span>캘린더</button>
       <button type="button" onclick="mMore(false);openDiaryList()"><span style="background:#fdeef3">📚</span>일기 전체</button>
-      <button type="button" onclick="mMore(false);openMemoList()"><span style="background:#fff8d6">📌</span>담벼락</button>
+      <button type="button" onclick="mMore(false);openMemoList()"><span style="background:#fff8d6">📝</span>메모</button>
       <button type="button" onclick="mMore(false);openAiInbox()"><span style="background:#f4efff">📥</span>접수함</button>
       <button type="button" onclick="mMore(false);openSyncModal()"><span style="background:#f1f2f4">🔄</span>기기 연동</button>
       <button type="button" onclick="mMore(false);setTimeout(()=>toggleMoreMenu(),50)"><span style="background:#f1f2f4">⚙️</span>설정·백업</button>
@@ -4396,10 +4435,14 @@ function addMemoFromInput(){
   if(!raw)return;
   const {text,tags}=parseMemo(raw);
   if(!text&&!tags.length)return;
-  ensureMemos().unshift({id:uid(),text:text||tags.map(t=>'#'+t).join(' '),tags,created:Date.now(),updated:Date.now()});
+  const sel=document.getElementById('memo-sec');
+  const sec=(sel&&wallSecs().some(x=>x.id===sel.value))?sel.value:'gen';
+  ensureMemos().unshift({id:uid(),sec,text:text||tags.map(t=>'#'+t).join(' '),tags,created:Date.now(),updated:Date.now()});
   inp.value='';
+  if(sel)sel.value='gen'; // 다음 메모는 다시 📝 일반부터 (모르는 사이 다른 칸에 들어가지 않게)
   saveState();renderMemos();
-  showToast('📝','메모를 남겼어요.',1600);
+  const sc=wallSecs().find(x=>x.id===sec);
+  showToast(sc?sc.ico:'📝',`${sc?sc.name:'일반'} 칸에 남겼어요.`,1600);
 }
 
 let memoTagFilter='';
@@ -4492,14 +4535,15 @@ function renderMemos(){
   if(cnt)cnt.textContent=memos.length?memos.length:'';
   wrap.className='memo-mini';wrap.innerHTML='';
   if(!memos.length){wrap.innerHTML='<div class="memo-mini-empty">아직 메모가 없어요</div>';}
+  memoFillSecSel();
   const PER=mIsPhone()?40:MEMO_HOME_N;
   const pages=Math.max(1,Math.ceil(memos.length/PER));
   memoHomePage=Math.min(Math.max(0,memoHomePage),pages-1);
   memoRenderPager(pages);
   memos.slice(memoHomePage*PER,memoHomePage*PER+PER).forEach(m=>{
     const c=memoColor(m);
-    const n=document.createElement('div');n.setAttribute('role','button');n.tabIndex=0;n.className='memo-mini-note';n.addEventListener('keydown',e=>{if(e.key==='Enter')openMemoList(m.id);});
-    n.style.background=(!m.kind||(m.color&&m.color!=='white'))?c.bg:'#fff';n.title='담벼락에서 보기';
+    const n=document.createElement('div');n.setAttribute('role','button');n.tabIndex=0;n.className='memo-mini-note';n.addEventListener('keydown',e=>{if(e.key==='Enter')wallView(m.id);});
+    n.style.background=(!m.kind||(m.color&&m.color!=='white'))?c.bg:'#fff';n.title='눌러서 보기';
     const k=m.kind||'text';
     if(k==='text'){
       n.textContent=(m.title?m.title+'\n':'')+(m.text||'')+((m.tags||[]).length?'\n'+m.tags.map(t=>'#'+t).join(' '):'');
@@ -4513,7 +4557,7 @@ function renderMemos(){
       n.classList.add('mmn-rich');
       n.innerHTML=`<div class="mmn-top">${th?`<span class="mmn-th">${th}</span>`:''}<div class="mmn-t">${esc(memoLabel(m))}</div></div><div class="mmn-sub">${esc(sub)}</div>`;
     }
-    n.addEventListener('click',()=>openMemoList(m.id));
+    n.addEventListener('click',()=>wallView(m.id));
     memoBindDrag(n,m.id);
     wrap.appendChild(n);
   });
@@ -4544,7 +4588,7 @@ function startMemoEdit(row,id){
 
 async function deleteMemo(id){
   const m=ensureMemos().find(x=>x.id===id);if(!m)return;
-  const ok=await confirm2('메모 삭제',`"${memoLabel(m).slice(0,40)}${memoLabel(m).length>40?'…':''}"\n삭제할까요?${m.fileId?'\n(사진은 드라이브 MyWorklist_담벼락 폴더에 그대로 남아요)':''}`,'삭제');
+  const ok=await confirm2('메모 삭제',`"${memoLabel(m).slice(0,40)}${memoLabel(m).length>40?'…':''}"\n삭제할까요?${m.fileId?'\n(사진은 드라이브 MyWorklist_메모 폴더에 그대로 남아요)':''}`,'삭제');
   if(!ok)return;
   state.memos=ensureMemos().filter(x=>x.id!==id);
   saveState();renderMemos();
@@ -4556,9 +4600,10 @@ async function deleteMemo(id){
 //  글·태그·색·링크는 데이터 파일(state.memos)에, 사진은 드라이브 "MyWorklist_담벼락" 폴더에 저장.
 //  메모 한 장: {id,sec,kind:'text'|'link'|'youtube'|'photo',title,text,tags,url,preview:{title,desc,img,site},fileId,color,archived}
 const WALL_SECS_DEF=[{id:'cust',name:'고객',ico:'👥'},{id:'study',name:'공부',ico:'📚'},{id:'church',name:'성당',ico:'⛪'},{id:'idea',name:'아이디어',ico:'💡'}];
-function wallSecs(){if(!Array.isArray(state.wallSecs)||!state.wallSecs.length)state.wallSecs=WALL_SECS_DEF.map(x=>({...x}));return state.wallSecs;}
-// 칸이 정해지지 않은 예전 메모는 아이디어 칸에 보여요 (끌어서 다른 칸으로 옮길 수 있어요)
-function memoSec(m){const ss=wallSecs();if(m&&ss.some(x=>x.id===m.sec))return m.sec;return ss.some(x=>x.id==='idea')?'idea':ss[ss.length-1].id;}
+const WALL_GEN={id:'gen',name:'일반',ico:'📝'};
+function wallSecs(){if(!Array.isArray(state.wallSecs)||!state.wallSecs.length)state.wallSecs=WALL_SECS_DEF.map(x=>({...x}));if(!state.wallSecs.some(x=>x.id==='gen'))state.wallSecs.unshift({...WALL_GEN});return state.wallSecs;}
+// 칸이 정해지지 않았거나 지운 칸의 메모는 📝 일반 칸에 보여요
+function memoSec(m){const ss=wallSecs();if(m&&ss.some(x=>x.id===m.sec))return m.sec;return 'gen';}
 function ytId(u){const m=String(u||'').match(/(?:youtube\.com\/(?:watch\?(?:[^#]*&)?v=|shorts\/|embed\/|live\/)|youtu\.be\/)([\w-]{11})/);return m?m[1]:'';}
 function wallHost(u){try{return new URL(u).hostname.replace(/^www\./,'');}catch(e){return '';}}
 const wallIsUrl=u=>/^https?:\/\/[^\s<>"']+$/i.test(String(u||'').trim());
@@ -4577,11 +4622,16 @@ async function wallFetchPreview(url){
 let wallFolderId='';
 async function wallFolder(token){
   if(wallFolderId)return wallFolderId;
-  const name=(typeof DS_FOLDER_NAME!=='undefined'&&DS_FOLDER_NAME==='MyWorklist_TEST')?'MyWorklist_TEST_담벼락':'MyWorklist_담벼락';
-  const q=encodeURIComponent(`name='${name}' and mimeType='application/vnd.google-apps.folder' and trashed=false`);
+  const T=(typeof DS_FOLDER_NAME!=='undefined'&&DS_FOLDER_NAME==='MyWorklist_TEST')?'MyWorklist_TEST_':'MyWorklist_';
+  const name=T+'메모',oldName=T+'담벼락';
+  const q=encodeURIComponent(`(name='${name}' or name='${oldName}') and mimeType='application/vnd.google-apps.folder' and trashed=false`);
   const lr=await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)`,{headers:{Authorization:`Bearer ${token}`}});
   const ld=await lr.json();
-  if(ld.files&&ld.files.length){wallFolderId=ld.files[0].id;return wallFolderId;}
+  if(ld.files&&ld.files.length){
+    const f=ld.files.find(x=>x.name===name)||ld.files[0];
+    if(f.name!==name){try{await fetch(`https://www.googleapis.com/drive/v3/files/${f.id}`,{method:'PATCH',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({name})});}catch(e){}}
+    wallFolderId=f.id;return wallFolderId;
+  }
   const cr=await fetch('https://www.googleapis.com/drive/v3/files',{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({name,mimeType:'application/vnd.google-apps.folder'})});
   const cd=await cr.json();if(!cd.id)throw new Error('folder');
   wallFolderId=cd.id;return wallFolderId;
@@ -4594,10 +4644,10 @@ function openMemoList(focusId){
   const d=document.createElement('div');d.id='__memolist';
   d.style.cssText='position:fixed;inset:0;background:rgba(9,30,66,.5);z-index:390;display:flex;align-items:center;justify-content:center;padding:16px';
   const types=[['','전체'],['text','📝 글'],['link','🔗 링크'],['photo','🖼️ 사진'],['youtube','▶️ 영상']];
-  d.innerHTML=`<div class="mb-panel wl-panel" role="dialog" aria-label="나의 담벼락">
+  d.innerHTML=`<div class="mb-panel wl-panel" role="dialog" aria-label="메모판">
     <div class="mb-head">
-      <div class="mb-title">📌 나의 담벼락</div>
-      <input class="mb-q" id="__ml-q" type="search" placeholder="검색 · #태그" aria-label="담벼락 검색">
+      <div class="mb-title">📝 메모판</div>
+      <input class="mb-q" id="__ml-q" type="search" placeholder="검색 · #태그" aria-label="메모 검색">
       <div class="wl-types" role="group" aria-label="종류로 골라 보기">${types.map(([k,n])=>`<button type="button" data-t="${k}">${n}</button>`).join('')}</div>
       <div class="mb-btns">
         <button type="button" class="mb-btn" id="__mb-addsec">＋ 칸 추가</button>
@@ -4620,7 +4670,7 @@ function openMemoList(focusId){
   renderMemoList();
 }
 function memoSetColor(id,c){const m=ensureMemos().find(x=>x.id===id);if(!m)return;m.color=c;m.updated=Date.now();saveState();renderMemos();}
-function memoArchive(id,on){const m=ensureMemos().find(x=>x.id===id);if(!m)return;m.archived=on;m.updated=Date.now();saveState();renderMemos();showToast('📦',on?'보관함으로 옮겼어요.':'담벼락으로 꺼냈어요.',1600);}
+function memoArchive(id,on){const m=ensureMemos().find(x=>x.id===id);if(!m)return;m.archived=on;m.updated=Date.now();saveState();renderMemos();showToast('📦',on?'보관함으로 옮겼어요.':'메모판으로 꺼냈어요.',1600);}
 function wallFiltered(){
   const term=memoListQuery.trim().toLowerCase().replace(/^#/,'');
   let list=ensureMemos().filter(m=>!!m.archived===memoBoardArchive);
@@ -4635,7 +4685,7 @@ function renderMemoList(){
   const box=document.getElementById('__memolist');
   box.querySelectorAll('.wl-types [data-t]').forEach(b=>b.classList.toggle('on',b.dataset.t===wallType));
   const ab=box.querySelector('#__mb-arch');ab.classList.toggle('on',memoBoardArchive);
-  const nArch=ensureMemos().filter(m=>m.archived).length;ab.textContent=memoBoardArchive?'← 담벼락으로':`보관함${nArch?' '+nArch:''}`;
+  const nArch=ensureMemos().filter(m=>m.archived).length;ab.textContent=memoBoardArchive?'← 메모판으로':`보관함${nArch?' '+nArch:''}`;
   tagWrap.innerHTML='';
   allMemoTags().forEach(([t,n])=>{
     const b=document.createElement('button');b.type='button';
@@ -4681,14 +4731,14 @@ function wallCardEl(m){
   const tags=(m.tags||[]).map(t=>`<span class="mb-tag" data-tag="${esc(t)}">#${esc(t)}</span>`).join(' ');
   const site=(k==='link'||k==='youtube')&&wallIsUrl(m.url)?`<a class="wl-site" href="${esc(m.url)}" target="_blank" rel="noopener">${k==='youtube'?'▶ 유튜브에서 보기':'🔗 '+esc(p.site||wallHost(m.url))} ›</a>`:'';
   el.innerHTML=`<div class="mb-acts">${dots}
-      <button type="button" class="memo-act" data-a="edit" title="고치기" aria-label="고치기">${svgIcon('pencil',15)}</button>
+      <button type="button" class="memo-act" data-a="edit" title="편집" aria-label="편집">${svgIcon('pencil',15)}</button>
       <button type="button" class="memo-act" data-a="card" title="카드로 만들기" aria-label="카드로 만들기">${svgIcon('filecheck',15)}</button>
       <button type="button" class="memo-act" data-a="arch" title="${m.archived?'꺼내기':'보관하기'}" aria-label="${m.archived?'꺼내기':'보관하기'}">${svgIcon(m.archived?'refresh':'folder',15)}</button>
       <button type="button" class="memo-act del" data-a="del" title="삭제" aria-label="삭제">${svgIcon('trash',15)}</button></div>
-    ${media}<div class="wl-in" title="눌러서 고치기">${title?`<div class="wl-t">${esc(title)}</div>`:''}${m.text?`<div class="wl-x">${esc(m.text)}</div>`:''}${site}
+    ${media}<div class="wl-in" title="눌러서 보기">${title?`<div class="wl-t">${esc(title)}</div>`:''}${m.text?`<div class="wl-x">${esc(m.text)}</div>`:''}${site}
     <div class="mb-meta" style="color:${plain||m.color==='white'?'#5e6c84':c.fg}">${tags}<span class="mb-date">${memoDateLabel(m.created)}</span></div></div>`;
   memoBindDrag(el,m.id);
-  el.querySelector('.wl-in').addEventListener('click',e=>{if(e.target.closest('a,.mb-tag'))return;wallCompose(m);});
+  el.querySelector('.wl-in').addEventListener('click',e=>{if(e.target.closest('a,.mb-tag'))return;wallView(m.id);});
   el.querySelectorAll('.mb-tag').forEach(t=>t.addEventListener('click',e=>{e.stopPropagation();memoTagFilter=memoTagFilter===t.dataset.tag?'':t.dataset.tag;renderMemoList();}));
   el.querySelectorAll('[data-set]').forEach(b=>b.addEventListener('click',()=>{memoSetColor(m.id,b.dataset.set);}));
   el.querySelector('[data-a="edit"]').addEventListener('click',()=>wallCompose(m));
@@ -4723,21 +4773,22 @@ const WC_HINT0='붙일 것을 골라요 — 글은 그냥 적으면 되고, 링�
 function wallCompose(src){
   const old=document.getElementById('__wallc');if(old)old.remove();
   const isEdit=!!(src&&src.id);
-  wcDraft=isEdit?{id:src.id,sec:memoSec(src),kind:src.kind||'text',url:src.url||'',preview:src.preview||null,fileId:src.fileId||'',color:src.color||'',file:null,localUrl:''}
-    :{sec:(src&&src.sec)||memoSec(null),kind:'text',url:'',preview:null,fileId:'',color:'',file:null,localUrl:''};
+  wcDraft=isEdit?{tags:[...(src.tags||[])],id:src.id,sec:memoSec(src),kind:src.kind||'text',url:src.url||'',preview:src.preview||null,fileId:src.fileId||'',color:src.color||'',file:null,localUrl:''}
+    :{tags:[],sec:(src&&src.sec)||memoSec(null),kind:'text',url:'',preview:null,fileId:'',color:'',file:null,localUrl:''};
   const secOpts=wallSecs().map(x=>`<option value="${x.id}"${x.id===wcDraft.sec?' selected':''}>${x.ico} ${esc(x.name)}</option>`).join('');
   const tiles=WC_TILES.map(t=>`<button type="button" class="wc-tile${t.soon?' soon':''}" data-k="${t.k}" aria-label="${t.name}${t.soon?' (2단계 준비 중)':''}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">${t.svg}</svg><span>${t.name}</span>${t.soon?'<i>2단계</i>':''}</button>`).join('');
-  const val=isEdit?((src.text||'')+((src.tags||[]).length?'\n'+src.tags.map(t=>'#'+t).join(' '):'')):'';
+  const val=isEdit?(src.text||''):'';
   const d=document.createElement('div');d.id='__wallc';
-  d.innerHTML=`<div class="wc-box" role="dialog" aria-label="담벼락에 붙이기">
-    <div class="wc-top"><label class="wc-sec"><select id="__wc-sec" aria-label="어느 칸에">${secOpts}</select> 칸에 ${isEdit?'고치기':'붙이기'}</label><button type="button" class="mb-x" id="__wc-x" aria-label="닫기">✕</button></div>
+  d.innerHTML=`<div class="wc-box" role="dialog" aria-label="메모 붙이기">
+    <div class="wc-top"><label class="wc-sec"><select id="__wc-sec" aria-label="어느 칸에">${secOpts}</select> ${isEdit?'칸 · 편집 중':'칸에 붙이기'}</label><button type="button" class="mb-x" id="__wc-x" aria-label="닫기">✕</button></div>
     <div class="wc-in">
       <input id="__wc-title" class="wc-title" type="text" maxlength="120" placeholder="제목" aria-label="제목" value="${esc(isEdit?src.title||'':'')}">
       <div class="wc-tiles" role="group" aria-label="붙일 것 고르기">${tiles}</div>
       <div class="wc-hint" id="__wc-hint">${WC_HINT0}</div>
       <div class="wc-url" id="__wc-urlrow" hidden><input id="__wc-url" type="url" inputmode="url" placeholder="주소를 붙여 넣으세요 (https://…)" aria-label="주소"><button type="button" id="__wc-urlok">넣기</button></div>
       <div class="wc-prev" id="__wc-prev"></div>
-      <textarea id="__wc-text" class="wc-text" aria-label="내용" placeholder="무엇이든 적어 보세요… #태그도 여기에">${esc(val)}</textarea>
+      <textarea id="__wc-text" class="wc-text" aria-label="내용" placeholder="무엇이든 적어 보세요…">${esc(val)}</textarea>
+      <div class="wc-tagbox"><div class="wc-tagl">태그</div><div class="wc-tags" id="__wc-tags"><input id="__wc-tagin" type="text" maxlength="20" placeholder="태그 입력 후 엔터 (# 안 써도 돼요)" aria-label="태그 입력"></div><div class="wc-sugg" id="__wc-sugg"></div></div>
       <div class="wc-foot"><span>색</span><span class="wc-dots"></span><span class="wc-tip">Ctrl+Enter 붙이기</span></div>
     </div>
     <div class="wc-btns"><button type="button" class="wc-cancel" id="__wc-cancel">취소</button><button type="button" class="wc-go" id="__wc-go">${isEdit?'저장':'붙이기'}</button></div>
@@ -4779,7 +4830,15 @@ function wallCompose(src){
   });
   d.querySelector('#__wc-go').addEventListener('click',wcSave);
   d.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();close();}if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();wcSave();}});
-  wcRenderDots();wcRenderPrev();
+  const tagIn=d.querySelector('#__wc-tagin');
+  tagIn.addEventListener('keydown',e=>{
+    if((e.key==='Enter'&&!e.ctrlKey&&!e.metaKey)||e.key===','){e.preventDefault();if(wcAddTag(tagIn.value))tagIn.value='';}
+    else if(e.key==='Backspace'&&!tagIn.value&&wcDraft&&wcDraft.tags.length){wcDraft.tags.pop();wcRenderTags();}
+  });
+  d.querySelector('#__wc-tags').addEventListener('click',e=>{if(e.target.id==='__wc-tags')tagIn.focus();});
+  let sgT=null;const sgLater=()=>{clearTimeout(sgT);sgT=setTimeout(wcRenderSugg,250);};
+  ta.addEventListener('input',sgLater);d.querySelector('#__wc-title').addEventListener('input',sgLater);
+  wcRenderDots();wcRenderPrev();wcRenderTags();
   setTimeout(()=>(isEdit?ta:d.querySelector('#__wc-title')).focus(),30);
 }
 function wcColorKey(){return wcDraft.color||(wcDraft.kind==='text'?'yellow':'white');}
@@ -4824,7 +4883,9 @@ async function wcSave(){
   const d=wcDraft;if(!d)return;
   const box=document.getElementById('__wallc');if(!box)return;
   const go=box.querySelector('#__wc-go');if(go.disabled)return;
-  const {text,tags}=parseMemo(box.querySelector('#__wc-text').value);
+  const tin=box.querySelector('#__wc-tagin');if(tin&&tin.value.trim()){wcAddTag(tin.value);tin.value='';}
+  const pm=parseMemo(box.querySelector('#__wc-text').value);const text=pm.text;
+  const tags=[...new Set([...(d.tags||[]),...pm.tags])];
   let title=box.querySelector('#__wc-title').value.trim();
   if(d.kind==='text'&&!text&&!title&&!tags.length){showToast('✏️','내용을 적거나, 붙일 것을 골라 주세요.',1800);return;}
   let fileId=d.fileId;
@@ -4834,7 +4895,7 @@ async function wcSave(){
       const token=await ensureDriveToken();
       const folder=await wallFolder(token);
       const ext=((d.file.type||'image/png').split('/')[1]||'png').replace('jpeg','jpg').replace(/[^\w]/g,'');
-      const nm=(d.file.name&&!/^image\.\w+$/.test(d.file.name))?d.file.name:`담벼락_${localDateStr(new Date())}_${String(Date.now()).slice(-5)}.${ext}`;
+      const nm=(d.file.name&&!/^image\.\w+$/.test(d.file.name))?d.file.name:`메모_${localDateStr(new Date())}_${String(Date.now()).slice(-5)}.${ext}`;
       const r=await uploadFileToDrive(new File([d.file],nm,{type:d.file.type}),token,folder);
       fileId=r.id;
     }catch(e){console.error(e);go.disabled=false;go.textContent=d.id?'저장':'붙이기';showToast('⚠️','사진을 드라이브에 올리지 못했어요. 드라이브 연결을 확인해 주세요.',3200);return;}
@@ -4854,7 +4915,99 @@ async function wcSave(){
   if(d.localUrl)URL.revokeObjectURL(d.localUrl);
   wcDraft=null;box.remove();
   saveState();renderMemos();
-  showToast('📌',d.id?'고쳤어요.':'담벼락에 붙였어요.',1600);
+  showToast('📌',d.id?'고쳤어요.':'메모를 붙였어요.',1600);
+}
+
+// 태그 칸 — 칩으로 넣고 빼기, 내용을 보고 추천
+const TAG_DICT=['이관','민원','청구','보상','만기','갱신','가망','상담','계약','해지','자동차','실손','운전자','화재','배상','견적','증권','설계','리모델링','소개','성당','자모회','복사단','디딤돌','과제','시험','강의','홈페이지','카드뉴스','블로그','가족','병원','학교','회비'];
+function wallCleanTag(t){return String(t||'').replace(/^#+/,'').replace(/[\s,#]+/g,'').slice(0,20);}
+function wcAddTag(raw){
+  if(!wcDraft)return false;
+  const list=String(raw||'').split(/[,\s]+/).map(wallCleanTag).filter(Boolean);
+  if(!list.length)return false;
+  list.forEach(t=>{if(!wcDraft.tags.includes(t))wcDraft.tags.push(t);});
+  wcRenderTags();return true;
+}
+function wcRenderTags(){
+  const w=document.getElementById('__wc-tags');if(!w||!wcDraft)return;
+  w.querySelectorAll('.wc-tchip').forEach(x=>x.remove());
+  const inp=w.querySelector('#__wc-tagin');
+  wcDraft.tags.forEach((t,i)=>{
+    const c=document.createElement('span');c.className='wc-tchip';
+    c.innerHTML=`#${esc(t)}<button type="button" aria-label="${esc(t)} 태그 빼기">✕</button>`;
+    c.querySelector('button').addEventListener('click',()=>{wcDraft.tags.splice(i,1);wcRenderTags();});
+    w.insertBefore(c,inp);
+  });
+  inp.placeholder=wcDraft.tags.length?'태그 더 넣기':'태그 입력 후 엔터 (# 안 써도 돼요)';
+  wcRenderSugg();
+}
+function wallSuggestTags(str,have){
+  const s=String(str||'');const out=[];
+  const add=t=>{t=wallCleanTag(t);if(t&&t.length>=2&&!have.includes(t)&&!out.includes(t))out.push(t);};
+  allMemoTags().forEach(([t])=>{if(s.includes(t))add(t);});
+  TAG_DICT.forEach(t=>{if(s.includes(t))add(t);});
+  const STOP=['고객','가족','우리','보험','이관','가망','신규','기존'];
+  for(const mm of s.matchAll(/([가-힣]{2,4})\s?(?:대표님|대표|고객님|고객|선생님|신부님|수녀님|팀장|과장|부장|원장|님|씨)(?![가-힣])/g)){if(!STOP.includes(mm[1]))add(mm[1]);}
+  return out.slice(0,6);
+}
+function wcRenderSugg(){
+  const w=document.getElementById('__wc-sugg');if(!w||!wcDraft)return;
+  const box=document.getElementById('__wallc');
+  const str=(box.querySelector('#__wc-title').value||'')+'\n'+(box.querySelector('#__wc-text').value||'')+'\n'+((wcDraft.preview&&wcDraft.preview.title)||'');
+  const list=wallSuggestTags(str,wcDraft.tags);
+  if(!list.length){w.innerHTML='';return;}
+  w.innerHTML='<span class="wc-sgl">✨ 추천</span>'+list.map(t=>`<button type="button" class="wc-sg" data-t="${esc(t)}">＋ #${esc(t)}</button>`).join('');
+  w.querySelectorAll('.wc-sg').forEach(b=>b.addEventListener('click',()=>wcAddTag(b.dataset.t)));
+}
+
+// 첫 화면 입력줄의 칸 고르기
+function memoFillSecSel(){
+  const sel=document.getElementById('memo-sec');if(!sel)return;
+  const ss=wallSecs();const cur=ss.some(x=>x.id===sel.value)?sel.value:'gen';
+  sel.innerHTML=ss.map(x=>`<option value="${x.id}">${x.ico} ${esc(x.name)}</option>`).join('');
+  sel.value=cur;
+}
+
+// ── 메모 보기 (읽기 전용 · [편집]을 눌러야 고침) ──
+function wallView(id){
+  const m=ensureMemos().find(x=>x.id===id);if(!m)return;
+  const old=document.getElementById('__wallv');if(old)old.remove();
+  const k=m.kind||'text',c=memoColor(m),p=m.preview||{};
+  const sec=wallSecs().find(x=>x.id===memoSec(m))||WALL_GEN;
+  const colored=k==='text'||(m.color&&m.color!=='white');
+  let media='';
+  if(k==='photo'&&m.fileId)media=`<div class="wv-media wl-photo" title="크게 보기"><img src="https://drive.google.com/thumbnail?id=${encodeURIComponent(m.fileId)}&sz=w1200" alt="${esc(m.title||'사진')}"></div>`;
+  else if(k==='youtube'){const y=ytId(m.url);if(y)media=`<div class="wv-media wl-yt" data-yt="${y}" title="여기서 바로 보기"><img src="https://i.ytimg.com/vi/${y}/hqdefault.jpg" alt=""><span class="wl-play" aria-hidden="true">▶</span></div>`;}
+  else if(k==='link'&&p.img&&wallIsUrl(p.img))media=`<a class="wv-media" href="${esc(m.url)}" target="_blank" rel="noopener"><img src="${esc(p.img)}" alt="" referrerpolicy="no-referrer" onerror="this.parentNode.remove()"></a>`;
+  const title=m.title||p.title||'';
+  const site=(k==='link'||k==='youtube')&&wallIsUrl(m.url)?`<a class="wv-site" href="${esc(m.url)}" target="_blank" rel="noopener">${k==='youtube'?'▶ 유튜브에서 보기':'🔗 '+esc(p.site||wallHost(m.url))+' 열기'} ›</a>`:'';
+  const tags=(m.tags||[]).map(t=>`<span class="wv-tag">#${esc(t)}</span>`).join('');
+  const edited=m.updated&&m.created&&m.updated-m.created>60000?` · ${memoDateLabel(m.updated)} 고침`:'';
+  const d=document.createElement('div');d.id='__wallv';
+  d.innerHTML=`<div class="wv-box" role="dialog" aria-label="메모 보기">
+    <div class="wv-top"><span class="wv-sec">${sec.ico} ${esc(sec.name)}</span><span class="wv-date">${memoDateLabel(m.created)}${edited}</span><button type="button" class="mb-x" data-a="x" aria-label="닫기">✕</button></div>
+    ${media}
+    <div class="wv-in">${title?`<h3 class="wv-t">${esc(title)}</h3>`:''}${m.text?`<div class="wv-x" style="background:${colored?c.bg:'#f7f8f9'}">${esc(m.text)}</div>`:''}${site}${tags?`<div class="wv-tags">${tags}</div>`:''}</div>
+    <div class="wv-foot">
+      <button type="button" data-a="card">📋 카드로</button>
+      <button type="button" data-a="arch">📦 ${m.archived?'꺼내기':'보관'}</button>
+      <button type="button" data-a="del" class="wv-del">삭제</button>
+      <button type="button" class="wc-go" data-a="edit">✏️ 편집</button>
+    </div>
+  </div>`;
+  document.body.appendChild(d);
+  const close=()=>d.remove();
+  bindOverlayClose(d,close);
+  d.querySelector('[data-a="x"]').addEventListener('click',close);
+  d.querySelector('[data-a="edit"]').addEventListener('click',()=>{close();wallCompose(m);});
+  d.querySelector('[data-a="card"]').addEventListener('click',()=>{close();memoToCard(m.id);});
+  d.querySelector('[data-a="arch"]').addEventListener('click',()=>{close();memoArchive(m.id,!m.archived);});
+  d.querySelector('[data-a="del"]').addEventListener('click',async()=>{await deleteMemo(m.id);if(!ensureMemos().some(x=>x.id===m.id))close();});
+  const yt=d.querySelector('.wl-yt');
+  if(yt)yt.addEventListener('click',()=>{if(yt.querySelector('iframe'))return;yt.innerHTML=`<iframe src="https://www.youtube-nocookie.com/embed/${yt.dataset.yt}?autoplay=1&rel=0" title="${esc(title||'유튜브 영상')}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>`;});
+  const ph=d.querySelector('.wl-photo');if(ph)ph.addEventListener('click',()=>wallPhotoBig(m.fileId,m.title));
+  d.tabIndex=-1;d.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();close();}if(e.key==='e'&&!e.target.closest('input,textarea')){e.preventDefault();close();wallCompose(m);}});
+  setTimeout(()=>d.querySelector('[data-a="edit"]').focus(),30);
 }
 
 // ── 칸 직접 만들기 · 이름 바꾸기 · 순서 옮기기 · 지우기 ──
@@ -4871,7 +5024,7 @@ function wallSecDlg(sec){
     <div class="ws-l">아이콘</div>
     <div class="ws-icons">${WALL_ICONS.map(i=>`<button type="button" data-i="${i}" class="${i===ico?'on':''}" aria-label="${i}">${i}</button>`).join('')}</div>
     ${isNew?'':`<div class="ws-row"><span>순서</span><button type="button" class="mb-btn" data-a="left" ${idx<=0?'disabled':''}>← 왼쪽으로</button><button type="button" class="mb-btn" data-a="right" ${idx>=ss.length-1?'disabled':''}>오른쪽으로 →</button></div>`}
-    <div class="ws-btns">${isNew||ss.length<=1?'':`<button type="button" class="ws-del" data-a="del">칸 지우기</button>`}<button type="button" class="wc-cancel" data-a="x">취소</button><button type="button" class="wc-go" data-a="ok">${isNew?'만들기':'저장'}</button></div>
+    <div class="ws-btns">${isNew||ss.length<=1?'':sec.id==='gen'?'<span class="ws-note">기본 칸이라 지울 수 없어요</span>':`<button type="button" class="ws-del" data-a="del">칸 지우기</button>`}<button type="button" class="wc-cancel" data-a="x">취소</button><button type="button" class="wc-go" data-a="ok">${isNew?'만들기':'저장'}</button></div>
   </div>`;
   document.body.appendChild(d);
   const close=()=>d.remove();
@@ -4896,7 +5049,7 @@ function wallSecDlg(sec){
   if(l)l.addEventListener('click',()=>mv(-1));if(r)r.addEventListener('click',()=>mv(1));
   const del=d.querySelector('[data-a="del"]');
   if(del)del.addEventListener('click',async()=>{
-    const rest=ss.filter(x=>x.id!==sec.id);const to=rest.find(x=>x.id==='idea')||rest[0];
+    const rest=ss.filter(x=>x.id!==sec.id);const to=rest.find(x=>x.id==='gen')||rest[0];
     const ok2=await confirm2('칸 지우기',cnt?`"${sec.name}" 칸을 지울까요?\n안에 있던 ${cnt}개는 "${to.name}" 칸으로 옮겨져요. (지워지지 않아요)`:`"${sec.name}" 칸을 지울까요?`,'지우기');
     if(!ok2)return;
     ensureMemos().forEach(m=>{if(memoSec(m)===sec.id){m.sec=to.id;m.updated=Date.now();}});
