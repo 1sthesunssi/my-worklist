@@ -239,7 +239,8 @@ body{font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFo
 @media (max-width:640px){
   .m-only{display:revert!important}
   body{padding-bottom:62px}
-  #app-header .hdr-btn:not(#more-btn):not(#m-search-btn){display:none!important}
+  #app-header .hdr-btn:not(#more-btn):not(#m-search-btn):not(#pin-bell){display:none!important}
+  #app-header #pin-bell[hidden]{display:none!important}
   #m-search-btn{display:inline-flex!important;font-size:16px}
   #hdr-search-wrap{display:none}
   #app-header .hdr-right{margin-left:auto}
@@ -474,6 +475,66 @@ a.wl-site:hover{text-decoration:underline}
 .wv-foot .wc-go{margin-left:auto;background:#0052cc;color:#fff;font-size:14px;padding:10px 20px;border-radius:12px}
 .wv-foot .wc-go:hover{background:#0747a6}
 @media (max-width:640px){#__wallv{padding:0;align-items:flex-end}.wv-box{border-radius:18px 18px 0 0;max-height:94vh}}
+/* 꼭 띄우기 */
+.pin-bell{position:relative}
+.pin-bell[hidden]{display:none}
+#pin-bell-n{position:absolute;top:-4px;right:-5px;background:#e5484d;color:#fff;font-size:10.5px;font-weight:800;border-radius:999px;padding:1px 5px;line-height:1.3}
+.wc-pin{border:1.5px solid #dfe3e8;border-radius:14px;padding:10px 14px;transition:border-color .15s,background .15s}
+.wc-pin.on{border:2px solid #e5484d;background:#fff5f5}
+.wc-pin-h{display:flex;align-items:center;gap:10px;cursor:pointer}
+.wc-pin-t{font-size:14.5px;font-weight:800;color:#42526e}
+.wc-pin.on .wc-pin-t{color:#c9372c}
+.wc-pin-d{font-size:12px;color:#8a94a6}
+.wc-sw{margin-left:auto;appearance:none;-webkit-appearance:none;width:44px;height:26px;border-radius:999px;background:#c1c7d0;position:relative;cursor:pointer;transition:background .15s;flex:none}
+.wc-sw::after{content:'';position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .15s;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.wc-sw:checked{background:#e5484d}
+.wc-sw:checked::after{left:21px}
+.wc-sw:focus-visible{outline:2px solid #0052cc;outline-offset:2px}
+.wc-pin-body{display:none;flex-direction:column;gap:9px;margin-top:10px}
+.wc-pin.on .wc-pin-body{display:flex}
+.wc-pin-row{display:flex;gap:10px}
+.wc-pin-row label{flex:1;display:flex;flex-direction:column;gap:4px;font-size:11.5px;font-weight:700;color:#5e6c84}
+.wc-pin-row label:last-child{flex:0 0 140px}
+.wc-pin-row input{border:1.5px solid #dfe3e8;background:#fff;border-radius:9px;padding:8px 10px;font:inherit;font-size:14px;font-weight:700;color:#172b4d;outline:none}
+.wc-pin-row input:focus{border-color:#0052cc}
+.wc-pin-cal{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:700;color:#172b4d;cursor:pointer}
+.wc-pin-cal input{width:17px;height:17px;accent-color:#0052cc}
+.wc-pin-cal span{font-weight:500;color:#8a94a6}
+.wc-pin-n{font-size:12px;color:#8a94a6}
+.wc-pin-n b{color:#c9372c}
+.wl-pin{display:inline-block;font-size:11.5px;font-weight:800;border-radius:6px;padding:2px 7px;margin-bottom:5px;color:#fff;background:#d9a400;white-space:nowrap}
+.wl-pin.pin-red{background:#e5484d}.wl-pin.pin-org{background:#f76808}
+.wv-top .wl-pin{margin:0}
+.mmn-pin{position:absolute;top:3px;right:4px;font-size:11px;line-height:1}
+.memo-mini-note{position:relative}
+.memo-mini-note.mmn-txt{display:flex;flex-direction:column;white-space:normal;-webkit-line-clamp:unset}
+.mmn-tt{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:none;padding-right:10px}
+.mmn-body{white-space:pre-wrap;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:4;overflow:hidden;min-height:0;flex:0 1 auto}
+.mmn-body.sub{font-size:11.5px;color:rgba(23,43,77,.7);-webkit-line-clamp:3;margin-top:2px}
+.mmn-tags{font-size:11px;font-weight:700;opacity:.75;margin-top:auto;padding-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:none}
+#__pinpop{position:fixed;inset:0;background:rgba(9,30,66,.6);z-index:450;display:flex;align-items:center;justify-content:center;padding:16px;outline:none}
+.pp-box{width:100%;max-width:520px;max-height:92vh;overflow:auto;background:#fff;border-radius:18px;box-shadow:0 24px 60px rgba(0,0,0,.35);animation:pppop .22s ease-out}
+@keyframes pppop{from{transform:translateY(12px) scale(.97);opacity:0}to{transform:none;opacity:1}}
+.pp-head{background:linear-gradient(90deg,#e5484d,#f76808);color:#fff;padding:16px 20px}
+.pp-h{font-size:20px;font-weight:800}
+.pp-sub{font-size:13px;opacity:.92;margin-top:2px}
+.pp-list{padding:16px 18px 6px}
+.pp-item{border-left:5px solid #d9a400;background:#fffbea;border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.pp-item.pin-red{border-color:#e5484d;background:#fff5f5}
+.pp-item.pin-org{border-color:#f76808;background:#fff8f1}
+.pp-meta{display:flex;align-items:center;gap:8px;font-size:11.5px;color:#8a94a6;flex-wrap:wrap}
+.pp-badge{font-size:12px;font-weight:800;color:#fff;background:#d9a400;border-radius:6px;padding:2px 8px}
+.pin-red .pp-badge{background:#e5484d}.pin-org .pp-badge{background:#f76808}
+.pp-t{font-size:16px;font-weight:800;margin-top:6px;color:#172b4d;word-break:break-word}
+.pp-s{font-size:13px;color:#42526e;margin-top:2px}
+.pp-acts{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.pp-acts button{font:inherit;font-size:13px;font-weight:700;background:#fff;border:1px solid #dfe3e8;border-radius:9px;padding:7px 12px;cursor:pointer;color:#172b4d}
+.pp-acts button:hover{background:#f4f5f7}
+.pp-acts .pp-done{background:#1f845a;border-color:#1f845a;color:#fff;font-weight:800}
+.pp-acts .pp-done:hover{background:#216e4e}
+.pp-foot{display:flex;align-items:center;gap:10px;padding:6px 18px 16px;font-size:12px;color:#8a94a6}
+.pp-foot button{margin-left:auto;border:none;font:inherit;font-size:14px;font-weight:700;padding:10px 18px;border-radius:12px;cursor:pointer}
+@media (max-width:640px){#__pinpop{padding:0;align-items:flex-end}.pp-box{border-radius:18px 18px 0 0}.wc-pin-row{flex-direction:column}.wc-pin-row label:last-child{flex:1}.pp-foot span{display:none}}
 /* 붙이기 창 */
 #__wallc{position:fixed;inset:0;background:rgba(9,30,66,.55);z-index:400;display:flex;align-items:center;justify-content:center;padding:16px}
 .wc-box{--wc-bg:#fff;width:100%;max-width:600px;max-height:94vh;overflow:auto;background:#fff;border-radius:20px;box-shadow:0 24px 60px rgba(0,0,0,.3)}
@@ -2087,6 +2148,7 @@ a.wl-site:hover{text-decoration:underline}
   </div>
   <div class="hdr-right">
     <button class="hdr-btn icon-only m-only" id="m-search-btn" onclick="mToggleSearch()" aria-label="검색">🔍</button>
+    <button class="hdr-btn icon-only pin-bell" id="pin-bell" onclick="pinOpen(true)" hidden aria-label="꼭 띄우기 보기">🔔<span id="pin-bell-n"></span></button>
     <button class="hdr-btn icon-only" id="undo-btn" onclick="undoLast()" title="실행취소 (Ctrl+Z)" disabled>↩</button>
     <button class="hdr-btn" id="myday-btn" onclick="openMyDay()">나의 하루<span id="myday-badge" class="hdr-badge" style="display:none"></span></button>
     <button class="hdr-btn" id="planner-btn" onclick="openPlanner()">✍️ 플래너</button>
@@ -4535,7 +4597,7 @@ function renderMemos(){
   if(cnt)cnt.textContent=memos.length?memos.length:'';
   wrap.className='memo-mini';wrap.innerHTML='';
   if(!memos.length){wrap.innerHTML='<div class="memo-mini-empty">아직 메모가 없어요</div>';}
-  memoFillSecSel();
+  memoFillSecSel();renderPinBell();
   const PER=mIsPhone()?40:MEMO_HOME_N;
   const pages=Math.max(1,Math.ceil(memos.length/PER));
   memoHomePage=Math.min(Math.max(0,memoHomePage),pages-1);
@@ -4546,7 +4608,11 @@ function renderMemos(){
     n.style.background=(!m.kind||(m.color&&m.color!=='white'))?c.bg:'#fff';n.title='눌러서 보기';
     const k=m.kind||'text';
     if(k==='text'){
-      n.textContent=(m.title?m.title+'\n':'')+(m.text||'')+((m.tags||[]).length?'\n'+m.tags.map(t=>'#'+t).join(' '):'');
+      const tt=(m.title||'').trim();let body=(m.text||'').trim();
+      if(tt&&body.startsWith(tt))body=body.slice(tt.length).replace(/^[\s\-—:·]+/,'');
+      const tg=(m.tags||[]).map(t=>'#'+t).join(' ');
+      n.classList.add('mmn-txt');
+      n.innerHTML=`${m.pin?'<span class="mmn-pin" title="꼭 띄우기">🔔</span>':''}${tt?`<div class="mmn-tt">${esc(tt)}</div>`:''}${body?`<div class="mmn-body${tt?' sub':''}">${esc(body)}</div>`:''}${tg?`<div class="mmn-tags">${esc(tg)}</div>`:''}`;
     }else{
       // 사진·유튜브·링크: 왼쪽 위 작은 썸네일 + 제목 (시안 ⑤-③)
       let th='';const y=k==='youtube'?ytId(m.url):'';const pi=m.preview&&m.preview.img;
@@ -4555,7 +4621,7 @@ function renderMemos(){
       else if(k==='link'&&pi&&wallIsUrl(pi))th=`<img src="${esc(pi)}" alt="" referrerpolicy="no-referrer" onerror="this.parentNode.remove()">`;
       const sub=(k==='photo'?'🖼️ 사진':k==='youtube'?'▶️ 유튜브':'🔗 '+((m.preview&&m.preview.site)||wallHost(m.url)))+((m.tags||[]).length?' · '+m.tags.map(t=>'#'+t).join(' '):'');
       n.classList.add('mmn-rich');
-      n.innerHTML=`<div class="mmn-top">${th?`<span class="mmn-th">${th}</span>`:''}<div class="mmn-t">${esc(memoLabel(m))}</div></div><div class="mmn-sub">${esc(sub)}</div>`;
+      n.innerHTML=`${m.pin?'<span class="mmn-pin" title="꼭 띄우기">🔔</span>':''}<div class="mmn-top">${th?`<span class="mmn-th">${th}</span>`:''}<div class="mmn-t">${esc(memoLabel(m))}</div></div><div class="mmn-sub">${esc(sub)}</div>`;
     }
     n.addEventListener('click',()=>wallView(m.id));
     memoBindDrag(n,m.id);
@@ -4591,6 +4657,7 @@ async function deleteMemo(id){
   const ok=await confirm2('메모 삭제',`"${memoLabel(m).slice(0,40)}${memoLabel(m).length>40?'…':''}"\n삭제할까요?${m.fileId?'\n(사진은 드라이브 MyWorklist_메모 폴더에 그대로 남아요)':''}`,'삭제');
   if(!ok)return;
   state.memos=ensureMemos().filter(x=>x.id!==id);
+  if(m.calEv)calRwApi('DELETE',m.calEv,null,'primary').catch(()=>{});
   saveState();renderMemos();
   showToast('🗑️','메모를 지웠어요.',1800);
 }
@@ -4735,7 +4802,7 @@ function wallCardEl(m){
       <button type="button" class="memo-act" data-a="card" title="카드로 만들기" aria-label="카드로 만들기">${svgIcon('filecheck',15)}</button>
       <button type="button" class="memo-act" data-a="arch" title="${m.archived?'꺼내기':'보관하기'}" aria-label="${m.archived?'꺼내기':'보관하기'}">${svgIcon(m.archived?'refresh':'folder',15)}</button>
       <button type="button" class="memo-act del" data-a="del" title="삭제" aria-label="삭제">${svgIcon('trash',15)}</button></div>
-    ${media}<div class="wl-in" title="눌러서 보기">${title?`<div class="wl-t">${esc(title)}</div>`:''}${m.text?`<div class="wl-x">${esc(m.text)}</div>`:''}${site}
+    ${media}<div class="wl-in" title="눌러서 보기">${m.pin?`<div class="wl-pin pin-${pinLevel(pinDday(m))}">🔔 ${pinLabel(pinDday(m))}</div>`:''}${title?`<div class="wl-t">${esc(title)}</div>`:''}${m.text?`<div class="wl-x">${esc(m.text)}</div>`:''}${site}
     <div class="mb-meta" style="color:${plain||m.color==='white'?'#5e6c84':c.fg}">${tags}<span class="mb-date">${memoDateLabel(m.created)}</span></div></div>`;
   memoBindDrag(el,m.id);
   el.querySelector('.wl-in').addEventListener('click',e=>{if(e.target.closest('a,.mb-tag'))return;wallView(m.id);});
@@ -4789,6 +4856,14 @@ function wallCompose(src){
       <div class="wc-prev" id="__wc-prev"></div>
       <textarea id="__wc-text" class="wc-text" aria-label="내용" placeholder="무엇이든 적어 보세요…">${esc(val)}</textarea>
       <div class="wc-tagbox"><div class="wc-tagl">태그</div><div class="wc-tags" id="__wc-tags"><input id="__wc-tagin" type="text" maxlength="20" placeholder="태그 입력 후 엔터 (# 안 써도 돼요)" aria-label="태그 입력"></div><div class="wc-sugg" id="__wc-sugg"></div></div>
+      <div class="wc-pin" id="__wc-pin">
+        <label class="wc-pin-h"><span class="wc-pin-t">🔔 꼭 띄우기</span><span class="wc-pin-d">앱을 켤 때마다 화면에 떠요</span><input type="checkbox" id="__wc-pinon" class="wc-sw" role="switch" aria-label="꼭 띄우기"></label>
+        <div class="wc-pin-body">
+          <div class="wc-pin-row"><label>마감 날짜<input type="date" id="__wc-due"></label><label>시간 (선택)<input type="time" id="__wc-time"></label></div>
+          <label class="wc-pin-cal"><input type="checkbox" id="__wc-pincal" checked> 구글 캘린더에도 알림 넣기 <span>(앱을 안 켜도 폰에 알림)</span></label>
+          <div class="wc-pin-n" id="__wc-pinn"></div>
+        </div>
+      </div>
       <div class="wc-foot"><span>색</span><span class="wc-dots"></span><span class="wc-tip">Ctrl+Enter 저장</span></div>
     </div>
     <div class="wc-btns"><button type="button" class="wc-cancel" id="__wc-cancel">취소</button><button type="button" class="wc-go" id="__wc-go">저장</button></div>
@@ -4838,7 +4913,7 @@ function wallCompose(src){
   d.querySelector('#__wc-tags').addEventListener('click',e=>{if(e.target.id==='__wc-tags')tagIn.focus();});
   let sgT=null;const sgLater=()=>{clearTimeout(sgT);sgT=setTimeout(wcRenderSugg,250);};
   ta.addEventListener('input',sgLater);d.querySelector('#__wc-title').addEventListener('input',sgLater);
-  wcRenderDots();wcRenderPrev();wcRenderTags();
+  wcRenderDots();wcRenderPrev();wcRenderTags();wcInitPin(d,isEdit?src:null);
   setTimeout(()=>(isEdit?ta:d.querySelector('#__wc-title')).focus(),30);
 }
 function wcColorKey(){return wcDraft.color||(wcDraft.kind==='text'?'yellow':'white');}
@@ -4901,20 +4976,27 @@ async function wcSave(){
     }catch(e){console.error(e);go.disabled=false;go.textContent='저장';showToast('⚠️','사진을 드라이브에 올리지 못했어요. 드라이브 연결을 확인해 주세요.',3200);return;}
     if(!wcDraft||!document.getElementById('__wallc'))return;
   }
+  const pinOn=box.querySelector('#__wc-pinon').checked;
+  const pinDue=box.querySelector('#__wc-due').value||localDateStr(new Date());
+  const pinTime=box.querySelector('#__wc-time').value||'';
+  const pinCal=box.querySelector('#__wc-pincal').checked;
   const pv=d.preview&&!d.preview.loading?d.preview:null;
   const rec={sec:box.querySelector('#__wc-sec').value,kind:d.kind,title,text,tags,url:(d.kind==='link'||d.kind==='youtube')?d.url:'',preview:(d.kind==='link'||d.kind==='youtube')?pv:null,fileId:d.kind==='photo'?fileId:'',color:d.color};
   Object.keys(rec).forEach(k=>{if(rec[k]===''||rec[k]===null)delete rec[k];});
   if(rec.kind==='text')delete rec.kind;
-  const now=Date.now();
+  if(pinOn){rec.pin=true;rec.due=pinDue;if(pinTime)rec.dueTime=pinTime;rec.pinCal=pinCal;}
+  const now=Date.now();let saved=null;
   if(d.id){
     const m=ensureMemos().find(x=>x.id===d.id);
-    if(m){['kind','title','url','preview','fileId','color'].forEach(k=>delete m[k]);Object.assign(m,rec,{text:rec.text||'',updated:now});}
+    if(m){['kind','title','url','preview','fileId','color','pin','due','dueTime','pinCal','snooze'].forEach(k=>delete m[k]);Object.assign(m,rec,{text:rec.text||'',updated:now});saved=m;}
   }else{
-    ensureMemos().unshift({id:uid(),...rec,text:rec.text||'',tags:rec.tags||[],created:now,updated:now});
+    saved={id:uid(),...rec,text:rec.text||'',tags:rec.tags||[],created:now,updated:now};
+    ensureMemos().unshift(saved);
   }
   if(d.localUrl)URL.revokeObjectURL(d.localUrl);
   wcDraft=null;box.remove();
   saveState();renderMemos();
+  if(saved&&((saved.pin&&saved.pinCal)||saved.calEv))pinSyncCal(saved);
   showToast('📌',d.id?'고쳤어요.':'메모를 저장했어요.',1600);
 }
 
@@ -4960,6 +5042,110 @@ function wcRenderSugg(){
   w.querySelectorAll('.wc-sg').forEach(b=>b.addEventListener('click',()=>wcAddTag(b.dataset.t)));
 }
 
+// ── 🔔 꼭 띄우기 — 중요한 것 중에 더 중요한 것 (최대 5개) ──
+//  메모에 {pin:true, due:'YYYY-MM-DD', dueTime:'HH:MM', pinCal:true, calEv:'구글 일정 id', snooze:'YYYY-MM-DD'}
+const PIN_MAX=5;
+function pinList(){return ensureMemos().filter(m=>m.pin&&!m.archived);}
+function pinDday(m){if(!m.due)return 99;const t=new Date(localDateStr(new Date())+'T00:00:00'),d=new Date(m.due+'T00:00:00');return Math.round((d-t)/86400000);}
+function pinLevel(dd){return dd<=0?'red':dd<=2?'org':'yel';}
+function pinLabel(dd){return dd<0?`${-dd}일 지남`:dd===0?'오늘 마감':`D-${dd}`;}
+function pinDueText(m){if(!m.due)return '꼭 띄우기';const d=new Date(m.due+'T00:00:00');return `${d.getMonth()+1}월 ${d.getDate()}일${m.dueTime?' '+m.dueTime:''} · ${pinLabel(pinDday(m))}`;}
+function renderPinBell(){
+  const b=document.getElementById('pin-bell');if(!b)return;
+  const n=pinList().length;b.hidden=!n;
+  const c=document.getElementById('pin-bell-n');if(c)c.textContent=n;
+  b.title=`꼭 띄우기 ${n}개 보기`;
+}
+function wcInitPin(d,src){
+  const on=d.querySelector('#__wc-pinon'),box=d.querySelector('#__wc-pin'),due=d.querySelector('#__wc-due'),tm=d.querySelector('#__wc-time'),cal=d.querySelector('#__wc-pincal'),nEl=d.querySelector('#__wc-pinn');
+  const others=pinList().filter(m=>!src||m.id!==src.id).length;
+  on.checked=!!(src&&src.pin);due.value=(src&&src.due)||localDateStr(new Date());tm.value=(src&&src.dueTime)||'';
+  cal.checked=src&&src.pin?src.pinCal!==false:true;
+  const sync=()=>{box.classList.toggle('on',on.checked);nEl.innerHTML=`지금 꼭 띄우기 <b>${others+(on.checked?1:0)} / ${PIN_MAX}</b>개 사용 중`;};
+  on.addEventListener('change',()=>{
+    if(on.checked&&others>=PIN_MAX){on.checked=false;showToast('🔔',`꼭 띄우기는 ${PIN_MAX}개까지예요. 다른 것을 [✓ 했어요]로 끝내 주세요.`,3200);}
+    sync();if(on.checked)due.focus();
+  });
+  sync();
+}
+// 구글 캘린더(기본 캘린더)에 알림 일정 넣기·고치기·지우기 — 시간이 없으면 오전 9시, 하루 전과 그 시각에 폰 알림
+async function pinSyncCal(m){
+  try{
+    if(m.pin&&m.pinCal&&m.due){
+      const t=m.dueTime||'09:00';
+      const st=new Date(m.due+'T'+t+':00'),en=new Date(st.getTime()+30*60000);
+      const hm=x=>String(x.getHours()).padStart(2,'0')+':'+String(x.getMinutes()).padStart(2,'0');
+      const tz=schTz();
+      const body={summary:'🔔 '+memoLabel(m).split('\n')[0].slice(0,80),
+        description:((m.text||'')+'\n\n— My Worklist 메모 · 꼭 띄우기').trim(),
+        start:{dateTime:m.due+'T'+t+':00',timeZone:tz},end:{dateTime:localDateStr(en)+'T'+hm(en)+':00',timeZone:tz},
+        reminders:{useDefault:false,overrides:[{method:'popup',minutes:0},{method:'popup',minutes:1440}]},
+        extendedProperties:{private:{mwMemo:m.id}}};
+      if(m.calEv){try{await calRwApi('PATCH',m.calEv,body,'primary');return;}catch(e){if(e.status!==404&&e.status!==410)throw e;}}
+      const j=await calRwApi('POST',null,body,'primary');
+      if(j&&j.id){m.calEv=j.id;saveState();showToast('📅','구글 캘린더에도 알림을 넣었어요.',2200);}
+    }else if(m.calEv){
+      try{await calRwApi('DELETE',m.calEv,null,'primary');}catch(e){}
+      delete m.calEv;saveState();
+    }
+  }catch(e){showToast('⚠️','구글 캘린더에 알림을 넣지 못했어요. '+((e&&e.message)||''),4500);}
+}
+let pinAlerted=new Set();
+function pinOpen(force){
+  const today=localDateStr(new Date());
+  let list=pinList();
+  if(!force)list=list.filter(m=>!m.snooze||m.snooze<=today);
+  const old=document.getElementById('__pinpop');if(old)old.remove();
+  if(!list.length){if(force)showToast('🔔','꼭 띄울 것이 없어요.',1600);return;}
+  list.sort((a,b)=>pinDday(a)-pinDday(b)||String(a.dueTime||'99').localeCompare(String(b.dueTime||'99')));
+  const now=new Date();const W='일월화수목금토';
+  const d=document.createElement('div');d.id='__pinpop';
+  const item=m=>{
+    const dd=pinDday(m),lv=pinLevel(dd);const sec=wallSecs().find(x=>x.id===memoSec(m))||WALL_GEN;
+    let bt=(m.title&&m.text?m.text.trim():'');if(bt.startsWith(m.title.trim()))bt=bt.slice(m.title.trim().length).replace(/^[\s\-—:·]+/,'');
+    const sub=[bt.split('\n')[0].slice(0,70),m.dueTime?'⏰ '+m.dueTime:''].filter(Boolean).join(' · ');
+    return `<div class="pp-item pin-${lv}" data-id="${m.id}">
+      <div class="pp-meta"><span class="pp-badge">${pinLabel(dd)}</span><span>📝 메모 · ${sec.ico} ${esc(sec.name)}</span>${m.snooze&&m.snooze>today?'<span>· 내일 다시로 미룸</span>':''}</div>
+      <div class="pp-t">${esc(memoLabel(m).split('\n')[0])}</div>${sub?`<div class="pp-s">${esc(sub)}</div>`:''}
+      <div class="pp-acts"><button type="button" class="pp-done" data-a="done">✓ 했어요</button><button type="button" data-a="snooze">내일 다시</button><button type="button" data-a="open">열어 보기</button></div>
+    </div>`;
+  };
+  d.innerHTML=`<div class="pp-box" role="alertdialog" aria-label="잊지 마세요">
+    <div class="pp-head"><div class="pp-h">🔔 잊지 마세요!</div><div class="pp-sub">${now.getMonth()+1}월 ${now.getDate()}일 (${W[now.getDay()]}) · 꼭 해야 할 일 <b id="__pp-n">${list.length}</b>개</div></div>
+    <div class="pp-list">${list.map(item).join('')}</div>
+    <div class="pp-foot"><span>[✓ 했어요]를 누를 때까지 앱을 켤 때마다 떠요</span><button type="button" class="wc-cancel" data-a="close">닫기</button></div>
+  </div>`;
+  document.body.appendChild(d);
+  const close=()=>d.remove();
+  bindOverlayClose(d,close);
+  d.querySelector('[data-a="close"]').addEventListener('click',close);
+  d.tabIndex=-1;d.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();close();}});
+  const left=()=>{const n=d.querySelectorAll('.pp-item').length;const c=d.querySelector('#__pp-n');if(c)c.textContent=n;if(!n)close();};
+  d.querySelectorAll('.pp-item').forEach(el=>{
+    const m=ensureMemos().find(x=>x.id===el.dataset.id);if(!m)return;
+    el.querySelector('[data-a="done"]').addEventListener('click',()=>{
+      m.pin=false;m.pinDoneAt=Date.now();delete m.snooze;m.updated=Date.now();
+      if(m.calEv){calRwApi('DELETE',m.calEv,null,'primary').catch(()=>{});delete m.calEv;}
+      saveState();renderMemos();el.remove();left();showToast('👏','잘했어요! 하나 끝냈어요.',1800);
+    });
+    el.querySelector('[data-a="snooze"]').addEventListener('click',()=>{
+      const t=new Date();t.setDate(t.getDate()+1);m.snooze=localDateStr(t);saveState();el.remove();left();
+      showToast('⏭️','내일 앱을 켤 때 다시 띄울게요.',1800);
+    });
+    el.querySelector('[data-a="open"]').addEventListener('click',()=>{close();wallView(m.id);});
+  });
+  setTimeout(()=>{const b=d.querySelector('.pp-done');if(b)b.focus();},30);
+}
+// 앱을 켤 때 한 번 + 정한 시각이 되면 다시
+window.addEventListener('load',()=>setTimeout(()=>{try{renderPinBell();pinOpen(false);}catch(e){}},2500));
+setInterval(()=>{
+  try{
+    const now=new Date(),today=localDateStr(now),hm=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+    const due=pinList().filter(m=>m.due===today&&m.dueTime&&m.dueTime<=hm&&!pinAlerted.has(m.id+today));
+    if(due.length){due.forEach(m=>pinAlerted.add(m.id+today));pinOpen(true);}
+  }catch(e){}
+},30000);
+
 // 첫 화면 입력줄의 칸 고르기
 function memoFillSecSel(){
   const sel=document.getElementById('memo-sec');if(!sel)return;
@@ -4985,7 +5171,7 @@ function wallView(id){
   const edited=m.updated&&m.created&&m.updated-m.created>60000?` · ${memoDateLabel(m.updated)} 고침`:'';
   const d=document.createElement('div');d.id='__wallv';
   d.innerHTML=`<div class="wv-box" role="dialog" aria-label="메모 보기">
-    <div class="wv-top"><span class="wv-sec">${sec.ico} ${esc(sec.name)}</span><span class="wv-date">${memoDateLabel(m.created)}${edited}</span><button type="button" class="mb-x" data-a="x" aria-label="닫기">✕</button></div>
+    <div class="wv-top"><span class="wv-sec">${sec.ico} ${esc(sec.name)}</span><span class="wv-date">${memoDateLabel(m.created)}${edited}</span>${m.pin?`<span class="wl-pin pin-${pinLevel(pinDday(m))}">🔔 ${pinDueText(m)}</span>`:''}<button type="button" class="mb-x" data-a="x" aria-label="닫기">✕</button></div>
     ${media}
     <div class="wv-in">${title?`<h3 class="wv-t">${esc(title)}</h3>`:''}${m.text?`<div class="wv-x" style="background:${colored?c.bg:'#f7f8f9'}">${esc(m.text)}</div>`:''}${site}${tags?`<div class="wv-tags">${tags}</div>`:''}</div>
     <div class="wv-foot">
