@@ -4609,7 +4609,6 @@ function renderMemos(){
     const k=m.kind||'text';
     if(k==='text'){
       const tt=(m.title||'').trim();let body=(m.text||'').trim();
-      if(tt&&body.startsWith(tt))body=body.slice(tt.length).replace(/^[\s\-—:·]+/,'');
       const tg=(m.tags||[]).map(t=>'#'+t).join(' ');
       n.classList.add('mmn-txt');
       n.innerHTML=`${m.pin?'<span class="mmn-pin" title="꼭 띄우기">🔔</span>':''}${tt?`<div class="mmn-tt">${esc(tt)}</div>`:''}${body?`<div class="mmn-body${tt?' sub':''}">${esc(body)}</div>`:''}${tg?`<div class="mmn-tags">${esc(tg)}</div>`:''}`;
@@ -5102,7 +5101,7 @@ function pinOpen(force){
   const d=document.createElement('div');d.id='__pinpop';
   const item=m=>{
     const dd=pinDday(m),lv=pinLevel(dd);const sec=wallSecs().find(x=>x.id===memoSec(m))||WALL_GEN;
-    let bt=(m.title&&m.text?m.text.trim():'');if(bt.startsWith(m.title.trim()))bt=bt.slice(m.title.trim().length).replace(/^[\s\-—:·]+/,'');
+    let bt=(m.title&&m.text?m.text.trim():'');
     const sub=[bt.split('\n')[0].slice(0,70),m.dueTime?'⏰ '+m.dueTime:''].filter(Boolean).join(' · ');
     return `<div class="pp-item pin-${lv}" data-id="${m.id}">
       <div class="pp-meta"><span class="pp-badge">${pinLabel(dd)}</span><span>📝 메모 · ${sec.ico} ${esc(sec.name)}</span>${m.snooze&&m.snooze>today?'<span>· 내일 다시로 미룸</span>':''}</div>
