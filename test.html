@@ -2488,9 +2488,9 @@ a.wl-site:hover{text-decoration:underline}
         <div id="modal-cinfo-section" style="display:none">
           <div class="ci-hd">
             <span class="ci-tt">👤 고객정보</span>
-            <button type="button" id="ci-mask-btn" onclick="ciToggleMask()">가리기</button>
-            <button type="button" onclick="ciOpenPaste()">📋 DB 캡처로 채우기</button>
+            <button type="button" onclick="ciOpenPaste()">📋 이미지로 입력</button>
             <button type="button" onclick="ciOpenEdit()">✎ 직접 입력</button>
+            <button type="button" id="ci-mask-btn" onclick="ciToggleMask()">개인정보 가리기</button>
           </div>
           <div id="ci-rows"></div>
           <div id="ci-paste" tabindex="0" style="display:none">여기를 한 번 누르고 <b>Ctrl+V</b>로 DB 화면 캡처를 붙여 넣어 주세요.<br><span style="font-size:12px">차량 표는 스크롤바 없이 끝까지 보이게 캡처해야 해요.</span><br><button type="button" class="ci-btn" style="margin-top:8px" onclick="document.getElementById('ci-file').click()">또는 파일 선택</button><input type="file" id="ci-file" accept="image/*" style="display:none"></div>
@@ -11727,7 +11727,7 @@ function ciData(card){return(card&&card.cinfo)||{};}
 function ciHas(card){const i=ciData(card);return Object.keys(CI_LABELS).some(k=>i[k])||(i.cars||[]).length>0||!!i.note;}
 function ciMaskVal(v){return String(v).replace(/\d[\d\- ]{4,}\d/g,m=>m.replace(/\d(?=(?:\D*\d){3})/g,'•'));}
 function ciShow(){ciOpen=true;const card=getActiveCard();if(card)ciRender(card);const s=document.getElementById('modal-cinfo-section');if(s)setTimeout(()=>s.scrollIntoView({behavior:'smooth',block:'nearest'}),50);}
-function ciToggleMask(){ciMasked=!ciMasked;const b=document.getElementById('ci-mask-btn');if(b)b.textContent=ciMasked?'보이기':'가리기';const c=getActiveCard();if(c)ciRows(c);}
+function ciToggleMask(){ciMasked=!ciMasked;const b=document.getElementById('ci-mask-btn');if(b)b.textContent=ciMasked?'개인정보 보이기':'개인정보 가리기';const c=getActiveCard();if(c)ciRows(c);}
 function ciRows(card){
   const i=ciData(card);const out=[];
   const row=(lab,val,copy,sub,link,tip)=>out.push('<div class="ci-row"><span class="ci-k">'+ciEsc(lab)+'</span><span class="ci-v" style="white-space:pre-wrap">'+(link?'<a href="'+ciEsc(link)+'"'+(/^https?:/.test(link)?' target="_blank" rel="noopener"':'')+' title="'+ciEsc(tip||'')+'">'+ciEsc(val)+'</a>':ciEsc(val))+(sub?'<span class="ci-s">'+ciEsc(sub)+'</span>':'')+'</span><button type="button" class="ci-cp" data-ci-copy="'+ciEsc(copy)+'">복사</button></div>');
