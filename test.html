@@ -2157,6 +2157,13 @@ a.wl-site:hover{text-decoration:underline}
 .ci-row:hover{background:#f4f6f9}
 .ci-k{width:64px;flex:none;color:var(--muted);font-size:12.5px}
 .ci-v{flex:1;min-width:0;word-break:break-all;font-variant-numeric:tabular-nums}
+.ci-car{display:flex;gap:0;align-items:baseline}
+.ci-c1{flex:none;width:112px;font-size:14px}
+.ci-c2{flex:none;width:92px;font-size:12px;color:var(--muted)}
+.ci-c3{flex:none;font-size:12px;color:var(--muted)}
+.ci-remark-wrap{margin-top:8px}
+.ci-remark-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px}
+.ci-remark{border:1px solid #d5dae1;border-radius:8px;background:#fafbfc;padding:6px 9px;font-size:13px;line-height:1.45;white-space:pre-wrap;word-break:break-all;color:#344563}
 .ci-s{margin-left:6px;font-size:12px;color:var(--muted)}
 .ci-cp{font-size:11.5px;line-height:1.3;padding:0 8px;border:1px solid #d5dae1;border-radius:6px;background:#fff;cursor:pointer;color:#344563}
 .ci-sub{margin-top:6px;padding-top:6px;border-top:1px dashed #e4e7eb}
@@ -11713,7 +11720,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
 const CI_LABELS={name:'이름',rrn:'주민번호',phone:'전화번호',carrier:'통신사',addr:'주소',job:'직업',remark:'비고',account:'계좌',cardNo:'카드번호',email:'이메일'};
 const CI_SECRET={rrn:1,account:1,cardNo:1,remark:1};
 const CI_ORDER_A=['name','rrn','phone','email','carrier','addr','job'];
-const CI_ORDER_B=['remark','account','cardNo'];
+const CI_ORDER_B=['account','cardNo'];
 let ciMasked=false,ciOpen=false,ciPending=null,ciTessP=null,ciW=null,ciBusy=false,ciSaveT=null;
 function ciEsc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function ciData(card){return(card&&card.cinfo)||{};}
@@ -11723,13 +11730,20 @@ function ciShow(){ciOpen=true;const card=getActiveCard();if(card)ciRender(card);
 function ciToggleMask(){ciMasked=!ciMasked;const b=document.getElementById('ci-mask-btn');if(b)b.textContent=ciMasked?'보이기':'가리기';const c=getActiveCard();if(c)ciRows(c);}
 function ciRows(card){
   const i=ciData(card);const out=[];
-  const row=(lab,val,copy,sub,link)=>out.push('<div class="ci-row"><span class="ci-k">'+ciEsc(lab)+'</span><span class="ci-v" style="white-space:pre-wrap">'+(link?'<a href="'+ciEsc(link)+'" target="_blank" rel="noopener" title="누르면 Gmail 쓰기 창이 열려요">'+ciEsc(val)+'</a>':ciEsc(val))+(sub?'<span class="ci-s">'+ciEsc(sub)+'</span>':'')+'</span><button type="button" class="ci-cp" data-ci-copy="'+ciEsc(copy)+'">복사</button></div>');
+  const row=(lab,val,copy,sub,link,tip)=>out.push('<div class="ci-row"><span class="ci-k">'+ciEsc(lab)+'</span><span class="ci-v" style="white-space:pre-wrap">'+(link?'<a href="'+ciEsc(link)+'"'+(/^https?:/.test(link)?' target="_blank" rel="noopener"':'')+' title="'+ciEsc(tip||'')+'">'+ciEsc(val)+'</a>':ciEsc(val))+(sub?'<span class="ci-s">'+ciEsc(sub)+'</span>':'')+'</span><button type="button" class="ci-cp" data-ci-copy="'+ciEsc(copy)+'">복사</button></div>');
   const show=k=>CI_SECRET[k]&&ciMasked?ciMaskVal(i[k]):i[k];
+  const carRow=(lab,c)=>out.push('<div class="ci-row"><span class="ci-k">'+ciEsc(lab)+'</span><span class="ci-v ci-car"><span class="ci-c1">'+ciEsc(c.no||c.raw||'(번호 직접 입력)')+'</span><span class="ci-c2">'+(ciCarMd(c)?'갱신일 '+ciEsc(ciCarMd(c)):'')+'</span><span class="ci-c3">'+(c.type?ciEsc(c.type):'')+'</span></span><button type="button" class="ci-cp" data-ci-copy="'+ciEsc(c.no||c.raw||'')+'">복사</button></div>');
   CI_ORDER_A.forEach(k=>{
-    if(i[k])row(CI_LABELS[k],show(k),i[k],'',k==='email'&&/@/.test(i[k])?ciMailHref(i[k]):'');
-    if(k==='job'){const cars=(i.cars||[]).filter(c=>c&&(c.no||c.md||c.exp||c.raw));cars.forEach((c,n)=>row('차량정보'+(cars.length>1?' '+(n+1):''),c.no||c.raw||'(번호 직접 입력)',c.no||c.raw||'',ciCarSub(c)));}
+    if(i[k]){
+      let link='',tip='';
+      if(k==='email'&&/@/.test(i[k])){link=ciMailHref(i[k]);tip='누르면 Gmail 쓰기 창이 열려요';}
+      if(k==='phone'){const d=String(i[k]).replace(/[^0-9+]/g,'');if(d){link='tel:'+d;tip='누르면 전화를 걸어요';}}
+      row(CI_LABELS[k],show(k),i[k],'',link,tip);
+    }
+    if(k==='job'){const cars=(i.cars||[]).filter(c=>c&&(c.no||c.md||c.exp||c.raw));cars.forEach((c,n)=>carRow('차량정보'+(cars.length>1?' '+(n+1):''),c));}
   });
   CI_ORDER_B.forEach(k=>{if(i[k])row(CI_LABELS[k],show(k),i[k]);});
+  if(i.remark)out.push('<div class="ci-remark-wrap"><div class="ci-remark-hd"><span class="ci-k" style="width:auto">비고</span><button type="button" class="ci-cp" data-ci-copy="'+ciEsc(i.remark)+'">복사</button></div><div class="ci-remark">'+ciEsc(show('remark'))+'</div></div>');
   document.getElementById('ci-rows').innerHTML=out.join('');
 }
 function ciRender(card){
@@ -11964,9 +11978,9 @@ function ciShowConfirm(out){
   R('job','직업',F.job,I.job,G.job);
   out.cars.forEach((c,n)=>R('car'+n,'차량정보'+(out.cars.length>1?' '+(n+1):''),c.raw||[c.no,c.type,ciCarMd(c)].filter(Boolean).join(' '),c.img,'번호는 항상 원본과 대조해 주세요'));
   if(!out.cars.length)rows.push('<div class="ci-cf-row empty"><span class="lb">차량정보</span><div style="color:var(--muted)">표에서 차량을 찾지 못했어요 · 직접 입력에서 적어 주세요</div><span></span></div>');
-  R('remark','비고',F.remark||'',I.remark,'');
   R('account','계좌',F.account||'',I.account,'');
   R('cardNo','카드번호',F.cardNo||'',I.cardNo,'');
+  R('remark','비고',F.remark||'',I.remark,'');
   const box=document.getElementById('ci-confirm');
   box.innerHTML='<div style="font-size:14px;font-weight:700;margin:8px 0 4px">📋 캡처를 읽었어요. 틀린 곳만 고쳐 주세요</div>'+rows.join('')+'<div style="font-size:12px;color:var(--muted);margin-top:6px">읽은 값은 틀렸어도 그대로 채워 둬요. 고쳐서 쓰세요. 비어 있는 칸은 기존 값을 그대로 두고, 가입보험은 읽지 않아요.</div><div class="ci-acts"><button type="button" class="ci-btn" onclick="ciCancelConfirm()">취소</button><button type="button" class="ci-btn" style="border-color:var(--accent);color:var(--accent);font-weight:700" onclick="ciApply()">카드에 반영</button></div>';
   box.style.display='';
@@ -11992,7 +12006,7 @@ function ciOpenEdit(){
   const i=ciData(card);
   const f=k=>'<span class="lb">'+CI_LABELS[k]+'</span><input type="text" data-ci-e="'+k+'" value="'+ciEsc(i[k]||'')+'">';
   const box=document.getElementById('ci-edit');
-  box.innerHTML='<div class="ci-ed-grid">'+['name','rrn','phone','email','carrier','addr','job'].map(f).join('')+'<span class="lb">차량정보</span><div><div id="ci-car-list">'+((i.cars&&i.cars.length)?i.cars:[{}]).map(ciCarRowHtml).join('')+'</div><button type="button" class="ci-btn" onclick="ciAddCar()">＋ 차량 추가</button></div>'+['remark','account','cardNo'].map(k=>k==='remark'?'<span class="lb">비고</span><textarea data-ci-e="remark" rows="3">'+ciEsc(i.remark||'')+'</textarea>':f(k)).join('')+'</div><div class="ci-acts"><button type="button" class="ci-btn" onclick="document.getElementById(\'ci-edit\').style.display=\'none\'">취소</button><button type="button" class="ci-btn" style="border-color:var(--accent);color:var(--accent);font-weight:700" onclick="ciSaveEdit()">저장</button></div>';
+  box.innerHTML='<div class="ci-ed-grid">'+['name','rrn','phone','email','carrier','addr','job'].map(f).join('')+'<span class="lb">차량정보</span><div><div id="ci-car-list">'+((i.cars&&i.cars.length)?i.cars:[{}]).map(ciCarRowHtml).join('')+'</div><button type="button" class="ci-btn" onclick="ciAddCar()">＋ 차량 추가</button></div>'+['account','cardNo','remark'].map(k=>k==='remark'?'<span class="lb">비고</span><textarea data-ci-e="remark" rows="3">'+ciEsc(i.remark||'')+'</textarea>':f(k)).join('')+'</div><div class="ci-acts"><button type="button" class="ci-btn" onclick="document.getElementById(\'ci-edit\').style.display=\'none\'">취소</button><button type="button" class="ci-btn" style="border-color:var(--accent);color:var(--accent);font-weight:700" onclick="ciSaveEdit()">저장</button></div>';
   box.style.display='';
 }
 function ciCarRowHtml(c){
