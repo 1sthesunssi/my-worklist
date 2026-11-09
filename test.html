@@ -11948,7 +11948,7 @@ function ciShowConfirm(out){
   document.getElementById('ci-paste').style.display='none';
   const cur=ciData(getActiveCard());
   const rows=[];
-  const R=(key,lab,val,img,flag,keepNote)=>rows.push('<div class="ci-cf-row'+(flag?' warn':'')+(val?'':' empty')+'"><span class="lb">'+lab+'</span><div>'+(key==='remark'?'<textarea data-ci-f="remark" rows="3" placeholder="비어 있음 · 직접 채우기" style="width:100%;box-sizing:border-box;padding:5px 8px;border:1px solid #c1c7d0;border-radius:6px;font-size:13.5px;font-family:inherit">'+ciEsc(val)+'</textarea>':'<input type="text" data-ci-f="'+key+'" value="'+ciEsc(val)+'" placeholder="'+(val?'':'비어 있음 · 직접 채우기')+'">')+(flag?'<span class="ci-flag">'+ciEsc(flag)+'</span>':'')+(keepNote||'')+'</div>'+(img&&img.length?[].concat(img).map(x=>'<img src="'+x+'" alt="원본 조각">').join(''):'<span></span>')+'</div>');
+  const R=(key,lab,val,img,flag,keepNote)=>rows.push('<div class="ci-cf-row'+(flag?' warn':'')+(val?'':' empty')+'"><span class="lb">'+lab+'</span><div>'+((key==='remark'||key==='addr')?'<textarea data-ci-f="'+key+'" rows="'+(key==='addr'?2:3)+'" placeholder="비어 있음 · 직접 채우기" style="width:100%;box-sizing:border-box;padding:5px 8px;border:1px solid #c1c7d0;border-radius:6px;font-size:13.5px;font-family:inherit;resize:vertical">'+ciEsc(val)+'</textarea>':'<input type="text" data-ci-f="'+key+'" value="'+ciEsc(val)+'" placeholder="'+(val?'':'비어 있음 · 직접 채우기')+'">')+(flag?'<span class="ci-flag">'+ciEsc(flag)+'</span>':'')+(keepNote||'')+'</div>'+(img&&img.length?[].concat(img).map(x=>'<img src="'+x+'" alt="원본 조각">').join(''):'<span></span>')+'</div>');
   const F=out.F,I=out.img,G=out.flag;
   R('name','이름',F.name,I.name,G.name);
   R('rrn','주민번호',F.rrn,I.rrn,G.rrn);
