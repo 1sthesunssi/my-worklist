@@ -2165,7 +2165,7 @@ a.wl-site:hover{text-decoration:underline}
 .ci-remark-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px}
 .ci-remark{border:1px solid #d5dae1;border-radius:8px;background:#fafbfc;padding:6px 9px;font-size:13px;line-height:1.45;white-space:pre-wrap;word-break:break-all;color:#344563}
 .ci-linkbar{display:flex;align-items:center;gap:8px;margin:2px 0 6px;flex-wrap:wrap}
-.ci-linkbtn{font:inherit;font-size:12.5px;padding:3px 10px;border:1px solid #c6d4f0;border-radius:7px;background:#eef3fd;color:#0052cc;cursor:pointer;font-weight:600}
+.ci-linkbtn{font:inherit;font-size:12px;margin-left:8px;padding:2px 9px;border:1px solid #c6d4f0;border-radius:7px;background:#eef3fd;color:#0052cc;cursor:pointer;font-weight:600}
 .ci-linkbtn:hover{background:#dfe9fb}
 .ci-linkhint{font-size:11.5px;color:var(--muted)}
 #ci-link-box{margin:0 0 8px;padding:8px;border:1px solid #d5dae1;border-radius:9px;background:#fafbfc}
@@ -2504,8 +2504,6 @@ a.wl-site:hover{text-decoration:underline}
             <button type="button" onclick="ciOpenEdit()">✎ 직접 입력</button>
             <button type="button" id="ci-mask-btn" onclick="ciToggleMask()">개인정보 가리기</button>
           </div>
-          <div class="ci-linkbar"><button type="button" class="ci-linkbtn" onclick="ciLinkOpen()">🔗 고객 카드 연결</button><span class="ci-linkhint">이 사람의 개인정보 카드를 찾아 설명 맨 위에 걸어 둬요</span></div>
-          <div id="ci-link-box" style="display:none"><input type="text" id="ci-link-q" placeholder="고객 이름 (예: 최은찬)" autocomplete="off" oninput="ciLinkSearch()" onkeydown="if(event.key==='Escape'){ciLinkClose();}"><div id="ci-link-res"></div></div>
           <div id="ci-rows"></div>
           <div id="ci-paste" tabindex="0" style="display:none">여기를 한 번 누르고 <b>Ctrl+V</b>로 DB 화면 캡처를 붙여 넣어 주세요.<br><span style="font-size:12px">차량 표는 스크롤바 없이 끝까지 보이게 캡처해야 해요.</span><br><button type="button" class="ci-btn" style="margin-top:8px" onclick="document.getElementById('ci-file').click()">또는 파일 선택</button><input type="file" id="ci-file" accept="image/*" style="display:none"></div>
           <div id="ci-status" style="display:none"></div>
@@ -2515,7 +2513,9 @@ a.wl-site:hover{text-decoration:underline}
           <textarea id="ci-note" placeholder="예: 자동차 DB 11/20 만기, 실손(타사)…"></textarea>
         </div>
         <div id="desc-section">
-          <div class="sec-hd">📄 설명 <button id="desc-fullscreen-btn" onclick="toggleDescFullscreen()" title="전체화면으로 보기">⛶</button></div>
+          <div class="sec-hd">📄 설명 <button id="desc-fullscreen-btn" onclick="toggleDescFullscreen()" title="전체화면으로 보기">⛶</button><button type="button" class="ci-linkbtn" onclick="ciLinkOpen()" title="이 사람의 개인정보 카드를 찾아 설명 맨 위에 걸어 둬요">🔗 고객 카드 연결</button></div>
+          <div id="ci-link-box" style="display:none"><input type="text" id="ci-link-q" placeholder="고객 이름 (예: 최은찬)" autocomplete="off" oninput="ciLinkSearch()" onkeydown="if(event.key==='Escape'){ciLinkClose();}"><div id="ci-link-res"></div></div>
+
           <div id="modal-desc-display" class="empty">설명 추가...</div>
           <button id="desc-showmore" onclick="toggleDescMore()">▼ 더 보기</button>
           <div id="modal-desc-edit-wrap">
