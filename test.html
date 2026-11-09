@@ -11496,7 +11496,7 @@ function aiMigrateBoards(){   // 열 때·자동 등록 때마다: 카톡·문�
 }
 setTimeout(()=>{try{aiMigrateBoards();}catch(e){}},6500);
 // ── 새 버전 확인: 오래 열어 둔 화면이 예전 코드로 자료를 되돌리지 않게, 새 버전이 올라오면 스스로 새로 고침 ──
-const APP_BUILD='20261015g';   // ※ 앱을 고쳐 올릴 때마다 바꿀 것
+const APP_BUILD='20261110a';   // ※ 앱을 고쳐 올릴 때마다 바꿀 것
 async function checkNewBuild(){
   try{
     if(document.hidden)return;
@@ -11732,9 +11732,9 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
 
 /* ═══ 고객정보 (DB 캡처 → 칸별 읽기) ═══
    카드 하나의 card.cinfo 에만 저장합니다. 캡처 이미지는 저장하지 않고 메모리에서만 씁니다. */
-const CI_LABELS={name:'이름',rrn:'주민번호',phone:'전화번호',carrier:'통신사',addr:'주소',job:'직업',remark:'비고',account:'계좌',cardNo:'카드번호',email:'이메일'};
+const CI_LABELS={name:'이름',rrn:'주민번호',phone:'전화번호',carrier:'통신사',zip:'우편번호',addr:'주소',job:'직업',remark:'비고',account:'계좌',cardNo:'카드번호',email:'이메일'};
 const CI_SECRET={rrn:1,account:1,cardNo:1,remark:1};
-const CI_ORDER_A=['name','rrn','phone','email','carrier','addr','job'];
+const CI_ORDER_A=['name','rrn','phone','email','carrier','zip','addr','job'];
 const CI_ORDER_B=['account','cardNo'];
 let ciMasked=false,ciOpen=false,ciPending=null,ciTessP=null,ciW=null,ciBusy=false,ciSaveT=null;
 function ciEsc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
@@ -12025,6 +12025,7 @@ function ciShowConfirm(out){
   R('phone','전화번호',F.phone,I.phone,G.phone);
   R('email','이메일',F.email,I.email,G.email);
   R('carrier','통신사',F.carrier,I.carrier,G.carrier);
+  R('zip','우편번호',F.zip,I.zip,G.zip);
   R('addr','주소',F.addr,I.addr,G.addr);
   R('job','직업',F.job,I.job,G.job);
   out.cars.forEach((c,n)=>R('car'+n,'차량정보'+(out.cars.length>1?' '+(n+1):''),c.raw||[c.no,c.type,ciCarMd(c)].filter(Boolean).join(' '),c.img,'번호는 항상 원본과 대조해 주세요'));
@@ -12043,7 +12044,7 @@ function ciApply(){
   const keepImg=!!(document.getElementById('ci-keep-img')&&document.getElementById('ci-keep-img').checked)&&ciPending.file;
   const capFile=ciPending.file;
   const i=card.cinfo=card.cinfo||{};
-  ['name','rrn','phone','carrier','addr','job','remark','account','cardNo','email'].forEach(k=>{if(v[k])i[k]=v[k];});
+  ['name','rrn','phone','carrier','zip','addr','job','remark','account','cardNo','email'].forEach(k=>{if(v[k])i[k]=v[k];});
   const cars=[];Object.keys(v).filter(k=>/^car\d+$/.test(k)).sort((a,b)=>(+a.slice(3))-(+b.slice(3))).forEach(k=>{const c=ciParseCar(v[k]);if(c)cars.push({no:c.no,type:c.type,md:c.md,exp:c.exp,ins:c.ins});else if(v[k])cars.push({no:'',type:'',md:'',exp:'',ins:'',raw:v[k]});});
   if(cars.length)i.cars=cars;
   if(i.phone&&!(card.phone&&card.phone.trim()))card.phone=i.phone;
@@ -12067,7 +12068,7 @@ function ciOpenEdit(){
   const i=ciData(card);
   const f=k=>'<span class="lb">'+CI_LABELS[k]+'</span><input type="text" data-ci-e="'+k+'" value="'+ciEsc(i[k]||'')+'">';
   const box=document.getElementById('ci-edit');
-  box.innerHTML='<div class="ci-ed-grid">'+['name','rrn','phone','email','carrier','addr','job'].map(f).join('')+'<span class="lb">차량정보</span><div><div id="ci-car-list">'+((i.cars&&i.cars.length)?i.cars:[{}]).map(ciCarRowHtml).join('')+'</div><button type="button" class="ci-btn" onclick="ciAddCar()">＋ 차량 추가</button></div>'+['account','cardNo','remark'].map(k=>k==='remark'?'<span class="lb">비고</span><textarea data-ci-e="remark" rows="3">'+ciEsc(i.remark||'')+'</textarea>':f(k)).join('')+'</div><div class="ci-acts"><button type="button" class="ci-btn" onclick="document.getElementById(\'ci-edit\').style.display=\'none\'">취소</button><button type="button" class="ci-btn" style="border-color:var(--accent);color:var(--accent);font-weight:700" onclick="ciSaveEdit()">저장</button></div>';
+  box.innerHTML='<div class="ci-ed-grid">'+['name','rrn','phone','email','carrier','zip','addr','job'].map(f).join('')+'<span class="lb">차량정보</span><div><div id="ci-car-list">'+((i.cars&&i.cars.length)?i.cars:[{}]).map(ciCarRowHtml).join('')+'</div><button type="button" class="ci-btn" onclick="ciAddCar()">＋ 차량 추가</button></div>'+['account','cardNo','remark'].map(k=>k==='remark'?'<span class="lb">비고</span><textarea data-ci-e="remark" rows="3">'+ciEsc(i.remark||'')+'</textarea>':f(k)).join('')+'</div><div class="ci-acts"><button type="button" class="ci-btn" onclick="document.getElementById(\'ci-edit\').style.display=\'none\'">취소</button><button type="button" class="ci-btn" style="border-color:var(--accent);color:var(--accent);font-weight:700" onclick="ciSaveEdit()">저장</button></div>';
   box.style.display='';
 }
 function ciCarRowHtml(c){
@@ -12081,6 +12082,7 @@ function ciSaveEdit(){
   document.querySelectorAll('#ci-edit [data-ci-e]').forEach(e=>{const k=e.getAttribute('data-ci-e');const val=e.value.trim();if(val)i[k]=val;else delete i[k];});
   const cars=[];document.querySelectorAll('#ci-edit .ci-car-row').forEach(r=>{const g=n=>r.querySelector('[data-cr="'+n+'"]').value.trim();const no=g('no'),md=ciNormMd(g('md'));if(no||md)cars.push({no:no,type:g('type'),md:md,exp:'',ins:''});});
   if(cars.length)i.cars=cars;else delete i.cars;
+  if(i.zip){const z=String(i.zip).replace(/\D/g,'');if(z.length===5)i.zip=z;else showToast('⚠️','우편번호는 숫자 5자리예요. 확인해 주세요.',3000);}
   if(i.phone&&!(card.phone&&card.phone.trim()))card.phone=i.phone;
   saveState();try{renderPhoneSection(card);}catch(e){}ciRender(card);showToast('✅','저장했어요.',1800);
 }
