@@ -11714,7 +11714,7 @@ function ciRows(card){
   const show=k=>CI_SECRET[k]&&ciMasked?ciMaskVal(i[k]):i[k];
   CI_ORDER_A.forEach(k=>{
     if(i[k])row(CI_LABELS[k],show(k),i[k]);
-    if(k==='job'){const cars=(i.cars||[]).filter(c=>c&&(c.no||c.exp||c.raw));cars.forEach((c,n)=>row('차량정보'+(cars.length>1?' '+(n+1):''),c.no||c.raw||'(번호 직접 입력)',c.no||c.raw||'',c.no?[c.type,c.exp,c.ins].filter(Boolean).join(' · '):''));}
+    if(k==='job'){const cars=(i.cars||[]).filter(c=>c&&(c.no||c.md||c.exp||c.raw));cars.forEach((c,n)=>row('차량정보'+(cars.length>1?' '+(n+1):''),c.no||c.raw||'(번호 직접 입력)',c.no||c.raw||'',ciCarSub(c)));}
   });
   CI_ORDER_B.forEach(k=>{if(i[k])row(CI_LABELS[k],show(k),i[k]);});
   document.getElementById('ci-rows').innerHTML=out.join('');
@@ -11774,7 +11774,7 @@ function ciStretch(cv){
 }
 const CI_REF={
   anch:{'연령':[701,110],'생일':[701,141],'직업':[35,298],'이메일':[23,456],'만기일':[946,426]},
-  box:{name:[120,20,210,42],rrn:[358,20,470,42],birth:[815,135,905,157],p1:[115,355,170,380],p2:[183,355,232,380],p3:[232,355,285,380],a1:[285,105,580,128],a2:[110,135,550,158],job:[215,295,375,317],memo:[730,590,1215,690],car:[273,357,322,380],eid:[110,455,242,478],edom:[313,455,414,478]},
+  box:{name:[120,20,210,42],rrn:[358,20,470,42],birth:[815,135,905,157],p1:[115,355,170,380],p2:[183,355,232,380],p3:[232,355,285,380],a1:[285,105,580,128],a2:[110,133,565,160],job:[215,295,375,317],memo:[730,590,1215,690],car:[273,357,322,380],eid:[110,455,242,478],edom:[313,455,414,478]},
   car:{x0:735,x1:1215,y0:455,h:25,pitch:28.5,n:5}
 };
 async function ciFindAnchors(w,cv){
@@ -11828,13 +11828,25 @@ function ciCarrier(t){
   if(/KT/.test(s))return alt?'알뜰KT':'KT';
   return alt?'알뜰':'';
 }
+function ciNormMd(v){
+  v=String(v||'');let m=v.match(/(\d{1,2})\D+(\d{1,2})/),a,b;
+  if(m){a=+m[1];b=+m[2];}else{const d=v.replace(/\D/g,'');if(d.length===4){a=+d.slice(0,2);b=+d.slice(2);}else if(d.length===3){a=+d[0];b=+d.slice(1);}else return '';}
+  if(a<1||a>12||b<1||b>31)return '';
+  return String(a).padStart(2,'0')+'-'+String(b).padStart(2,'0');
+}
+function ciCarMd(c){return c.md||(c.exp?String(c.exp).slice(5):'');}
+function ciCarSub(c){return [ciCarMd(c)?'갱신일 '+ciCarMd(c):'',c.type?'구분 '+c.type:''].filter(Boolean).join(' · ');}
 function ciParseCar(t){
   const s=String(t||'').replace(/\s+/g,' ');
   const p=s.match(/(\d{2,3})\s?([가-힣])\s?(\d{4})/);
-  const e=s.match(/(20\d{2})\s?-\s?(\d{2})\s?-\s?(\d{2})/);
+  const rest=p?s.replace(p[0],' '):s;
+  const e=rest.match(/(20\d{2})\s?-\s?(\d{2})\s?-\s?(\d{2})/);
+  let md='',exp='';
+  if(e){exp=e[1]+'-'+e[2]+'-'+e[3];md=ciNormMd(e[2]+'-'+e[3]);}
+  else{const q=rest.match(/(\d{1,2})\s*[-\/.]\s*(\d{1,2})/);if(q)md=ciNormMd(q[1]+'-'+q[2]);}
   const ins=(s.match(/DB손해보험|삼성화재|현대해상|KB손해보험|메리츠화재|한화손해보험|흥국화재|롯데손해보험|MG손해보험/)||[''])[0];
-  if(!p&&!e)return null;
-  return{no:p?p[1]+p[2]+p[3]:'',type:/영업/.test(s)?'영업용':/자가/.test(s)?'자가용':'',exp:e?e[1]+'-'+e[2]+'-'+e[3]:'',ins};
+  if(!p&&!md)return null;
+  return{no:p?p[1]+p[2]+p[3]:'',type:/영업/.test(s)?'영업용':/자가/.test(s)?'자가용':'',md,exp,ins};
 }
 function ciParseMemo(t){
   const s=String(t||'').replace(/[ \t]+/g,' ');const o={};
@@ -11879,7 +11891,7 @@ async function ciExtract(w,cv,say){
     const y=C.y0+n*C.pitch;
     const r=await ciOcr(w,cv,[C.x0,y,C.x1,y+C.h],m,{});
     let car=ciParseCar(r.text);
-    if(!car){const raw=r.text.replace(/\s+/g,' ').trim();if(/[가-힣]/.test(raw)&&/\d{3,}/.test(raw)&&(raw.match(/[A-Za-z]/g)||[]).length<4){car={no:'',type:'',exp:'',ins:'',raw:raw};}else break;}
+    if(!car){const raw=r.text.replace(/\s+/g,' ').trim();if(/[가-힣]/.test(raw)&&/\d{3,}/.test(raw)&&(raw.match(/[A-Za-z]/g)||[]).length<4){car={no:'',type:'',md:'',exp:'',ins:'',raw:raw};}else break;}
     car.img=r.img;cars.push(car);
   }
   const mm=await ciOcr(w,cv,B.memo,m,{psm:'6'});
@@ -11919,7 +11931,7 @@ function ciShowConfirm(out){
   R('carrier','통신사',F.carrier,I.carrier,G.carrier);
   R('addr','주소',F.addr,I.addr,G.addr);
   R('job','직업',F.job,I.job,G.job);
-  out.cars.forEach((c,n)=>R('car'+n,'차량정보'+(out.cars.length>1?' '+(n+1):''),c.raw||[c.no,c.type,c.exp,c.ins].filter(Boolean).join(' '),c.img,'번호는 항상 원본과 대조해 주세요'));
+  out.cars.forEach((c,n)=>R('car'+n,'차량정보'+(out.cars.length>1?' '+(n+1):''),c.raw||[c.no,c.type,ciCarMd(c)].filter(Boolean).join(' '),c.img,'번호는 항상 원본과 대조해 주세요'));
   if(!out.cars.length)rows.push('<div class="ci-cf-row empty"><span class="lb">차량정보</span><div style="color:var(--muted)">표에서 차량을 찾지 못했어요 · 직접 입력에서 적어 주세요</div><span></span></div>');
   R('remark','비고',F.remark||'',I.remark,'');
   R('account','계좌',F.account||'',I.account,'');
@@ -11934,7 +11946,7 @@ function ciApply(){
   const v={};document.querySelectorAll('#ci-confirm [data-ci-f]').forEach(e=>{v[e.getAttribute('data-ci-f')]=e.value.trim();});
   const i=card.cinfo=card.cinfo||{};
   ['name','rrn','phone','carrier','addr','job','remark','account','cardNo','email'].forEach(k=>{if(v[k])i[k]=v[k];});
-  const cars=[];Object.keys(v).filter(k=>/^car\d+$/.test(k)).sort((a,b)=>(+a.slice(3))-(+b.slice(3))).forEach(k=>{const c=ciParseCar(v[k]);if(c)cars.push({no:c.no,type:c.type,exp:c.exp,ins:c.ins});else if(v[k])cars.push({no:'',type:'',exp:'',ins:'',raw:v[k]});});
+  const cars=[];Object.keys(v).filter(k=>/^car\d+$/.test(k)).sort((a,b)=>(+a.slice(3))-(+b.slice(3))).forEach(k=>{const c=ciParseCar(v[k]);if(c)cars.push({no:c.no,type:c.type,md:c.md,exp:c.exp,ins:c.ins});else if(v[k])cars.push({no:'',type:'',md:'',exp:'',ins:'',raw:v[k]});});
   if(cars.length)i.cars=cars;
   if(i.phone&&!(card.phone&&card.phone.trim()))card.phone=i.phone;
   ciPending=null;saveState();
@@ -11948,14 +11960,21 @@ function ciOpenEdit(){
   document.getElementById('ci-paste').style.display='none';document.getElementById('ci-confirm').style.display='none';
   const i=ciData(card);
   const f=k=>'<span class="lb">'+CI_LABELS[k]+'</span><input type="text" data-ci-e="'+k+'" value="'+ciEsc(i[k]||'')+'">';
-  const carsTxt=(i.cars||[]).map(c=>c.raw||[c.no,c.type,c.exp,c.ins].filter(Boolean).join(' ')).join('\n');
   const box=document.getElementById('ci-edit');
-  box.innerHTML='<div class="ci-ed-grid">'+['name','rrn','phone','email','carrier','addr','job'].map(f).join('')+'<span class="lb">차량정보</span><textarea data-ci-e="cars" rows="3" placeholder="한 줄에 한 대: 12가3456 자가용 2027-07-29 DB손해보험">'+ciEsc(carsTxt)+'</textarea>'+['remark','account','cardNo'].map(k=>k==='remark'?'<span class="lb">비고</span><textarea data-ci-e="remark" rows="3">'+ciEsc(i.remark||'')+'</textarea>':f(k)).join('')+'</div><div class="ci-acts"><button type="button" class="ci-btn" onclick="document.getElementById(\'ci-edit\').style.display=\'none\'">취소</button><button type="button" class="ci-btn" style="border-color:var(--accent);color:var(--accent);font-weight:700" onclick="ciSaveEdit()">저장</button></div>';
+  box.innerHTML='<div class="ci-ed-grid">'+['name','rrn','phone','email','carrier','addr','job'].map(f).join('')+'<span class="lb">차량정보</span><div><div id="ci-car-list">'+((i.cars&&i.cars.length)?i.cars:[{}]).map(ciCarRowHtml).join('')+'</div><button type="button" class="ci-btn" onclick="ciAddCar()">＋ 차량 추가</button></div>'+['remark','account','cardNo'].map(k=>k==='remark'?'<span class="lb">비고</span><textarea data-ci-e="remark" rows="3">'+ciEsc(i.remark||'')+'</textarea>':f(k)).join('')+'</div><div class="ci-acts"><button type="button" class="ci-btn" onclick="document.getElementById(\'ci-edit\').style.display=\'none\'">취소</button><button type="button" class="ci-btn" style="border-color:var(--accent);color:var(--accent);font-weight:700" onclick="ciSaveEdit()">저장</button></div>';
   box.style.display='';
 }
+function ciCarRowHtml(c){
+  c=c||{};const ty=c.type||'자가용';
+  const opts=['자가용','영업용','기타'].concat(['자가용','영업용','기타'].includes(ty)?[]:[ty]).map(o=>'<option'+(o===ty?' selected':'')+'>'+ciEsc(o)+'</option>').join('');
+  return '<div class="ci-car-row" style="display:flex;gap:6px;margin-bottom:6px;align-items:center"><input type="text" data-cr="no" placeholder="차량번호 (예: 12가3456)" value="'+ciEsc(c.no||c.raw||'')+'" style="flex:2;min-width:0"><input type="text" data-cr="md" placeholder="갱신일 (예: 07-29)" value="'+ciEsc(ciCarMd(c))+'" style="flex:1.3;min-width:0"><select data-cr="type" style="flex:1;min-width:0">'+opts+'</select><button type="button" class="ci-btn" title="이 차량 지우기" onclick="this.parentNode.remove()">✕</button></div>';
+}
+function ciAddCar(){const l=document.getElementById('ci-car-list');if(l){l.insertAdjacentHTML('beforeend',ciCarRowHtml({}));const r=l.querySelectorAll('.ci-car-row');const last=r[r.length-1];if(last)last.querySelector('input').focus();}}
 function ciSaveEdit(){
   const card=getActiveCard();if(!card)return;const i=card.cinfo=card.cinfo||{};
-  document.querySelectorAll('#ci-edit [data-ci-e]').forEach(e=>{const k=e.getAttribute('data-ci-e');const val=e.value.trim();if(k==='cars'){i.cars=val.split('\n').map(x=>x.trim()).filter(Boolean).map(x=>{const c=ciParseCar(x);return c?{no:c.no,type:c.type,exp:c.exp,ins:c.ins}:{no:'',type:'',exp:'',ins:'',raw:x};});}else{if(val)i[k]=val;else delete i[k];}});
+  document.querySelectorAll('#ci-edit [data-ci-e]').forEach(e=>{const k=e.getAttribute('data-ci-e');const val=e.value.trim();if(val)i[k]=val;else delete i[k];});
+  const cars=[];document.querySelectorAll('#ci-edit .ci-car-row').forEach(r=>{const g=n=>r.querySelector('[data-cr="'+n+'"]').value.trim();const no=g('no'),md=ciNormMd(g('md'));if(no||md)cars.push({no:no,type:g('type'),md:md,exp:'',ins:''});});
+  if(cars.length)i.cars=cars;else delete i.cars;
   if(i.phone&&!(card.phone&&card.phone.trim()))card.phone=i.phone;
   saveState();try{renderPhoneSection(card);}catch(e){}ciRender(card);showToast('✅','저장했어요.',1800);
 }
