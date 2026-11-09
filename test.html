@@ -11699,8 +11699,8 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
    카드 하나의 card.cinfo 에만 저장합니다. 캡처 이미지는 저장하지 않고 메모리에서만 씁니다. */
 const CI_LABELS={name:'이름',rrn:'주민번호',phone:'전화번호',carrier:'통신사',addr:'주소',job:'직업',remark:'비고',account:'계좌',cardNo:'카드번호',email:'이메일'};
 const CI_SECRET={rrn:1,account:1,cardNo:1,remark:1};
-const CI_ORDER_A=['name','rrn','phone','carrier','addr','job'];
-const CI_ORDER_B=['remark','account','cardNo','email'];
+const CI_ORDER_A=['name','rrn','phone','email','carrier','addr','job'];
+const CI_ORDER_B=['remark','account','cardNo'];
 let ciMasked=false,ciOpen=false,ciPending=null,ciTessP=null,ciW=null,ciBusy=false,ciSaveT=null;
 function ciEsc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function ciData(card){return(card&&card.cinfo)||{};}
@@ -11915,6 +11915,7 @@ function ciShowConfirm(out){
   R('name','이름',F.name,I.name,G.name);
   R('rrn','주민번호',F.rrn,I.rrn,G.rrn);
   R('phone','전화번호',F.phone,I.phone,G.phone);
+  R('email','이메일',F.email,I.email,G.email);
   R('carrier','통신사',F.carrier,I.carrier,G.carrier);
   R('addr','주소',F.addr,I.addr,G.addr);
   R('job','직업',F.job,I.job,G.job);
@@ -11923,7 +11924,6 @@ function ciShowConfirm(out){
   R('remark','비고',F.remark||'',I.remark,'');
   R('account','계좌',F.account||'',I.account,'');
   R('cardNo','카드번호',F.cardNo||'',I.cardNo,'');
-  R('email','이메일',F.email,I.email,G.email);
   const box=document.getElementById('ci-confirm');
   box.innerHTML='<div style="font-size:14px;font-weight:700;margin:8px 0 4px">📋 캡처를 읽었어요. 틀린 곳만 고쳐 주세요</div>'+rows.join('')+'<div style="font-size:12px;color:var(--muted);margin-top:6px">읽은 값은 틀렸어도 그대로 채워 둬요. 고쳐서 쓰세요. 비어 있는 칸은 기존 값을 그대로 두고, 가입보험은 읽지 않아요.</div><div class="ci-acts"><button type="button" class="ci-btn" onclick="ciCancelConfirm()">취소</button><button type="button" class="ci-btn" style="border-color:var(--accent);color:var(--accent);font-weight:700" onclick="ciApply()">카드에 반영</button></div>';
   box.style.display='';
@@ -11950,7 +11950,7 @@ function ciOpenEdit(){
   const f=k=>'<span class="lb">'+CI_LABELS[k]+'</span><input type="text" data-ci-e="'+k+'" value="'+ciEsc(i[k]||'')+'">';
   const carsTxt=(i.cars||[]).map(c=>c.raw||[c.no,c.type,c.exp,c.ins].filter(Boolean).join(' ')).join('\n');
   const box=document.getElementById('ci-edit');
-  box.innerHTML='<div class="ci-ed-grid">'+['name','rrn','phone','carrier','addr','job'].map(f).join('')+'<span class="lb">차량정보</span><textarea data-ci-e="cars" rows="3" placeholder="한 줄에 한 대: 12가3456 자가용 2027-07-29 DB손해보험">'+ciEsc(carsTxt)+'</textarea>'+['remark','account','cardNo','email'].map(k=>k==='remark'?'<span class="lb">비고</span><textarea data-ci-e="remark" rows="3">'+ciEsc(i.remark||'')+'</textarea>':f(k)).join('')+'</div><div class="ci-acts"><button type="button" class="ci-btn" onclick="document.getElementById(\'ci-edit\').style.display=\'none\'">취소</button><button type="button" class="ci-btn" style="border-color:var(--accent);color:var(--accent);font-weight:700" onclick="ciSaveEdit()">저장</button></div>';
+  box.innerHTML='<div class="ci-ed-grid">'+['name','rrn','phone','email','carrier','addr','job'].map(f).join('')+'<span class="lb">차량정보</span><textarea data-ci-e="cars" rows="3" placeholder="한 줄에 한 대: 12가3456 자가용 2027-07-29 DB손해보험">'+ciEsc(carsTxt)+'</textarea>'+['remark','account','cardNo'].map(k=>k==='remark'?'<span class="lb">비고</span><textarea data-ci-e="remark" rows="3">'+ciEsc(i.remark||'')+'</textarea>':f(k)).join('')+'</div><div class="ci-acts"><button type="button" class="ci-btn" onclick="document.getElementById(\'ci-edit\').style.display=\'none\'">취소</button><button type="button" class="ci-btn" style="border-color:var(--accent);color:var(--accent);font-weight:700" onclick="ciSaveEdit()">저장</button></div>';
   box.style.display='';
 }
 function ciSaveEdit(){
