@@ -11955,6 +11955,7 @@ async function ciRead(file){
     const w=await ciWorker(say);
     const cv=await ciToCanvas(file);
     const out=await ciExtract(w,cv,say);
+    out.file=file;
     say('');ciShowConfirm(out);
   }catch(e){
     ciBusy=false;console.error('ci-read',e);say('');
@@ -11982,13 +11983,15 @@ function ciShowConfirm(out){
   R('cardNo','카드번호',F.cardNo||'',I.cardNo,'');
   R('remark','비고',F.remark||'',I.remark,'');
   const box=document.getElementById('ci-confirm');
-  box.innerHTML='<div style="font-size:14px;font-weight:700;margin:8px 0 4px">📋 캡처를 읽었어요. 틀린 곳만 고쳐 주세요</div>'+rows.join('')+'<div style="font-size:12px;color:var(--muted);margin-top:6px">읽은 값은 틀렸어도 그대로 채워 둬요. 고쳐서 쓰세요. 비어 있는 칸은 기존 값을 그대로 두고, 가입보험은 읽지 않아요.</div><div class="ci-acts"><button type="button" class="ci-btn" onclick="ciCancelConfirm()">취소</button><button type="button" class="ci-btn" style="border-color:var(--accent);color:var(--accent);font-weight:700" onclick="ciApply()">카드에 반영</button></div>';
+  box.innerHTML='<div style="font-size:14px;font-weight:700;margin:8px 0 4px">📋 캡처를 읽었어요. 틀린 곳만 고쳐 주세요</div>'+rows.join('')+'<div style="font-size:12px;color:var(--muted);margin-top:6px"><label style="display:flex;align-items:center;gap:6px;margin:0 0 6px;font-size:13px;color:#344563;cursor:pointer"><input type="checkbox" id="ci-keep-img" checked> ☁️ 캡처 원본 그림도 아래 첨부 파일에 저장 (구글 드라이브)</label>읽은 값은 틀렸어도 그대로 채워 둬요. 고쳐서 쓰세요. 비어 있는 칸은 기존 값을 그대로 두고, 가입보험은 읽지 않아요.</div><div class="ci-acts"><button type="button" class="ci-btn" onclick="ciCancelConfirm()">취소</button><button type="button" class="ci-btn" style="border-color:var(--accent);color:var(--accent);font-weight:700" onclick="ciApply()">카드에 반영</button></div>';
   box.style.display='';
 }
 function ciCancelConfirm(){ciPending=null;document.getElementById('ci-confirm').style.display='none';}
 function ciApply(){
   const card=getActiveCard();if(!card||!ciPending)return;
   const v={};document.querySelectorAll('#ci-confirm [data-ci-f]').forEach(e=>{v[e.getAttribute('data-ci-f')]=e.value.trim();});
+  const keepImg=!!(document.getElementById('ci-keep-img')&&document.getElementById('ci-keep-img').checked)&&ciPending.file;
+  const capFile=ciPending.file;
   const i=card.cinfo=card.cinfo||{};
   ['name','rrn','phone','carrier','addr','job','remark','account','cardNo','email'].forEach(k=>{if(v[k])i[k]=v[k];});
   const cars=[];Object.keys(v).filter(k=>/^car\d+$/.test(k)).sort((a,b)=>(+a.slice(3))-(+b.slice(3))).forEach(k=>{const c=ciParseCar(v[k]);if(c)cars.push({no:c.no,type:c.type,md:c.md,exp:c.exp,ins:c.ins});else if(v[k])cars.push({no:'',type:'',md:'',exp:'',ins:'',raw:v[k]});});
@@ -11998,6 +12001,14 @@ function ciApply(){
   try{renderPhoneSection(card);}catch(e){}
   try{refreshCard(activeCardId,activeColId);}catch(e){}
   ciRender(card);showToast('✅','고객정보를 카드에 반영했어요.',2500);
+  if(keepImg&&capFile){
+    try{
+      const d=new Date(),ymd=d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');
+      const nm='DB캡처_'+String(i.name||card.title||'고객').replace(/[\\/:*?"<>|\s]/g,'')+'_'+ymd+'.png';
+      const f=new File([capFile],nm,{type:capFile.type||'image/png'});
+      setTimeout(()=>{handleFileUpload([f],card);},900);
+    }catch(e){console.error('ci-keep-img',e);}
+  }
 }
 /* ── 직접 입력 ── */
 function ciOpenEdit(){
