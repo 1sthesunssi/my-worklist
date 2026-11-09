@@ -2164,6 +2164,19 @@ a.wl-site:hover{text-decoration:underline}
 .ci-remark-wrap{margin-top:8px}
 .ci-remark-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px}
 .ci-remark{border:1px solid #d5dae1;border-radius:8px;background:#fafbfc;padding:6px 9px;font-size:13px;line-height:1.45;white-space:pre-wrap;word-break:break-all;color:#344563}
+.ci-linkbar{display:flex;align-items:center;gap:8px;margin:2px 0 6px;flex-wrap:wrap}
+.ci-linkbtn{font:inherit;font-size:12.5px;padding:3px 10px;border:1px solid #c6d4f0;border-radius:7px;background:#eef3fd;color:#0052cc;cursor:pointer;font-weight:600}
+.ci-linkbtn:hover{background:#dfe9fb}
+.ci-linkhint{font-size:11.5px;color:var(--muted)}
+#ci-link-box{margin:0 0 8px;padding:8px;border:1px solid #d5dae1;border-radius:9px;background:#fafbfc}
+#ci-link-q{width:100%;box-sizing:border-box;padding:6px 9px;border:1px solid #c1c7d0;border-radius:7px;font-size:13.5px;font-family:inherit}
+#ci-link-res{margin-top:6px;max-height:230px;overflow-y:auto}
+.ci-lr{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:6px;cursor:pointer;font-size:13.5px}
+.ci-lr:hover{background:#e8f0fe}
+.ci-lr .t{font-weight:700;flex:none;max-width:55%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ci-lr .l{font-size:11.5px;color:#0052cc;background:rgba(0,82,204,.12);border-radius:4px;padding:1px 6px;white-space:nowrap}
+.ci-lr .l.cu{background:#d8f2e0;color:#216e4e}
+.ci-lr .b{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ci-s{margin-left:6px;font-size:12px;color:var(--muted)}
 .ci-cp{font-size:11.5px;line-height:1.3;padding:0 8px;border:1px solid #d5dae1;border-radius:6px;background:#fff;cursor:pointer;color:#344563}
 .ci-sub{margin-top:6px;padding-top:6px;border-top:1px dashed #e4e7eb}
@@ -2492,6 +2505,8 @@ a.wl-site:hover{text-decoration:underline}
             <button type="button" onclick="ciOpenPaste()">📋 DB 캡처로 채우기</button>
             <button type="button" onclick="ciOpenEdit()">✎ 직접 입력</button>
           </div>
+          <div class="ci-linkbar"><button type="button" class="ci-linkbtn" onclick="ciLinkOpen()">🔗 고객 카드 연결</button><span class="ci-linkhint">이 사람의 개인정보 카드를 찾아 설명 맨 위에 걸어 둬요</span></div>
+          <div id="ci-link-box" style="display:none"><input type="text" id="ci-link-q" placeholder="고객 이름 (예: 최은찬)" autocomplete="off" oninput="ciLinkSearch()" onkeydown="if(event.key==='Escape'){ciLinkClose();}"><div id="ci-link-res"></div></div>
           <div id="ci-rows"></div>
           <div id="ci-paste" tabindex="0" style="display:none">여기를 한 번 누르고 <b>Ctrl+V</b>로 DB 화면 캡처를 붙여 넣어 주세요.<br><span style="font-size:12px">차량 표는 스크롤바 없이 끝까지 보이게 캡처해야 해요.</span><br><button type="button" class="ci-btn" style="margin-top:8px" onclick="document.getElementById('ci-file').click()">또는 파일 선택</button><input type="file" id="ci-file" accept="image/*" style="display:none"></div>
           <div id="ci-status" style="display:none"></div>
@@ -11726,6 +11741,41 @@ function ciEsc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;
 function ciData(card){return(card&&card.cinfo)||{};}
 function ciHas(card){const i=ciData(card);return Object.keys(CI_LABELS).some(k=>i[k])||(i.cars||[]).length>0||!!i.note;}
 function ciMaskVal(v){return String(v).replace(/\d[\d\- ]{4,}\d/g,m=>m.replace(/\d(?=(?:\D*\d){3})/g,'•'));}
+/* ── 고객 카드 연결: 이 사람의 개인정보 카드 링크를 설명 맨 위에 ── */
+const CI_LINK_PRE='👤 고객정보 카드: ';
+function ciLinkOpen(){
+  ['ci-paste','ci-confirm','ci-edit'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';});
+  const b=document.getElementById('ci-link-box'),q=document.getElementById('ci-link-q');if(!b)return;
+  b.style.display='';const card=getActiveCard();
+  if(card&&!q.value)q.value=String(card.title||'').split(/[\s/·,(\[]/)[0].slice(0,10);
+  ciLinkSearch();q.focus();q.select();
+}
+function ciLinkClose(){const b=document.getElementById('ci-link-box');if(b)b.style.display='none';}
+function ciLinkSearch(){
+  const q=document.getElementById('ci-link-q').value.replace(/\s+/g,'').toLowerCase();
+  const res=document.getElementById('ci-link-res');const cur=getActiveCard();
+  if(!q){res.innerHTML='<div style="font-size:12px;color:var(--muted);padding:4px 6px">이름을 쓰면 카드가 나와요.</div>';return;}
+  const hits=[];
+  (state.boards||[]).forEach(b=>(b.columns||[]).forEach(c=>(c.cards||[]).forEach(k=>{
+    if(!cur||k.id===cur.id)return;
+    if(String(k.title||'').replace(/\s+/g,'').toLowerCase().includes(q))hits.push({k,b,c,cu:/고객정보/.test(c.title||'')});
+  })));
+  hits.sort((x,y)=>(y.cu-x.cu)||String(x.k.title).localeCompare(String(y.k.title),'ko'));
+  if(!hits.length){res.innerHTML='<div style="font-size:12.5px;color:var(--muted);padding:6px">찾는 카드가 없어요. 이름을 줄여서 다시 써 보세요.</div>';return;}
+  res.innerHTML=hits.slice(0,15).map(h=>'<div class="ci-lr" onclick="ciLinkPick(\''+ciEsc(h.k.id)+'\')"><span class="t">'+ciEsc(h.k.title)+'</span><span class="l'+(h.cu?' cu':'')+'">'+ciEsc(h.c.title)+'</span><span class="b">'+ciEsc(h.b.title||'')+'</span></div>').join('')+(hits.length>15?'<div style="font-size:12px;color:var(--muted);padding:4px 6px">더 있어요. 이름을 더 써서 좁혀 보세요.</div>':'');
+}
+function ciLinkPick(id){
+  const card=getActiveCard();if(!card||!id)return;
+  const line=CI_LINK_PRE+'https://card.link/'+id;
+  let d=card.desc||'';
+  const re=/^👤 고객정보 카드: https:\/\/card\.link\/[\w-]+(?:<br\s*\/?>|<\/div>)?/;
+  if(re.test(d))d=d.replace(re,line+'<br>');
+  else d=line+(d&&d.trim()?'<br>':'')+d;
+  card.desc=d;saveState();
+  try{showDescDisplay(card.desc);}catch(e){console.error(e);}
+  ciLinkClose();showToast('🔗','설명 맨 위에 고객 카드를 연결했어요.',2500);
+  try{const ds=document.getElementById('desc-section');if(ds)ds.scrollIntoView({behavior:'smooth',block:'nearest'});}catch(e){}
+}
 function ciShow(){ciOpen=true;const card=getActiveCard();if(card)ciRender(card);const s=document.getElementById('modal-cinfo-section');if(s)setTimeout(()=>s.scrollIntoView({behavior:'smooth',block:'nearest'}),50);}
 function ciToggleMask(){ciMasked=!ciMasked;const b=document.getElementById('ci-mask-btn');if(b)b.textContent=ciMasked?'보이기':'가리기';const c=getActiveCard();if(c)ciRows(c);}
 function ciRows(card){
@@ -11749,7 +11799,7 @@ function ciRows(card){
 function ciRender(card){
   const sec=document.getElementById('modal-cinfo-section');if(!sec)return;
   sec.style.display=(ciHas(card)||ciOpen)?'':'none';
-  ['ci-paste','ci-confirm','ci-edit','ci-status'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';});
+  ['ci-paste','ci-confirm','ci-edit','ci-status','ci-link-box'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';});
   ciRows(card);
   const n=document.getElementById('ci-note');if(n&&document.activeElement!==n)n.value=ciData(card).note||'';
 }
