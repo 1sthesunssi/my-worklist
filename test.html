@@ -11496,7 +11496,7 @@ function aiMigrateBoards(){   // 열 때·자동 등록 때마다: 카톡·문�
 }
 setTimeout(()=>{try{aiMigrateBoards();}catch(e){}},6500);
 // ── 새 버전 확인: 오래 열어 둔 화면이 예전 코드로 자료를 되돌리지 않게, 새 버전이 올라오면 스스로 새로 고침 ──
-const APP_BUILD='20261110a';   // ※ 앱을 고쳐 올릴 때마다 바꿀 것
+const APP_BUILD='20261110b';   // ※ 앱을 고쳐 올릴 때마다 바꿀 것
 async function checkNewBuild(){
   try{
     if(document.hidden)return;
@@ -11851,7 +11851,7 @@ function ciStretch(cv){
 }
 const CI_REF={
   anch:{'연령':[701,110],'생일':[701,141],'직업':[35,298],'이메일':[23,456],'만기일':[946,426]},
-  box:{name:[120,20,210,42],rrn:[358,20,470,42],birth:[815,135,905,157],p1:[115,355,170,380],p2:[183,355,232,380],p3:[232,355,285,380],a1:[285,105,580,128],a2:[110,133,565,160],job:[215,295,375,317],memo:[730,590,1215,690],car:[273,357,322,380],eid:[110,455,242,478],edom:[313,455,414,478]},
+  box:{name:[120,20,210,42],rrn:[358,20,470,42],birth:[815,135,905,157],p1:[115,355,170,380],p2:[183,355,232,380],p3:[232,355,285,380],zip:[178,106,238,127],a1:[285,105,580,128],a2:[110,133,565,160],job:[215,295,375,317],memo:[730,590,1215,690],car:[273,357,322,380],eid:[110,455,242,478],edom:[313,455,414,478]},
   car:{x0:735,x1:1215,y0:455,h:25,pitch:28.5,n:5}
 };
 async function ciFindAnchors(w,cv){
@@ -11878,6 +11878,14 @@ function ciMap(A){
   const s=(sx+sy)/2;
   return{s,ox:ciMed(ks.map(k=>A[k][0]-s*R[k][0])),oy:ciMed(ks.map(k=>A[k][1]-s*R[k][1]))};
 }
+// 숫자 칸 전용: 흑백으로 또렷하게 만들고 둘레에 흰 여백을 둬서 가장자리 선을 글자로 읽지 않게 합니다
+function ciBinPad(cv){
+  const pd=20,o=document.createElement('canvas');o.width=cv.width+pd*2;o.height=cv.height+pd*2;
+  const g=o.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,o.width,o.height);g.drawImage(cv,pd,pd);
+  const d=g.getImageData(0,0,o.width,o.height),a=d.data;
+  for(let i=0;i<a.length;i+=4){const v=(a[i]*0.3+a[i+1]*0.59+a[i+2]*0.11)<150?0:255;a[i]=a[i+1]=a[i+2]=v;a[i+3]=255;}
+  g.putImageData(d,0,0);return o;
+}
 async function ciOcr(w,cv,box,m,opt){
   opt=opt||{};
   const x0=Math.max(0,Math.round(box[0]*m.s+m.ox)),y0=Math.max(0,Math.round(box[1]*m.s+m.oy));
@@ -11886,7 +11894,8 @@ async function ciOcr(w,cv,box,m,opt){
   const c=document.createElement('canvas');c.width=x1-x0;c.height=y1-y0;c.getContext('2d').drawImage(cv,x0,y0,x1-x0,y1-y0,0,0,x1-x0,y1-y0);
   let thumb='';try{const t=ciResize(c,Math.min(1,340/c.width));thumb=t.toDataURL('image/jpeg',0.8);}catch(e){}
   if(opt.thumbOnly)return{text:'',img:thumb};
-  const big=ciStretch(ciResize(c,opt.k||(m.s>1.8?1:4)));
+  let big=ciStretch(ciResize(c,opt.k||(m.s>1.8?1:4)));
+  if(opt.bin)big=ciBinPad(big);
   await w.setParameters({tessedit_pageseg_mode:opt.psm||'7',tessedit_char_whitelist:opt.wl?opt.wl:(opt.digits?'0123456789-':'')});
   const r=await w.recognize(big);
   return{text:String(r.data.text||'').trim(),img:thumb};
@@ -11976,6 +11985,8 @@ async function ciExtract(w,cv,say){
   F.email=eid.length>=2?(edm?eid+'@'+edm:eid):'';img.email=[ei.img,ed.img];
   if(F.email)flag.email='l(엘)과 I(아이) 같은 글자를 꼭 확인해 주세요';
   say('칸을 읽는 중… (3/4)');
+  const zr=await ciOcr(w,cv,B.zip,m,{digits:1,bin:1});F.zip=zr.text.replace(/\D/g,'');img.zip=zr.img;
+  if(F.zip.length===5)flag.zip='숫자 5자리를 원본과 꼭 확인해 주세요';else{if(F.zip.length>5)F.zip=F.zip.slice(0,5);flag.zip=F.zip?'5자리가 아니에요 · 원본과 비교해 고쳐 주세요':'못 읽었어요 · 직접 입력';}
   const a1=await ciOcr(w,cv,B.a1,m,{}),a2=await ciOcr(w,cv,B.a2,m,{});
   F.addr=(a1.text.replace(/\s+/g,' ')+' '+a2.text.replace(/\s+/g,' ')).trim();img.addr=[a1.img,a2.img];
   flag.addr='동·호 숫자를 꼭 확인해 주세요';
