@@ -2136,10 +2136,10 @@ a.wl-site:hover{text-decoration:underline}
 .ph-num:hover{text-decoration:underline}
 .ph-grp{display:flex;align-items:center;gap:7px;margin-left:4px;padding-left:12px;border-left:1px solid #d3d8df;flex-wrap:nowrap;flex:1;min-width:0}
 .ph-grp .ph-num{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#modal-phone-display{flex-wrap:nowrap;gap:7px;padding:5px 10px}
-#modal-phone-display .ph-lab{font-size:12.5px}
-#modal-phone-display .ph-num{font-size:14.5px;letter-spacing:0;white-space:nowrap}
-#modal-phone-display .ph-edit{height:22px;padding:0 8px;font-size:11.5px;flex:none;border-radius:6px}
+#modal-phone-display{flex-wrap:nowrap;gap:6px;padding:5px 9px}
+#modal-phone-display .ph-lab{font-size:11.5px}
+#modal-phone-display .ph-num{font-size:13px;letter-spacing:0;white-space:nowrap}
+#modal-phone-display .ph-edit{height:22px;width:24px;padding:0;font-size:12.5px;line-height:1;flex:none;border-radius:6px;text-align:center}
 .ph-edit{font:inherit;font-size:12.5px;height:30px;padding:0 12px;border-radius:7px;border:1px solid #d0d5dc;background:#fff;color:#44546f;cursor:pointer}
 .ph-edit:hover{background:#f1f2f4}
 #board.compact .card-phone{background:none;padding:0 4px;font-size:13px;opacity:0;transition:opacity .15s}
@@ -2612,12 +2612,12 @@ a.wl-site:hover{text-decoration:underline}
           <div id="modal-phone-display" class="ph-row" style="display:none">
             <span class="ph-lab">📞 전화번호</span>
             <a id="modal-phone-link" href="#" class="ph-num">-</a>
-            <button type="button" class="ph-edit" onclick="showPhoneEditForm()">수정</button>
+            <button type="button" class="ph-edit" title="전화번호 수정" onclick="showPhoneEditForm()">✎</button>
             <span id="modal-email-display" class="ph-grp" style="display:none">
             <span class="ph-lab">📧 이메일</span>
             <a id="modal-email-link" href="#" class="ph-num" target="_blank" rel="noopener" title="누르면 Gmail 쓰기 창이 열려요">-</a>
-            <input id="modal-email-input" type="email" placeholder="예: name@naver.com" style="display:none;flex:1;min-width:150px;height:30px;box-sizing:border-box;padding:0 8px;border:1px solid #c1c7d0;border-radius:7px;font-size:14px" onkeydown="if(event.key==='Enter'){ciEmailEdit();}else if(event.key==='Escape'){ciEmailCancel();}">
-            <button type="button" id="modal-email-btn" class="ph-edit" onclick="ciEmailEdit()">수정</button>
+            <input id="modal-email-input" type="email" placeholder="예: name@naver.com" style="display:none;flex:1;min-width:120px;height:24px;box-sizing:border-box;padding:0 6px;border:1px solid #c1c7d0;border-radius:6px;font-size:13px" onkeydown="if(event.key==='Enter'){ciEmailEdit();}else if(event.key==='Escape'){ciEmailCancel();}">
+            <button type="button" id="modal-email-btn" class="ph-edit" title="이메일 수정" onclick="ciEmailEdit()">✎</button>
           </span>
           </div>
           <div id="phone-edit-hd" class="sec-hd" style="display:none">📞 전화번호</div>
@@ -11846,13 +11846,13 @@ function ciEmailSync(card){
   const l=document.getElementById('modal-email-link'),inp=document.getElementById('modal-email-input'),b=document.getElementById('modal-email-btn');
   const em=(card.cinfo&&card.cinfo.email)||'';
   box.style.display='';inp.style.display='none';l.style.display='';
-  if(em){l.textContent=em;l.href=ciMailHref(em);l.style.pointerEvents='';l.style.color='';l.style.fontWeight='';b.textContent='수정';}
-  else{l.textContent='등록된 이메일이 없어요';l.removeAttribute('href');l.style.pointerEvents='none';l.style.color='var(--muted)';l.style.fontWeight='400';b.textContent='추가';}
+  if(em){l.textContent=em;l.href=ciMailHref(em);l.style.pointerEvents='';l.style.color='';l.style.fontWeight='';b.textContent='✎';b.title='이메일 수정';}
+  else{l.textContent='등록된 이메일이 없어요';l.removeAttribute('href');l.style.pointerEvents='none';l.style.color='var(--muted)';l.style.fontWeight='400';b.textContent='＋';b.title='이메일 추가';}
 }
 function ciEmailEdit(){
   const card=getActiveCard();if(!card)return;
   const l=document.getElementById('modal-email-link'),inp=document.getElementById('modal-email-input'),b=document.getElementById('modal-email-btn');
-  if(inp.style.display==='none'){inp.value=(card.cinfo&&card.cinfo.email)||'';l.style.display='none';inp.style.display='';b.textContent='저장';inp.focus();return;}
+  if(inp.style.display==='none'){inp.value=(card.cinfo&&card.cinfo.email)||'';l.style.display='none';inp.style.display='';b.textContent='✓';b.title='저장';inp.focus();return;}
   const v=inp.value.trim();card.cinfo=card.cinfo||{};
   if(v)card.cinfo.email=v;else delete card.cinfo.email;
   saveState();try{ciRender(card);}catch(e){}ciEmailSync(card);showToast('✅','이메일을 저장했어요.',1800);
