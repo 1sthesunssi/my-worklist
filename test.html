@@ -2606,6 +2606,7 @@ a.wl-site:hover{text-decoration:underline}
           <div id="modal-phone-display" class="ph-row" style="display:none">
             <span class="ph-lab">📞 전화번호</span>
             <a id="modal-phone-link" href="#" class="ph-num">-</a>
+            <a id="modal-email-link" href="#" class="ph-num" target="_blank" rel="noopener" title="누르면 Gmail 쓰기 창이 열려요" style="display:none;font-size:13.5px">✉️</a>
             <button type="button" class="ph-edit" onclick="showPhoneEditForm()">수정</button>
           </div>
           <div id="phone-edit-hd" class="sec-hd" style="display:none">📞 전화번호</div>
@@ -3325,6 +3326,8 @@ function syncPhoneWidgets(card){
     const link=document.getElementById('modal-phone-link');
     link.textContent=phFmt(card.phone);link.href='tel:'+card.phone.replace(/[^0-9+]/g,'');
     document.getElementById('phone-edit-hd').style.display='none';
+    const ml=document.getElementById('modal-email-link'),em=card.cinfo&&card.cinfo.email;
+    if(ml){if(em){ml.textContent='✉️ '+em;ml.href=ciMailHref(em);ml.style.display='';}else ml.style.display='none';}
   }else{
     disp.style.display='none';form.style.display='';
     document.getElementById('phone-edit-hd').style.display='';
@@ -11710,10 +11713,10 @@ function ciShow(){ciOpen=true;const card=getActiveCard();if(card)ciRender(card);
 function ciToggleMask(){ciMasked=!ciMasked;const b=document.getElementById('ci-mask-btn');if(b)b.textContent=ciMasked?'보이기':'가리기';const c=getActiveCard();if(c)ciRows(c);}
 function ciRows(card){
   const i=ciData(card);const out=[];
-  const row=(lab,val,copy,sub)=>out.push('<div class="ci-row"><span class="ci-k">'+ciEsc(lab)+'</span><span class="ci-v" style="white-space:pre-wrap">'+ciEsc(val)+(sub?'<span class="ci-s">'+ciEsc(sub)+'</span>':'')+'</span><button type="button" class="ci-cp" data-ci-copy="'+ciEsc(copy)+'">복사</button></div>');
+  const row=(lab,val,copy,sub,link)=>out.push('<div class="ci-row"><span class="ci-k">'+ciEsc(lab)+'</span><span class="ci-v" style="white-space:pre-wrap">'+(link?'<a href="'+ciEsc(link)+'" target="_blank" rel="noopener" title="누르면 Gmail 쓰기 창이 열려요">'+ciEsc(val)+'</a>':ciEsc(val))+(sub?'<span class="ci-s">'+ciEsc(sub)+'</span>':'')+'</span><button type="button" class="ci-cp" data-ci-copy="'+ciEsc(copy)+'">복사</button></div>');
   const show=k=>CI_SECRET[k]&&ciMasked?ciMaskVal(i[k]):i[k];
   CI_ORDER_A.forEach(k=>{
-    if(i[k])row(CI_LABELS[k],show(k),i[k]);
+    if(i[k])row(CI_LABELS[k],show(k),i[k],'',k==='email'&&/@/.test(i[k])?ciMailHref(i[k]):'');
     if(k==='job'){const cars=(i.cars||[]).filter(c=>c&&(c.no||c.md||c.exp||c.raw));cars.forEach((c,n)=>row('차량정보'+(cars.length>1?' '+(n+1):''),c.no||c.raw||'(번호 직접 입력)',c.no||c.raw||'',ciCarSub(c)));}
   });
   CI_ORDER_B.forEach(k=>{if(i[k])row(CI_LABELS[k],show(k),i[k]);});
@@ -11828,6 +11831,7 @@ function ciCarrier(t){
   if(/KT/.test(s))return alt?'알뜰KT':'KT';
   return alt?'알뜰':'';
 }
+function ciMailHref(a){return 'https://mail.google.com/mail/?view=cm&fs=1&to='+encodeURIComponent(String(a).trim());}
 function ciNormMd(v){
   v=String(v||'');let m=v.match(/(\d{1,2})\D+(\d{1,2})/),a,b;
   if(m){a=+m[1];b=+m[2];}else{const d=v.replace(/\D/g,'');if(d.length===4){a=+d.slice(0,2);b=+d.slice(2);}else if(d.length===3){a=+d[0];b=+d.slice(1);}else return '';}
