@@ -546,6 +546,8 @@ a.wl-site:hover{text-decoration:underline}
 @media (max-width:640px){#__pinpop{padding:0;align-items:flex-end}.pp-box{border-radius:18px 18px 0 0}.wc-pin-row{flex-direction:column}.wc-pin-row label:last-child{flex:1}.pp-foot span{display:none}}
 /* 붙이기 창 */
 #__wallc{position:fixed;inset:0;background:rgba(9,30,66,.55);z-index:400;display:flex;align-items:center;justify-content:center;padding:16px}
+@keyframes wcnudge{0%,100%{transform:none}25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
+.wc-nudge{animation:wcnudge .3s}
 .wc-box{--wc-bg:#fff;width:100%;max-width:600px;max-height:94vh;overflow:auto;background:#fff;border-radius:20px;box-shadow:0 24px 60px rgba(0,0,0,.3)}
 .wc-top{display:flex;align-items:center;gap:10px;padding:12px 12px 0 22px}
 .wc-sec{font-size:13px;font-weight:700;color:#5e6c84;display:flex;align-items:center;gap:6px}
@@ -4554,6 +4556,10 @@ const WC_TILES=[
   {k:'loc',name:'위치',hint:'위치는 2단계에서 만들어요',svg:'<path d="M12 21s-6-5.6-6-11a6 6 0 0 1 12 0c0 5.4-6 11-6 11z"/><circle cx="12" cy="10" r="2.2"/>',soon:1}
 ];
 const WC_HINT0='붙일 것을 골라요 — 글은 그냥 적으면 되고, 링크·사진은 Ctrl+V 로 붙여 넣어도 돼요';
+const WC_DRAFT_KEY='wc_draft_v1';
+function wcDraftClear(){try{localStorage.removeItem(WC_DRAFT_KEY);}catch(_){}}
+function wcDraftSave(o){try{localStorage.setItem(WC_DRAFT_KEY,JSON.stringify(o));}catch(_){}}
+function wcDraftLoad(){try{const o=JSON.parse(localStorage.getItem(WC_DRAFT_KEY)||'null');return o&&typeof o==='object'?o:null;}catch(_){return null;}}
 function wallCompose(src){
   const old=document.getElementById('__wallc');if(old)old.remove();
   const isEdit=!!(src&&src.id);
@@ -4588,9 +4594,39 @@ function wallCompose(src){
   </div>`;
   document.body.appendChild(d);
   const close=()=>{if(wcDraft&&wcDraft.localUrl)URL.revokeObjectURL(wcDraft.localUrl);wcDraft=null;d.remove();};
-  bindOverlayClose(d,close);
-  d.querySelector('#__wc-x').addEventListener('click',close);
-  d.querySelector('#__wc-cancel').addEventListener('click',close);
+  // 쓰던 내용이 있으면 바깥(어두운 곳)을 눌러도 닫지 않고, 닫기·취소·Esc는 한 번 물어본다 (실수로 사라지는 것 방지)
+  const snap=()=>JSON.stringify([d.querySelector('#__wc-title').value.trim(),d.querySelector('#__wc-text').value.trim(),d.querySelector('#__wc-tagin').value.trim(),wcDraft?wcDraft.tags:[],wcDraft?wcDraft.kind:'',wcDraft?wcDraft.url:'']);
+  const snap0=snap();
+  const dirty=()=>snap()!==snap0;
+  const closeAsk=()=>{if(dirty()&&!confirm('쓰던 내용이 사라져요. 정말 닫을까요?'))return;if(!isEdit)wcDraftClear();close();};
+  bindOverlayClose(d,()=>{
+    if(!dirty()){close();return;}
+    const bx=d.querySelector('.wc-box');bx.classList.remove('wc-nudge');void bx.offsetWidth;bx.classList.add('wc-nudge');
+    showToast('✏️','쓰던 내용이 있어요. 저장하거나 취소를 눌러 주세요.',2200);
+  });
+  d.querySelector('#__wc-x').addEventListener('click',closeAsk);
+  d.querySelector('#__wc-cancel').addEventListener('click',closeAsk);
+  // 임시 저장: 새 메모는 쓰는 동안 조금씩 저장해 두었다가, 다음에 열면 불러온다
+  if(!isEdit){
+    const sv=wcDraftLoad();
+    if(sv&&((sv.title||'').trim()||(sv.text||'').trim()||(sv.tags||[]).length)){
+      d.querySelector('#__wc-title').value=String(sv.title||'').slice(0,120);
+      d.querySelector('#__wc-text').value=String(sv.text||'');
+      wcDraft.tags=(Array.isArray(sv.tags)?sv.tags:[]).map(wallCleanTag).filter(Boolean).slice(0,20);
+      if(sv.color&&MEMO_COLORS[sv.color])wcDraft.color=sv.color;
+      const sel=d.querySelector('#__wc-sec');
+      if(!(src&&src.sec)&&[...sel.options].some(o=>o.value===sv.sec)){sel.value=sv.sec;wcDraft.sec=sv.sec;}
+      setTimeout(()=>showToast('📝','쓰던 메모를 불러왔어요.',2200),200);
+    }
+    let dsT=null;
+    const draftNow=()=>{
+      if(!wcDraft||!d.isConnected)return;
+      const o={sec:d.querySelector('#__wc-sec').value,title:d.querySelector('#__wc-title').value,text:d.querySelector('#__wc-text').value,tags:wcDraft.tags.slice(),color:wcDraft.color||'',t:Date.now()};
+      if(o.title.trim()||o.text.trim()||o.tags.length)wcDraftSave(o);else wcDraftClear();
+    };
+    const draftLater=()=>{clearTimeout(dsT);dsT=setTimeout(draftNow,400);};
+    d.addEventListener('input',draftLater);d.addEventListener('click',draftLater);
+  }
   const hint=d.querySelector('#__wc-hint'),urlRow=d.querySelector('#__wc-urlrow'),urlIn=d.querySelector('#__wc-url'),ta=d.querySelector('#__wc-text');
   const setOn=k=>d.querySelectorAll('.wc-tile').forEach(b=>b.classList.toggle('on',b.dataset.k===k));
   d.querySelectorAll('.wc-tile').forEach(b=>{
@@ -4621,7 +4657,7 @@ function wallCompose(src){
     if(wallIsUrl(t)&&wcDraft&&wcDraft.kind==='text'){e.preventDefault();wcSetUrl(t);}
   });
   d.querySelector('#__wc-go').addEventListener('click',wcSave);
-  d.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();close();}if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();wcSave();}});
+  d.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();closeAsk();}if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();wcSave();}});
   const tagIn=d.querySelector('#__wc-tagin');
   tagIn.addEventListener('keydown',e=>{
     if((e.key==='Enter'&&!e.ctrlKey&&!e.metaKey)||e.key===','){e.preventDefault();if(wcAddTag(tagIn.value))tagIn.value='';}
@@ -4711,7 +4747,7 @@ async function wcSave(){
     ensureMemos().unshift(saved);
   }
   if(d.localUrl)URL.revokeObjectURL(d.localUrl);
-  wcDraft=null;box.remove();
+  wcDraft=null;box.remove();if(!d.id)wcDraftClear();
   saveState();renderMemos();
   if(saved&&((saved.pin&&saved.pinCal)||saved.calEv))pinSyncCal(saved);
   showToast('📌',d.id?'고쳤어요.':'메모를 저장했어요.',1600);
