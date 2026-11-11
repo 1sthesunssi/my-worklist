@@ -548,6 +548,8 @@ a.wl-site:hover{text-decoration:underline}
 #__wallc{position:fixed;inset:0;background:rgba(9,30,66,.55);z-index:400;display:flex;align-items:center;justify-content:center;padding:16px}
 @keyframes wcnudge{0%,100%{transform:none}25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
 .wc-nudge{animation:wcnudge .3s}
+@keyframes ovnudge{0%,100%{translate:0 0}25%{translate:-7px 0}75%{translate:7px 0}}
+.ov-nudge{animation:ovnudge .3s}
 .wc-box{--wc-bg:#fff;width:100%;max-width:600px;max-height:94vh;overflow:auto;background:#fff;border-radius:20px;box-shadow:0 24px 60px rgba(0,0,0,.3)}
 .wc-top{display:flex;align-items:center;gap:10px;padding:12px 12px 0 22px}
 .wc-sec{font-size:13px;font-weight:700;color:#5e6c84;display:flex;align-items:center;gap:6px}
@@ -4975,7 +4977,7 @@ function wallCompose(src){
     if(!dirty()){close();return;}
     const bx=d.querySelector('.wc-box');bx.classList.remove('wc-nudge');void bx.offsetWidth;bx.classList.add('wc-nudge');
     showToast('✏️','쓰던 내용이 있어요. 저장하거나 취소를 눌러 주세요.',2200);
-  });
+  },{guard:false});
   d.querySelector('#__wc-x').addEventListener('click',closeAsk);
   d.querySelector('#__wc-cancel').addEventListener('click',closeAsk);
   // 임시 저장: 새 메모는 쓰는 동안 조금씩 저장해 두었다가, 다음에 열면 불러온다
@@ -5450,15 +5452,36 @@ document.addEventListener('keydown',e=>{
   }
 },true);
 
-function bindOverlayClose(overlayEl,closeFn){
+function bindOverlayClose(overlayEl,closeFn,opts){
   const ov=(typeof overlayEl==='string')?document.getElementById(overlayEl):overlayEl;
   if(!ov)return;
-  let downOnOverlay=false;
+  let downOnOverlay=false,touched=false;
+  const guard=!(opts&&opts.guard===false);
+  // 창 안에 글을 직접 쓰는 중이면, 바깥(어두운 곳)을 눌러도 닫지 않는다 — 쓰던 내용이 사라지는 것 방지
+  const isTyping=el=>{
+    if(!el||!el.matches||!el.matches('input,textarea,select,[contenteditable="true"]'))return false;
+    if(el.matches('input[type=checkbox],input[type=radio],input[type=button],input[type=file],input[type=search],input[type=range]'))return false;
+    const mark=((el.id||'')+' '+(el.className&&el.className.baseVal===undefined?el.className:'')+' '+(el.getAttribute('placeholder')||'')+' '+(el.getAttribute('aria-label')||''));
+    return !/search|검색|filter|필터|-q$/i.test(mark);
+  };
+  if(guard){
+    const mk=e=>{if(isTyping(e.target))touched=true;};
+    ov.addEventListener('input',mk,true);ov.addEventListener('change',mk,true);
+    try{new MutationObserver(()=>{if(touched&&!ov.isConnected)touched=false;else if(touched){const cs=getComputedStyle(ov);if(cs.display==='none'||cs.visibility==='hidden'||(!ov.offsetWidth&&!ov.offsetHeight))touched=false;}}).observe(ov,{attributes:true,attributeFilter:['class','style','hidden']});}catch(_){}
+  }
   ov.addEventListener('mousedown',e=>{downOnOverlay=(e.target===ov);});
   ov.addEventListener('click',e=>{
     const shouldClose=(e.target===ov&&downOnOverlay);
     downOnOverlay=false;
-    if(shouldClose)closeFn();
+    if(!shouldClose)return;
+    if(guard&&touched){
+      const bx=ov.firstElementChild;
+      if(bx){bx.classList.remove('ov-nudge');void bx.offsetWidth;bx.classList.add('ov-nudge');}
+      if(typeof showToast==='function')showToast('✏️','쓰던 내용이 있어요. 저장하거나 ✕ 닫기를 눌러 주세요.',2200);
+      return;
+    }
+    touched=false;
+    closeFn();
   });
 }
 
@@ -7710,7 +7733,7 @@ document.getElementById('modal-title').addEventListener('blur',()=>{const card=g
 document.getElementById('modal-title').addEventListener('input',()=>autoR(document.getElementById('modal-title')));
 document.getElementById('modal-done-chk').addEventListener('change',()=>{const card=getActiveCard();if(!card)return;applyCardDone(card,document.getElementById('modal-done-chk').checked);document.getElementById('modal-done-chk').checked=!!card.done;updateDoneRow(card.done);updateCompletedRow(card);updateDateSummary(card);updateGcalBtn(card.due);saveState();refreshCard(activeCardId,activeColId);gtaskSync(card);});
 document.getElementById('modal-close').addEventListener('click',closeModal);
-bindOverlayClose('modal-overlay',closeModal);
+bindOverlayClose('modal-overlay',closeModal,{guard:false});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('modal-overlay').classList.contains('open'))closeModal();});
 // ════════════════════════════
 //  날짜 팝오버 (Trello 스타일)
@@ -8677,7 +8700,7 @@ function renderMyDay(){
 }
 
 document.getElementById('myday-close').addEventListener('click',closeMyDay);
-bindOverlayClose('myday-overlay',closeMyDay);
+bindOverlayClose('myday-overlay',closeMyDay,{guard:false});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('myday-overlay').classList.contains('open'))closeMyDay();});
 
 // ════════════════════════════
@@ -8767,7 +8790,7 @@ document.getElementById('planner-date-input').addEventListener('blur',function()
 document.getElementById('planner-prev').addEventListener('click',()=>plannerShiftWeek(-1));
 document.getElementById('planner-next').addEventListener('click',()=>plannerShiftWeek(1));
 document.getElementById('planner-close').addEventListener('click',closePlanner);
-bindOverlayClose('planner-overlay',closePlanner);
+bindOverlayClose('planner-overlay',closePlanner,{guard:false});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('planner-overlay').classList.contains('open'))closePlanner();});
 
 // 6시~다음날 3시까지 시간 눈금 목록 — [{h24, disp, top}], top 은 상단 여백을 포함한 px
@@ -9775,7 +9798,7 @@ function calShiftDay(delta){
 document.getElementById('cal-det-prev').addEventListener('click',()=>calShiftDay(-1));
 document.getElementById('cal-det-next').addEventListener('click',()=>calShiftDay(1));
 document.getElementById('calendar-close').addEventListener('click',closeCalendar);
-bindOverlayClose('calendar-overlay',closeCalendar);
+bindOverlayClose('calendar-overlay',closeCalendar,{guard:false});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('calendar-overlay').classList.contains('open'))closeCalendar();});
 
 // ════════════════════════════
@@ -10152,8 +10175,8 @@ function printDiary(){
   });
   document.getElementById('print-overlay').classList.add('open');
 }
-bindOverlayClose('diary-list-overlay',closeDiaryList);
-bindOverlayClose('diary-read-overlay',closeDiaryReader);
+bindOverlayClose('diary-list-overlay',closeDiaryList,{guard:false});
+bindOverlayClose('diary-read-overlay',closeDiaryReader,{guard:false});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('diary-list-overlay').classList.contains('open'))closeDiaryList();});
 document.addEventListener('keydown',e=>{
   if(!document.getElementById('diary-read-overlay').classList.contains('open'))return;
@@ -10492,7 +10515,7 @@ function renderPlannerPrintContent(){
 }
 function closePrintView(){document.getElementById('print-overlay').classList.remove('open');}
 // 바깥 클릭 · Esc 로 닫기
-bindOverlayClose('print-overlay',closePrintView);
+bindOverlayClose('print-overlay',closePrintView,{guard:false});
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'&&document.getElementById('print-overlay').classList.contains('open'))closePrintView();
 });
