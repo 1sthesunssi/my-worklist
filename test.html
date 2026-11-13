@@ -2221,7 +2221,7 @@ a.wl-site:hover{text-decoration:underline}
     <button class="hdr-btn" id="myday-btn" onclick="openMyDay()">나의 하루<span id="myday-badge" class="hdr-badge" style="display:none"></span></button>
     <button class="hdr-btn" id="planner-btn" onclick="openPlanner()">✍️ 플래너</button>
     <button class="hdr-btn" id="ai-btn" onclick="aiGoList()" title="할 일이 남은 리스트(통화 → 카톡 → 문자)로 가기 · 다 보면 접수함">📥 고객 할 일<span id="ai-badge" class="hdr-badge" style="display:none"></span></button>
-    <button class="hdr-btn" id="sales-btn" onclick="openSales()">💰 매출</button>
+    <button class="hdr-btn" id="sales-btn" onclick="slPeriod='month';openSales()">💰 매출</button>
     <button class="hdr-btn" id="sched-btn" onclick="openSchedule()">📅 일정</button>
     <button class="hdr-btn" onclick="openCalendar()">캘린더</button>
     <div id="sync-status" onclick="mwlSyncClick()" title="기기 연동 (구글 드라이브)" style="cursor:pointer"><div id="sync-dot"></div><span id="sync-text">연결 안 됨</span></div>
@@ -10806,14 +10806,14 @@ function renderContractSection(card){
     box.innerHTML=`<div class="ct-box ct-done">
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <span style="font-size:12px;font-weight:800;padding:3px 9px;border-radius:4px;background:#00875a;color:#fff">${(()=>{const nC=cl.filter(ctIsDeal).length,nT=cl.length+ctAdj(card).length;return nT>1?`계약 ${nC}건 · 거래 ${nT}건`:'계약 확정';})()}</span>
-        <a href="#" onclick="event.preventDefault();openSales()" style="margin-left:auto;font-size:12.5px">매출 화면에서 보기 →</a>
+        <a href="#" onclick="event.preventDefault();slPeriod='month';openSales()" style="margin-left:auto;font-size:12.5px">매출 화면에서 보기 →</a>
       </div>
       <div class="ct-rows">${rows}</div>
       ${ajList}
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><button type="button" class="ct-btn go" style="min-height:36px;font-size:13px" onclick="ctEdit('new')">＋ 다음 계약 추가</button><span style="margin-left:auto"></span>${ajBtns}</div></div>`;
     return;
   }
-  box.innerHTML=`<div class="ct-box ct-empty"><div style="flex:1 1 240px;font-size:13px;color:#44546f;line-height:1.5">계약이 확정되면 눌러 주세요. 확정일과 보험료를 적으면 <b>매출 화면</b>에 모여요.</div><button type="button" class="ct-btn go" onclick="ctEdit()">✓ 계약 확정</button><div style="flex-basis:100%;display:flex;align-items:center;gap:8px;font-size:12.5px;color:#7a8794">${ajList?`<a href="#" onclick="event.preventDefault();openSales()" style="font-size:12.5px">매출 화면에서 보기 →</a>`:'예전 계약이 해지·감액됐나요?'}<span style="margin-left:auto"></span>${ajBtns}</div>${ajList?`<div style="flex-basis:100%">${ajList}</div>`:''}</div>`;
+  box.innerHTML=`<div class="ct-box ct-empty"><div style="flex:1 1 240px;font-size:13px;color:#44546f;line-height:1.5">계약이 확정되면 눌러 주세요. 확정일과 보험료를 적으면 <b>매출 화면</b>에 모여요.</div><button type="button" class="ct-btn go" onclick="ctEdit()">✓ 계약 확정</button><div style="flex-basis:100%;display:flex;align-items:center;gap:8px;font-size:12.5px;color:#7a8794">${ajList?`<a href="#" onclick="event.preventDefault();slPeriod='month';openSales()" style="font-size:12.5px">매출 화면에서 보기 →</a>`:'예전 계약이 해지·감액됐나요?'}<span style="margin-left:auto"></span>${ajBtns}</div>${ajList?`<div style="flex-basis:100%">${ajList}</div>`:''}</div>`;
 }
 function ctGuessCat(card){
   const t=(card.title||'')+' '+(document.getElementById('modal-col-label')||{}).textContent;
@@ -10931,7 +10931,7 @@ setTimeout(()=>{try{if(document.getElementById('home-screen').style.display!=='n
 const SL_GRP=[{k:'장기',cats:['장기']},{k:'자동차',cats:['자동차 DB','자동차 BB'],nm:['DB','BB']},{k:'일반',cats:['일반 DB','일반 타사'],nm:['DB','타사']}];
 const slCatsOf=k=>{const g=SL_GRP.find(g=>g.k===k);return g?g.cats:[k];};
 const slLabel=k=>k==='자동차'?'자동차 (DB+BB)':k==='일반'?'일반 (DB+타사)':k;
-let slPeriod='year',slCat='장기',slFrom='',slTo='',slBiz='all';
+let slPeriod='month',slCat='장기',slFrom='',slTo='',slBiz='all';   // (11/13) 처음 열 때 기본 = 이번 달
 function slAll(){
   const out=[];
   (state.boards||[]).forEach(b=>(b.columns||[]).forEach(col=>(col.cards||[]).forEach(card=>{
