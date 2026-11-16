@@ -2239,6 +2239,50 @@ a.wl-site:hover{text-decoration:underline}
 .ci-ed-grid input,.ci-ed-grid textarea{width:100%;box-sizing:border-box;padding:5px 8px;border:1px solid #c1c7d0;border-radius:6px;font-size:13.5px;font-family:inherit}
 @media(max-width:640px){.ci-cf-row{grid-template-columns:64px 1fr}.ci-cf-row img{display:none}}
 </style>
+<style>
+/* ── 첫 화면 정리 (2026-11-16): 오른쪽 끝선 하나 · 1:2 칸 · 위 오른쪽 카드 2개 · Auto Action 9칸 · 차분한 색 (PC만) ── */
+@media (min-width:761px){
+  #home-screen #home-top{flex-wrap:nowrap;align-items:stretch!important;gap:14px}
+  #home-screen #ht-wid{max-width:none;flex:1 1 auto}
+  #home-screen #home-sub{margin-left:0;flex:0 0 260px;width:260px;display:flex;flex-direction:column;align-items:stretch;align-self:stretch!important;gap:8px}
+  #home-screen #home-sub .ht-div{display:none}
+  #home-screen #diary-section,#home-screen #home-sub #home-sales{flex:1;display:flex;align-items:center;gap:6px;background:#fff;border:1px solid #e4e7ea;border-radius:12px;padding:8px 10px;min-width:0}
+  #home-screen #diary-section #diary-collapsed-strip{flex:1;min-width:0}
+  #home-screen #diary-section .diary-strip{border:0;background:none;padding:0;max-width:none;font-size:12.5px;gap:8px}
+  #home-screen #diary-section .diary-strip span:first-child{width:34px;height:34px;border-radius:9px;font-size:17px!important}
+  #home-screen #diary-section .ht-round{width:30px;height:30px;font-size:13px}
+  #home-screen #home-sub #home-sales .hs-head{flex:1;margin:0}
+  #home-screen #home-sub .hs-toggle{width:100%;text-align:left;border:0;background:none;border-radius:8px;padding:6px 4px;font-size:13.5px;font-weight:800;color:var(--text);display:flex;align-items:center;gap:10px}
+  #home-screen #home-sub .hs-toggle::after{content:'›';margin-left:auto;width:28px;height:28px;border-radius:50%;border:1px solid #e4e7ea;display:inline-flex;align-items:center;justify-content:center;color:#6b778c;font-size:15px}
+  #home-screen #home-sub #home-sales:hover{border-color:var(--accent)}
+  /* 보드: 오른쪽 끝까지 꽉 채운 격자 */
+  #home-screen #boards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
+  #home-screen #boards-grid .board-card{width:auto}
+  /* 아래 두 줄: 1 : 2 로 같은 세로선 */
+  #home-screen .home-row{grid-template-columns:minmax(0,1fr) minmax(0,2fr)}
+  #home-screen #memo-section{max-width:none}
+  #home-screen .home-row.three{align-items:stretch}
+  #home-screen #sched-section{display:flex;flex-direction:column}
+  #home-screen #sched-section>.sec-body{flex:1;display:flex;flex-direction:column}
+  #home-screen #home-sched{flex:1;display:flex;flex-direction:column}
+  #home-screen #home-sched>.sch-panel{flex:1;box-sizing:border-box}
+  #home-screen #quick-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  /* Auto Action: 한 줄 9칸 → 17개가 2줄에 딱 */
+  #home-screen #auto-grid{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:8px}
+  #home-screen #auto-grid .auto-item{width:auto;min-width:0;padding:11px 4px}
+  #home-screen #auto-grid .auto-name{max-width:100%;font-size:11.5px;word-break:keep-all}
+  /* 메모 사진: 색은 흐리게, 높이는 조금 낮게 (마우스를 올리면 원래 색) */
+  #home-screen .mmn-img{height:66px}
+  #home-screen .mmn-img img{filter:saturate(.3) brightness(1.05);opacity:.85;transition:filter .15s,opacity .15s}
+  #home-screen .memo-mini-note:hover .mmn-img img{filter:none;opacity:1}
+  /* 7일 날씨: 줄무늬 없이 가는 선 · 기온은 회색 */
+  #ht-wx .wx-day:nth-child(odd){background:none}
+  #ht-wx .wx-days{border-top:1px solid #e3dfd6}
+  #ht-wx .wx-day+.wx-day{border-left:1px solid #ebe7df}
+  #ht-wx .wx-day .hi{color:#3a3a3a}#ht-wx .wx-day .lo{color:#9a9a9a}
+  #ht-wx .wx-day .i,#ht-wx .wx-ico{filter:saturate(.6)}
+}
+</style>
 </head>
 <body>
 
@@ -2258,13 +2302,14 @@ a.wl-site:hover{text-decoration:underline}
     <button class="hdr-btn" id="myday-btn" onclick="openMyDay()">나의 하루<span id="myday-badge" class="hdr-badge" style="display:none"></span></button>
     <button class="hdr-btn" id="planner-btn" onclick="openPlanner()">✍️ 플래너</button>
     <button class="hdr-btn" id="ai-btn" onclick="aiGoList()" title="할 일이 남은 리스트(통화 → 카톡 → 문자)로 가기 · 다 보면 접수함">📥 고객 할 일<span id="ai-badge" class="hdr-badge" style="display:none"></span></button>
-    <button class="hdr-btn" id="sales-btn" onclick="slPeriod='month';openSales()">💰 매출</button>
     <button class="hdr-btn" id="sched-btn" onclick="openSchedule()">📅 일정</button>
-    <button class="hdr-btn" onclick="openCalendar()">캘린더</button>
     <div id="sync-status" onclick="openSyncModal()" title="기기 연동 (구글 드라이브)" style="cursor:pointer"><div id="sync-dot"></div><span id="sync-text">연결 안 됨</span></div>
     <div id="more-wrap">
       <button class="hdr-btn icon-only" id="more-btn" onclick="toggleMoreMenu(event)" title="더 보기">···</button>
       <div id="more-menu">
+        <button onclick="closeMoreMenu();slPeriod='month';openSales()"><span>💰 매출</span></button>
+        <button onclick="closeMoreMenu();openCalendar()"><span>🗓️ 캘린더 (마감·일기)</span></button>
+        <div class="mm-sep"></div>
         <button onclick="closeMoreMenu();openSyncModal()"><span>기기 연동</span></button>
         <button id="notif-btn" onclick="closeMoreMenu();toggleNotifPermission()"><span>알림 켜기</span></button>
         <button id="diary-lock-btn" onclick="closeMoreMenu();setupDiaryLock()"><span>일기 잠금 설정</span></button>
