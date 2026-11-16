@@ -2281,7 +2281,49 @@ a.wl-site:hover{text-decoration:underline}
   #ht-wx .wx-day+.wx-day{border-left:1px solid #ebe7df}
   #ht-wx .wx-day .hi{color:#3a3a3a}#ht-wx .wx-day .lo{color:#9a9a9a}
   #ht-wx .wx-day .i,#ht-wx .wx-ico{filter:saturate(.6)}
+  /* 날씨 판 색: 밤 · 비 · 눈 (2026-11-16) */
+  #ht-wx{cursor:pointer;transition:background .4s,box-shadow .15s}
+  #ht-wx:hover{box-shadow:0 0 0 2px rgba(12,102,228,.35)}
+  #ht-wx.wx-night{background:linear-gradient(160deg,#1d2b53,#2f3f73);color:#dfe6ff}
+  #ht-wx.wx-rain{background:linear-gradient(160deg,#5d6b7a,#7e8b98);color:#f1f4f7}
+  #ht-wx.wx-snow{background:linear-gradient(160deg,#cfe6fb,#eaf4fd);color:#33475b}
+  #ht-wx.wx-night .wx-date,#ht-wx.wx-night .wx-temp,#ht-wx.wx-rain .wx-date,#ht-wx.wx-rain .wx-temp{color:#fff}
+  #ht-wx.wx-night .wx-sub,#ht-wx.wx-night .wx-dow,#ht-wx.wx-rain .wx-sub,#ht-wx.wx-rain .wx-dow{color:rgba(255,255,255,.75)}
+  #ht-wx.wx-night .wx-dow:not(.wk):not(.sat){color:#ff9b9b}#ht-wx.wx-night .wx-dow.sat,#ht-wx.wx-rain .wx-dow.sat{color:#a9cbff}
+  #ht-wx.wx-night .wx-days,#ht-wx.wx-rain .wx-days{border-top-color:rgba(255,255,255,.18)}
+  #ht-wx.wx-night .wx-day+.wx-day,#ht-wx.wx-rain .wx-day+.wx-day{border-left-color:rgba(255,255,255,.12)}
+  #ht-wx.wx-night .wx-day .hi,#ht-wx.wx-rain .wx-day .hi{color:#fff}
+  #ht-wx.wx-night .wx-day .lo,#ht-wx.wx-rain .wx-day .lo{color:rgba(255,255,255,.6)}
+  #ht-wx.wx-snow .wx-days{border-top-color:#c3dbf1}#ht-wx.wx-snow .wx-day+.wx-day{border-left-color:#d5e6f6}
+  #ht-wx.wx-night .wx-day .i,#ht-wx.wx-night .wx-ico,#ht-wx.wx-rain .wx-day .i,#ht-wx.wx-rain .wx-ico{filter:none}
 }
+/* 시간별 날씨 창 */
+#hw-ov{position:fixed;inset:0;background:rgba(9,30,66,.45);z-index:3000;display:flex;align-items:center;justify-content:center;padding:20px}
+#hw-ov .hw-box{background:#fff;border-radius:18px;width:min(880px,100%);max-height:calc(100vh - 40px);overflow:auto;box-shadow:0 24px 60px rgba(9,30,66,.35);font-family:'Pretendard Variable',Pretendard,system-ui,sans-serif}
+#hw-ov .hw-head{position:relative;display:flex;justify-content:space-between;padding:20px 24px;background:linear-gradient(160deg,#f3f1ec,#e9e4d9);color:#3a3a3a;border-radius:18px 18px 0 0}
+#hw-ov .hw-head.wx-night{background:linear-gradient(160deg,#1d2b53,#2f3f73);color:#fff}
+#hw-ov .hw-head.wx-rain{background:linear-gradient(160deg,#5d6b7a,#7e8b98);color:#fff}
+#hw-ov .hw-head.wx-snow{background:linear-gradient(160deg,#cfe6fb,#eaf4fd);color:#33475b}
+#hw-ov .hw-city{font-size:15px;font-weight:800;opacity:.85}
+#hw-ov .hw-now{display:flex;align-items:center;gap:10px;margin:4px 0}
+#hw-ov .hw-ico{font-size:46px}#hw-ov .hw-tp{font-size:52px;font-weight:300;line-height:1}
+#hw-ov .hw-sub{font-size:14px;opacity:.85}#hw-ov .hw-sun{font-size:12.5px;opacity:.75;margin-top:4px}
+#hw-ov .hw-x{position:absolute;top:14px;right:14px;width:34px;height:34px;border-radius:50%;border:0;background:rgba(255,255,255,.35);font-size:15px;cursor:pointer;color:inherit}
+#hw-ov .hw-sec{font-size:13px;font-weight:800;color:#44546f;margin:16px 24px 8px}
+#hw-ov .hw-scroll{overflow-x:auto;margin:0 16px;padding-bottom:6px}
+#hw-ov .hw-hours{position:relative}
+#hw-ov .hw-line{display:block}
+#hw-ov .hw-cells{display:flex}
+#hw-ov .hwh{width:64px;flex:none;text-align:center;font-size:12px;color:#44546f}
+#hw-ov .hwh.nd{border-left:1px dashed #c1c7d0}
+#hw-ov .hwh .t{font-weight:700;white-space:nowrap}#hw-ov .hwh .i{font-size:22px;margin:4px 0}#hw-ov .hwh .tp{font-size:15px;font-weight:800;color:#172b4d}
+#hw-ov .hwh .pp{font-size:11px;color:#8a94a6;min-height:15px}#hw-ov .hwh .pp.hi{color:#1a62c9;font-weight:700}
+#hw-ov .hw-days{margin:0 16px}
+#hw-ov .hwd{display:grid;grid-template-columns:70px 44px 30px 1fr 64px 36px 90px 36px;align-items:center;gap:6px;padding:8px;border-bottom:1px solid #f0f1f4;font-size:13px;color:#44546f}
+#hw-ov .hwd b{color:#172b4d}#hw-ov .hwd .dd{color:#8a94a6;font-size:12px}#hw-ov .hwd .i{font-size:20px}
+#hw-ov .hwd .pp{font-size:12px;color:#1a62c9}#hw-ov .hwd .lo{text-align:right;color:#8a94a6}#hw-ov .hwd .hi{font-weight:800;color:#172b4d}
+#hw-ov .hwd .bar{height:5px;border-radius:3px;background:#eef0f3;display:flex}#hw-ov .hwd .bar i{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,#7cb6f2,#f6b445)}
+#hw-ov .hw-foot{font-size:11px;color:#8a94a6;text-align:right;margin:10px 24px 16px}
 </style>
 </head>
 <body>
@@ -2377,7 +2419,7 @@ a.wl-site:hover{text-decoration:underline}
 <!-- HOME -->
 <div id="home-screen">
   <!-- 시간 · 날짜 · 날씨 한 줄 -->
-  <div id="home-top"><div id="ht-mline"><span id="htm-time"></span><span id="htm-info"></span></div><div id="ht-wid"><div id="ht-flip" aria-label="지금 시각"></div><div id="ht-wx" title="서울 날씨 (30분마다 새로 받아요)"></div></div><span id="home-sub"><span id="diary-section"><span id="diary-collapsed-strip"></span><button type="button" class="ht-round" onclick="openGeminiDiary()" title="제미나이에서 일기 쓰기" aria-label="제미나이에서 일기 쓰기">✍️</button><button type="button" class="ht-round" onclick="openDiaryList()" title="일기 전체" aria-label="일기 전체">📚</button></span><span class="ht-div" aria-hidden="true"></span></span><span class="m-only m-top-btns"><button type="button" class="ht-round" onclick="mOpenDiary()" aria-label="일기">📔</button><button type="button" class="ht-round" onclick="slPeriod='month';openSales()" aria-label="매출 보기">💰</button></span></div>
+  <div id="home-top"><div id="ht-mline"><span id="htm-time"></span><span id="htm-info"></span></div><div id="ht-wid"><div id="ht-flip" aria-label="지금 시각"></div><div id="ht-wx" title="눌러서 시간별 날씨 보기" role="button" tabindex="0" onclick="hwOpen()" onkeydown="if(event.key==='Enter')hwOpen()"></div></div><span id="home-sub"><span id="diary-section"><span id="diary-collapsed-strip"></span><button type="button" class="ht-round" onclick="openGeminiDiary()" title="제미나이에서 일기 쓰기" aria-label="제미나이에서 일기 쓰기">✍️</button><button type="button" class="ht-round" onclick="openDiaryList()" title="일기 전체" aria-label="일기 전체">📚</button></span><span class="ht-div" aria-hidden="true"></span></span><span class="m-only m-top-btns"><button type="button" class="ht-round" onclick="mOpenDiary()" aria-label="일기">📔</button><button type="button" class="ht-round" onclick="slPeriod='month';openSales()" aria-label="매출 보기">💰</button></span></div>
   <!-- 보드 -->
   <div class="home-sec" id="boards-section" data-sec="boards">
     <h2><span class="sec-caret">▾</span><span class="sec-ico" style="background:#e6f9f0;color:#0d9668">📌</span><span class="sec-label">Boards</span></h2>
@@ -6036,7 +6078,7 @@ try{hwCache=JSON.parse(localStorage.getItem('home_weather7')||'null');}catch(e){
 function hwSky(code,day){
   if(code===0)return day?['☀️','맑음']:['🌙','맑음'];
   if(code===1)return day?['🌤️','대체로 맑음']:['🌙','대체로 맑음'];
-  if(code===2)return['⛅','구름 조금'];
+  if(code===2)return day?['⛅','구름 조금']:['☁️','구름 조금'];
   if(code===3)return['☁️','흐림'];
   if(code===45||code===48)return['🌫️','안개'];
   if(code>=51&&code<=57)return['🌦️','이슬비'];
@@ -6062,23 +6104,61 @@ function hwPaint(){
     return `<div class="wx-day"><b>${i===0&&d.d===today?'오늘':W[dt.getDay()]}</b><div class="i">${hwSky(d.c,true)[0]}</div><div class="hi">${Math.round(d.hi)}°</div><div class="lo">${Math.round(d.lo)}°</div></div>`;
   }).join('');
   const n=new Date(),dw=n.getDay();
+  el.classList.remove('wx-night','wx-rain','wx-snow');const th=hwTheme(hwCache.code,hwCache.day);if(th)el.classList.add(th);
   const dateHtml=`<div><div class="wx-date">${n.getMonth()+1}월 ${n.getDate()}일</div><div class="wx-dow${dw===0?'':dw===6?' sat':' wk'}">${W[dw]}요일</div></div>`;
   el.innerHTML=`<div class="wx-now">${dateHtml}<div class="wx-ico">${ico}</div><div style="text-align:center"><div class="wx-temp">${Math.round(hwCache.temp)}°</div><div class="wx-sub">${txt}${hwCache.dust?`<span class="wx-dust"> · 미세먼지 ${hwCache.dust}</span>`:''}</div></div></div>${days?`<div class="wx-days">${days}</div>`:''}`;
 }
+// 판 색: 밤=남색 밤하늘, 비·이슬비·뇌우=회색, 눈=하늘색
+function hwTheme(code,day){
+  if((code>=71&&code<=77)||code===85||code===86)return 'wx-snow';
+  if((code>=51&&code<=67)||(code>=80&&code<=82)||code>=95)return 'wx-rain';
+  if(!day)return 'wx-night';
+  return '';
+}
+// 날씨 판을 누르면: 앞으로 24시간 시간별 날씨 + 7일
+function hwOpen(){
+  if(!hwCache||!hwCache.hours){hwLoad();showToast('🌤️','날씨를 받아 오는 중이에요. 잠시 뒤 다시 눌러 주세요.',2500);return;}
+  const now=new Date(),key=localDateStr(now)+'T'+String(now.getHours()).padStart(2,'0')+':00';
+  const hrs=hwCache.hours.filter(h=>h.t>=key).slice(0,24);
+  if(!hrs.length){hwCache.at=0;hwLoad();showToast('🌤️','날씨를 새로 받아 오는 중이에요.',2500);return;}
+  const tps=hrs.map(h=>h.tp),mx=Math.max(...tps),mn=Math.min(...tps),CW=64,H=70;
+  const pts=hrs.map((h,i)=>`${i*CW+CW/2},${8+(mx===mn?H/2:(mx-h.tp)/(mx-mn)*H)}`).join(' ');
+  const W=['일','월','화','수','목','금','토'];
+  const cells=hrs.map((h,i)=>{const hh=+h.t.slice(11,13),lab=i===0?'지금':(hh===0?`${+h.t.slice(8,10)}일`:(hh<12?'오전 ':'오후 ')+(hh%12||12)+'시');
+    return `<div class="hwh${hh===0&&i?' nd':''}"><div class="t">${lab}</div><div class="i">${hwSky(h.c,h.day)[0]}</div><div class="tp">${Math.round(h.tp)}°</div><div class="pp${h.pp>=50?' hi':''}">${h.pp!=null?'💧'+h.pp+'%':''}</div></div>`;}).join('');
+  const today=localDateStr(now);
+  const dl7=(hwCache.days||[]).filter(d=>d.d>=today).slice(0,7),wMin=Math.min(...dl7.map(d=>d.lo)),wMax=Math.max(...dl7.map(d=>d.hi)),wR=Math.max(1,wMax-wMin);
+  const days=dl7.map((d,i)=>{const dt=new Date(d.d+'T00:00:00');
+    return `<div class="hwd"><b>${i===0?'오늘':W[dt.getDay()]+'요일'}</b><span class="dd">${dt.getMonth()+1}/${dt.getDate()}</span><span class="i">${hwSky(d.c,true)[0]}</span><span class="tx">${hwSky(d.c,true)[1]}</span><span class="pp">${d.pp!=null?'💧'+d.pp+'%':''}</span><span class="lo">${Math.round(d.lo)}°</span><span class="bar"><i style="margin-left:${(d.lo-wMin)/wR*100}%;width:${Math.max(6,(d.hi-d.lo)/wR*100)}%"></i></span><span class="hi">${Math.round(d.hi)}°</span></div>`;}).join('');
+  const t0=(hwCache.days||[]).find(d=>d.d===today)||{};
+  const [ico,txt]=hwSky(hwCache.code,hwCache.day),th=hwTheme(hwCache.code,hwCache.day);
+  let ov=document.getElementById('hw-ov');if(ov)ov.remove();
+  ov=document.createElement('div');ov.id='hw-ov';
+  ov.innerHTML=`<div class="hw-box" role="dialog" aria-label="시간별 날씨"><div class="hw-head ${th}"><div><div class="hw-city">서울 날씨</div><div class="hw-now"><span class="hw-ico">${ico}</span><span class="hw-tp">${Math.round(hwCache.temp)}°</span></div><div class="hw-sub">${txt}${t0.hi!=null?` · 최고 ${Math.round(t0.hi)}° 최저 ${Math.round(t0.lo)}°`:''}${hwCache.dust?' · 미세먼지 '+hwCache.dust:''}</div>${t0.sr?`<div class="hw-sun">🌅 해 뜸 ${t0.sr.slice(11,16)} · 🌇 해 짐 ${t0.ss.slice(11,16)}</div>`:''}</div><button type="button" class="hw-x" aria-label="닫기">✕</button></div>
+  <div class="hw-sec">앞으로 24시간</div><div class="hw-scroll"><div class="hw-hours" style="width:${hrs.length*CW}px"><svg class="hw-line" width="${hrs.length*CW}" height="${H+16}"><polyline points="${pts}" fill="none" stroke="#f0a500" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>${hrs.map((h,i)=>`<circle cx="${i*CW+CW/2}" cy="${8+(mx===mn?H/2:(mx-h.tp)/(mx-mn)*H)}" r="3" fill="#f0a500"/>`).join('')}</svg><div class="hw-cells">${cells}</div></div></div>
+  <div class="hw-sec">7일 날씨</div><div class="hw-days">${days}</div><div class="hw-foot">Open-Meteo 무료 날씨 · 30분마다 새로 받아요</div></div>`;
+  document.body.appendChild(ov);
+  const close=()=>{ov.remove();document.removeEventListener('keydown',esc);};
+  const esc=e=>{if(e.key==='Escape')close();};
+  document.addEventListener('keydown',esc);
+  ov.addEventListener('click',e=>{if(e.target===ov)close();});
+  ov.querySelector('.hw-x').onclick=close;
+}
 async function hwLoad(){
   if(!document.querySelector('#ht-wx>*'))hwPaint();
-  if(hwBusy||(hwCache&&Date.now()-hwCache.at<30*60*1000&&hwCache.dayKey===localDateStr(new Date())))return;
+  if(hwBusy||(hwCache&&hwCache.hours&&Date.now()-hwCache.at<30*60*1000&&hwCache.dayKey===localDateStr(new Date())))return;
   hwBusy=true;
   try{
     const lat=37.5665,lon=126.978;
     const [w,a]=await Promise.all([
-      fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min&forecast_days=8&timezone=Asia%2FSeoul`).then(r=>r.ok?r.json():null).catch(()=>null),
+      fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset&hourly=temperature_2m,weather_code,precipitation_probability,is_day&forecast_days=8&timezone=Asia%2FSeoul`).then(r=>r.ok?r.json():null).catch(()=>null),
       fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=pm10,pm2_5&timezone=Asia%2FSeoul`).then(r=>r.ok?r.json():null).catch(()=>null)
     ]);
     if(w&&w.current){
-      const dl=w.daily||{},days=(dl.time||[]).map((d,i)=>({d,c:dl.weather_code[i],hi:dl.temperature_2m_max[i],lo:dl.temperature_2m_min[i]}));
+      const dl=w.daily||{},days=(dl.time||[]).map((d,i)=>({d,c:dl.weather_code[i],hi:dl.temperature_2m_max[i],lo:dl.temperature_2m_min[i],pp:(dl.precipitation_probability_max||[])[i],sr:(dl.sunrise||[])[i],ss:(dl.sunset||[])[i]}));
+      const hl=w.hourly||{},hours=(hl.time||[]).map((t,i)=>({t,c:hl.weather_code[i],tp:hl.temperature_2m[i],pp:(hl.precipitation_probability||[])[i],day:(hl.is_day||[])[i]!==0}));
       hwCache={at:Date.now(),dayKey:localDateStr(new Date()),temp:w.current.temperature_2m,code:w.current.weather_code,day:w.current.is_day!==0,
-        dust:a&&a.current?hwDust(a.current.pm10,a.current.pm2_5):'',days};
+        dust:a&&a.current?hwDust(a.current.pm10,a.current.pm2_5):'',days,hours};
       try{localStorage.setItem('home_weather7',JSON.stringify(hwCache));}catch(e){}
     }
   }catch(e){}
