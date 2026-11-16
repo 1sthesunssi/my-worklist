@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>보험사 전산 모음 · 한눈에 보기</title>
+<meta name="description" content="손해보험·생명보험·공제회사 40개사의 전산 접속, 약관, 청구양식, 고객센터·인콜·헬프데스크·청구팩스 번호를 한 화면에 모았습니다.">
+<meta name="color-scheme" content="light">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%231b3a5c'/%3E%3Cpath d='M26 30h48M26 50h48M26 70h28' stroke='white' stroke-width='8' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#f4f6f9; --line:#e1e6ee; --line2:#edf0f5; --text:#1b2431; --muted:#6c7787;
+    --navy:#1b3a5c; --fire:#2563eb; --life:#0e8a68; --gongje:#b06004;
+    --barH:47px; --rh:37px;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--bg);color:var(--text);font-size:13px;line-height:1.5;
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","맑은 고딕","Noto Sans KR","Segoe UI",Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1104px;margin:0 auto;padding:0 14px}
+
+  /* ── 상단 콤팩트 바 ── */
+  .bar{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:10px;
+    background:rgba(244,246,249,.97);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);padding:7px 0;transition:box-shadow .15s}
+  .bar.stuck{box-shadow:0 8px 18px -16px rgba(20,40,70,.55)}
+  .brand{display:flex;align-items:center;gap:6px;flex:0 0 auto}
+  .brand .bm{font-size:15px;font-weight:800;letter-spacing:-.03em;color:var(--navy);line-height:1.2}
+  .brand .bt{font-size:10.5px;font-weight:800;color:#fff;background:var(--navy);border-radius:20px;padding:1px 6px;line-height:14px}
+  .search{position:relative;flex:1 1 auto;min-width:120px;max-width:330px}
+  .search svg{position:absolute;left:9px;top:50%;transform:translateY(-50%);width:14px;height:14px;stroke:#8b95a4;fill:none;stroke-width:2.2;stroke-linecap:round}
+  #q{width:100%;height:31px;padding:0 26px 0 27px;border:1px solid var(--line);border-radius:8px;background:#fff;
+     font-family:inherit;font-size:13px;color:var(--text);outline:none;-webkit-appearance:none;appearance:none}
+  #q::placeholder{color:#9aa3b1}
+  #q:focus{border-color:#a9bde0;box-shadow:0 0 0 3px rgba(37,99,235,.10)}
+  #q::-webkit-search-cancel-button{-webkit-appearance:none}
+  #clearq{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:22px;height:22px;border:0;background:transparent;
+     color:#9aa3b1;font-size:12px;cursor:pointer;border-radius:50%;display:none;line-height:1;font-family:inherit;padding:0}
+  #clearq:hover{background:#eef1f5;color:var(--text)}
+  .tabs{display:inline-flex;background:#e9edf3;border-radius:8px;padding:2px;gap:1px;flex:0 0 auto}
+  .tab{border:0;background:transparent;font-family:inherit;font-size:12px;font-weight:700;color:#5a6576;
+     padding:4px 9px;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+  .tab .n{font-size:10.5px;font-weight:700;color:#8b95a4}
+  .tab .sh{display:none}
+  .tab:hover{color:var(--navy)}
+  .tab[aria-selected="true"]{background:#fff;color:var(--navy);box-shadow:0 1px 2px rgba(16,24,40,.10),0 0 0 1px rgba(16,24,40,.04)}
+  .tab[aria-selected="true"] .n{color:var(--navy)}
+  .status{flex:0 0 auto;font-size:11.5px;color:var(--muted);white-space:nowrap;margin-left:auto}
+  .status b{color:var(--navy);font-weight:800;font-variant-numeric:tabular-nums}
+
+  /* ── 데스크톱 테이블 ── */
+  table{width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed;background:#fff;border-bottom:1px solid var(--line)}
+  thead th{position:sticky;top:var(--barH);z-index:20;background:#eef1f6;color:#5c6879;
+    font-size:11.5px;font-weight:800;letter-spacing:.01em;text-align:left;padding:0 10px;height:27px;
+    border-bottom:1px solid var(--line);white-space:nowrap;
+    box-shadow:inset 0 1px 0 var(--line)}
+  thead th + th{border-left:1px solid #e5e9f1}
+  tbody tr{background:#fff}
+  tbody tr:nth-child(even){background:#fbfcfe}
+  tbody tr.item:hover{background:#f2f7fd}
+  tbody td{height:var(--rh);padding:0 10px;font-size:12.5px;color:#23303f;vertical-align:middle;
+    border-bottom:1px solid var(--line2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  td.nm{font-size:13px;font-weight:700;color:#16202d;letter-spacing:-.01em}
+  .dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:5px;vertical-align:1px}
+  .dot.fire{background:var(--fire)} .dot.life{background:var(--life)} .dot.gongje{background:var(--gongje)}
+  .brw{display:inline-block;margin-left:5px;font-size:10px;font-weight:800;color:#7b8494;background:#f0f3f7;
+       border:1px solid #e4e9f0;border-radius:4px;padding:0 3px;line-height:13px;vertical-align:1.5px;letter-spacing:0}
+  .pill{display:inline-flex;align-items:center;justify-content:center;height:21px;padding:0 8px;border-radius:6px;
+    font-size:11px;font-weight:700;text-decoration:none;border:1px solid var(--line);color:#3d4a5c;background:#fbfcfd;vertical-align:middle}
+  .pill + .pill{margin-left:4px}
+  .pill:hover{background:#eef3f9;border-color:#cfd7e2;color:var(--navy)}
+  .pill.go{background:var(--navy);border-color:var(--navy);color:#fff;padding-right:6px}
+  .pill.go:hover{background:#16324f;border-color:#16324f;color:#fff}
+  .pill.go svg{width:8px;height:8px;margin-left:3px;stroke:currentColor;fill:none;stroke-width:2.8;stroke-linecap:round;stroke-linejoin:round;opacity:.8}
+  td.num{font-variant-numeric:tabular-nums;color:#1a2634}
+  .tel{color:#1a2634;text-decoration:none;font-weight:700;font-size:13px}
+  .tel:hover{color:var(--fire);text-decoration:underline;text-underline-offset:2px}
+  td.life .tel:hover{color:var(--life)} td.gongje .tel:hover{color:var(--gongje)}
+  td.num.sm .tel{font-size:11.5px}
+  tbody td.num.wrap2 .tel{white-space:nowrap}
+  tbody td.num.wrap2{white-space:normal;overflow:visible;text-overflow:clip;line-height:1.32;font-size:11.5px}
+  .sub{color:#8a94a3;font-size:11px;font-weight:600}
+  .sep{color:#c8cfd9;margin:0 4px;font-size:10px}
+  .na{color:#b3bcc8;font-weight:600}
+  .cp{border:0;background:transparent;padding:0;margin-left:3px;color:#b7bfca;cursor:pointer;vertical-align:-2px;line-height:0}
+  .cp:hover{color:var(--navy)}
+  .cp svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  tr.grp td{height:23px;background:#f1f4f8;border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+    font-size:11px;font-weight:800;color:var(--navy);letter-spacing:-.01em}
+  tr.grp td .gbar{display:inline-block;width:3px;height:10px;border-radius:2px;margin-right:6px;vertical-align:0}
+  tr.grp .gc{color:#8b95a4;font-weight:700;margin-left:5px;font-size:10.5px}
+  tr.grp.fire .gbar{background:var(--fire)} tr.grp.life .gbar{background:var(--life)} tr.grp.gongje .gbar{background:var(--gongje)}
+
+  /* ── 모바일 리스트 ── */
+  .mlist{display:none;background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .m-row{padding:6px 12px;border-bottom:1px solid var(--line2)}
+  .m-row:nth-child(even){background:#fbfcfe}
+  .m-grp{background:#f1f4f8;padding:4px 12px;font-size:10.5px;font-weight:800;color:var(--navy);border-bottom:1px solid var(--line)}
+  .m-grp .gbar{display:inline-block;width:3px;height:9px;border-radius:2px;margin-right:5px;vertical-align:0}
+  .m-grp.fire .gbar{background:var(--fire)} .m-grp.life .gbar{background:var(--life)} .m-grp.gongje .gbar{background:var(--gongje)}
+  .m-grp .gc{color:#8b95a4;font-weight:700;margin-left:4px;font-size:9.5px}
+  .m-l1{display:flex;align-items:center;gap:4px;min-width:0}
+  .m-name{font-size:13px;font-weight:700;color:#16202d;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:0 1 auto}
+  .m-acts{margin-left:auto;display:flex;gap:4px;flex:0 0 auto}
+  .m-acts .pill{height:19px;padding:0 7px;font-size:10px}
+  .m-acts .pill.go{padding-right:5px}
+  .m-acts .pill.go svg{width:7px;height:7px}
+  .m-l2{display:flex;flex-wrap:wrap;align-items:center;gap:1px 8px;margin-top:1px;font-size:11px;color:#3a4757}
+  .n{white-space:nowrap;font-variant-numeric:tabular-nums}
+  .n i{font-style:normal;font-size:9.5px;font-weight:700;color:#9aa4b2;margin-right:2px}
+  .n a{color:#1a2634;text-decoration:none;font-weight:700}
+  .n .sub{font-size:10px}
+  .n .cp{vertical-align:-2px;margin-left:2px}
+  .n .cp svg{width:11px;height:11px}
+
+  .empty{display:none;text-align:center;padding:44px 10px;color:var(--muted);font-size:13px;line-height:1.7;background:#fff;border-bottom:1px solid var(--line)}
+  .empty.show{display:block}
+  .empty b{color:var(--navy)}
+
+  footer.foot{padding:9px 0 30px;color:#94a0ae;font-size:11px;line-height:1.5;letter-spacing:-.01em}
+  footer.foot b{color:#6c7787;font-weight:700}
+
+  #toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,12px);background:#1b2735;color:#fff;
+    font-size:12.5px;font-weight:700;padding:9px 14px;border-radius:9px;opacity:0;pointer-events:none;
+    transition:opacity .16s,transform .16s;z-index:60;box-shadow:0 10px 26px -12px rgba(0,0,0,.5);max-width:calc(100% - 28px)}
+  #toast.show{opacity:1;transform:translate(-50%,0)}
+
+  @media (max-width:860px){
+    table{display:none}
+    .mlist{display:block}
+    .wrap{padding:0}
+    .bar{flex-wrap:wrap;gap:6px;padding:6px 12px}
+    .brand .bm{font-size:13px}
+    .brand .bt{font-size:9.5px;padding:0 5px}
+    .tabs{order:2;margin-left:auto;overflow:visible;padding:1px}
+    .tab{font-size:11px;padding:3px 6px;gap:3px}
+    .tab .n{font-size:9.5px}
+    .tab .lg{display:none} .tab .sh{display:inline}
+    .search{order:3;flex:1 1 100%;max-width:none}
+    #q{height:32px;font-size:14px}
+    .status{display:none}
+    footer.foot{padding:8px 12px 26px}
+  }
+  @media print{
+    body{background:#fff}
+    .bar,.cp,#toast{display:none!important}
+    .mlist{display:none!important}
+    table{display:table!important;border:1px solid #d8dde5}
+    thead th{position:static;box-shadow:none}
+    tr{break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="bar" id="bar">
+    <div class="brand"><span class="bm">보험사 전산</span><span class="bt">40</span></div>
+    <div class="search">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M20 20l-4.7-4.7"/></svg>
+      <input id="q" type="search" autocomplete="off" placeholder="보험사명 · 전화번호 검색" aria-label="보험사 검색">
+      <button id="clearq" type="button" aria-label="검색어 지우기">✕</button>
+    </div>
+    <div class="tabs" role="tablist" aria-label="보험사 구분">
+      <button class="tab" role="tab" data-cat="all" aria-selected="true"><span class="lg">전체</span><span class="sh">전체</span> <span class="n">40</span></button>
+      <button class="tab" role="tab" data-cat="fire" aria-selected="false"><span class="lg">손해보험</span><span class="sh">손보</span> <span class="n">14</span></button>
+      <button class="tab" role="tab" data-cat="life" aria-selected="false"><span class="lg">생명보험</span><span class="sh">생보</span> <span class="n">21</span></button>
+      <button class="tab" role="tab" data-cat="gongje" aria-selected="false"><span class="lg">공제회사</span><span class="sh">공제</span> <span class="n">5</span></button>
+    </div>
+    <div class="status" id="status"><b>40</b>개사</div>
+  </div>
+
+  <main id="main">
+    <table id="tbl">
+      <colgroup>
+        <col><col style="width:182px"><col style="width:128px"><col style="width:170px"><col style="width:138px"><col style="width:252px">
+      </colgroup>
+      <thead>
+        <tr><th>보험사</th><th>바로가기</th><th>고객센터</th><th>인콜</th><th>헬프데스크</th><th>청구팩스</th></tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div class="mlist" id="mlist"></div>
+    <div class="empty" id="empty">‘<b id="emptyq"></b>’에 맞는 보험사가 없습니다.<br>이름이나 전화번호 일부만 넣어 보세요.</div>
+  </main>
+
+  <footer class="foot">
+    <b>출처</b> 초격차보험 ‘보험회사 모든 전산’ 표를 2026-11-16에 광고 없이 정리 · 번호를 누르면 바로 걸리고 ⧉는 복사 · <b>C</b>=Chrome <b>E</b>=Edge(전산 접속 브라우저) · ‘—’는 원본에 값 없음
+  </footer>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+const DATA = [{"name":"AIG손해보험","alt":"AIG손해보험","cat":"fire","url":"https://sso.aig.co.kr/gaLogin/gaLogin.jsp","terms":"https://www.aig.co.kr/wo/dpwot001.html?menuId=MS702","form":"https://www.aig.co.kr/wm/content.html?contentId=DPWMS406&menuId=MS406","cs":["1544-2792"],"incall":["1544-2792"],"help":["02-2260-6855"],"fax":["02-2011-4607"],"browser":"chrome"},{"name":"DB손해보험","alt":"DB손해보험","cat":"fire","url":"https://www.mdbins.com","terms":"https://www.idbins.com/FWMAIV1534.do","form":"https://www.idbins.com/pc/bizxpress/ct/dc/FWCUSV1301.shtm","cs":["1588-0100"],"incall":["1566-0757"],"help":["02-2262-1241"],"fax":["0505-181-4862"],"browser":"chrome"},{"name":"KB손해보험","alt":"KB손해보험","cat":"fire","url":"http://sales.kbinsure.co.kr","terms":"https://www.kbinsure.co.kr/CG802030001.ec","form":"https://www.kbinsure.co.kr/CG205020001.ec","cs":["1544-0114"],"incall":["1544-0019"],"help":["1544-8119"],"fax":["0505-136-6500"],"browser":"edge"},{"name":"MG손해보험","alt":"MG손해보험","cat":"fire","url":"https://mganet.mggeneralins.com","terms":"https://www.yebyeol.co.kr/PB031210DM.scp?menuId=MN0803006","form":"https://www.yebyeol.co.kr/LG011010DM.scp","cs":["1588-5959"],"incall":["1577-3777"],"help":["02-3788-2261"],"fax":["0505-088-1646"],"browser":"edge"},{"name":"NH농협손해보험","alt":"NH농협손해보험","cat":"fire","url":"http://www.nhfire.co.kr/fc/fd.nhfire","terms":"https://www.nhfire.co.kr/announce/productAnnounce/retrieveInsuranceProductsAnnounce.nhfire","form":"https://www.nhfire.co.kr/customer/bilgdcm/retrieveBilgDcmList.nhfire","cs":["1644-9000"],"incall":["1644-9600"],"help":["1644-0090"],"fax":["0505-060-7000"],"browser":"chrome"},{"name":"롯데손해보험","alt":"롯데손해보험","cat":"fire","url":"http://lottero.lotteins.co.kr","terms":"https://lotteins.co.kr/web/C/D/H/cdh190.jsp","form":"https://lotteins.co.kr/web/C/D/C/cdc_claim_0502.jsp","cs":["1588-3344"],"incall":["1600-5182"],"help":["1599-8260"],"fax":["0507-333-9999"],"browser":"edge"},{"name":"메리츠화재","alt":"메리츠화재","cat":"fire","url":"http://sales.meritzfire.com","terms":"https://www.meritzfire.com/disclosure/product-announcement/product-list.do#!/","form":"https://www.meritzfire.com/compensation/longterm-insurance/request-document.do#!/","cs":["1566-7711"],"incall":["1577-7711"],"help":["02-3786-2777"],"fax":["0505-021-3400"],"browser":"edge"},{"name":"삼성화재","alt":"삼성화재","cat":"fire","url":"https://erp.samsungfire.com","terms":"https://www.samsungfire.com/page/VH.REIF0011.do","form":"https://www.samsungfire.com/claim/P_P03_01_02_009.html","cs":["1588-5114"],"incall":["1566-0553"],"help":["1899-5005"],"fax":["0505-162-0872"],"browser":"edge"},{"name":"하나손해보험","alt":"하나손해보험재","cat":"fire","url":"https://sfa.saleshana.com","terms":"https://www.hanainsure.co.kr/w/disclosure/product/saleProduct","form":"https://www.hanainsure.co.kr/w/claim/carReward/rewardDocumentGuide","cs":["1566-3000"],"incall":["1566-3000","연결후 2번"],"help":["02-6670-8110"],"fax":["0504-3764-0765"],"browser":"chrome"},{"name":"한화손해보험","alt":"한화손해보험","cat":"fire","url":"http://portal.hwgeneralins.com","terms":"https://www.hwgeneralins.com/notice/ir/product-ing01.do","form":"https://www.hwgeneralins.com/fplaza/compensation/receipt01.do","cs":["1566-8000"],"incall":["1670-1882"],"help":["02-316-0111"],"fax":["0502-779-1004"],"browser":"edge"},{"name":"현대해상","alt":"현대해상","cat":"fire","url":"https://sp.hi.co.kr","terms":"https://www.hi.co.kr/serviceAction.do?view=bin/PA/03/HHPA03010M#none","form":"https://www.hi.co.kr/serviceAction.do?menuId=100631","cs":["1588-5656"],"incall":["1577-3223"],"help":["02-2628-4567"],"fax":["0507-774-6060"],"browser":"chrome"},{"name":"흥국화재","alt":"흥국화재","cat":"fire","url":"http://upride.heungkukfire.co.kr","terms":"https://www.heungkukfire.co.kr/FRW/announce/insGoodsGongsiSale.do","form":"https://www.heungkukfire.co.kr/FRW/compensation/accidentDocInfo.do","cs":["1688-1688"],"incall":["1688-6997"],"help":["031-786-8088"],"fax":["0504-800-0700"],"browser":"edge"},{"name":"처브 에이스 손해보험","alt":"처브 에이스 손해보험","cat":"fire","url":"https://www.chubb.com/kr-kr/","terms":"https://www.chubb.com/kr-kr/disclosure/product.html","form":"https://www.chubb.com/kr-kr/claims/report-a-claim.html","cs":["1566-5800"],"incall":[],"help":[],"fax":["02-2127-2308","치아: 02-6913-8482"],"browser":"edge"},{"name":"AXA 손해보험","alt":"AXA 손해보험","cat":"fire","url":"https://www.axa.co.kr/ActionControler.action?screenID=SHCM0000&actionID=I01","terms":"https://www.axa.co.kr/AsianPlatformInternet/html/axacms/common/intro/disclosure/insurance/index.html","form":"https://www.axa.co.kr/AsianPlatformInternet/html/axacms/shcl/pa/process/index.html","cs":["1566-1566"],"incall":[],"help":[],"fax":["콜센터 가상번호 부여"],"browser":"edge"},{"name":"AIA생명","alt":"AIA생명","cat":"life","url":"https://imap.aia.co.kr","terms":"https://www.aia.co.kr/ko/our-products.html","form":"https://www.aia.co.kr/ko/help-support/forms.html","cs":["1588-9898"],"incall":["1588-2513"],"help":["1588-2937"],"fax":["02-2021-4540"],"browser":"edge"},{"name":"ABL생명","alt":"ABL생명","cat":"life","url":"http://ga.abllife.co.kr","terms":"https://www.abllife.co.kr/st/pban/prdtPban/whlPrdt/whlPrdt1/whlPrdt11?page=index","form":"https://www.abllife.co.kr/st/custDesk/insSrvcGudn/acdtInsmClamGudn/acdtInsmClamGudn3?page=index","cs":["1588-6500"],"incall":["1566-1002"],"help":["02-3787-8583"],"fax":["콜센터 가상번호 부여"],"browser":"edge"},{"name":"BNP파리바카디프생명","alt":"BNP파리카디프","cat":"life","url":"http://ga.cardif.co.kr","terms":"https://www.cardif.co.kr/disclosure/papag101.do","form":"https://www.cardif.co.kr/customer-center/hcwgi001.do","cs":["1688-1118"],"incall":["1688-1118"],"help":["1577-3435"],"fax":["콜센터 가상번호 부여"],"browser":"edge"},{"name":"DB생명","alt":"DB생명","cat":"life","url":"http://etopia.dongbulife.com","terms":"https://www.idblife.com/notice/product/sale","form":"https://www.idblife.com/support/guide/acbf_clm","cs":["1588-3131"],"incall":["02-6470-7663"],"help":["02-2119-5151"],"fax":["0505-129-3134"],"browser":"edge"},{"name":"DGB생명","alt":"DGB생명","cat":"life","url":"https://fgs.dgbfnlife.com:8443","terms":"https://www.dgbfnlife.com/BA/BA_A020.do","form":"https://www.dgbfnlife.com/BB/BB_D010.do","cs":["1588-4770"],"incall":["1588-4770"],"help":["02-2087-9594"],"fax":["콜센터 접수 후","0505-083-5420"],"browser":"chrome"},{"name":"IBK연금보험","alt":"IBK연금보험","cat":"life","url":"https://vpn.ibkinsu.co.kr","terms":"https://www.ibki.co.kr/process/HP_PBANO_PDT_SP_INDV","form":"https://www.ibki.co.kr/process/HP_CSCETR_POSN_DOC_INS_LIST?bltb_cod=SC000014&sctn=in&TAB=in","cs":["1577-4117"],"incall":["02-2270-1661"],"help":[],"fax":["02-2270-1577"],"browser":"edge"},{"name":"KB라이프생명","alt":"KB라이프생명","cat":"life","url":"http://esfa.kbli.co.kr","terms":"https://www.kblife.co.kr/?/=true&tab=currently-selling","form":"https://www.kblife.co.kr/customer-center/informRequiredDocument.do","cs":["1588-3374"],"incall":["1566-2730"],"help":[],"fax":["(구)푸르덴셜생명:라이프파트너","(구)KB생명:02-6220-9912"],"browser":"edge"},{"name":"KDB생명","alt":"KDB생명","cat":"life","url":"http://kss.kdblife.co.kr","terms":"https://www.kdblife.co.kr/ajax.do?scrId=HDLMA002M02P","form":"https://www.kdblife.co.kr/ajax.do?scrId=HCSCT006M01P","cs":["1588-4040"],"incall":["1588-4040"],"help":["02-6303-2771"],"fax":["콜센터 접수후","02-2669-6500"],"browser":"chrome"},{"name":"NH농협생명","alt":"NH농협생명","cat":"life","url":"http://www.nhlife.co.kr/nhsmart.nhl","terms":"https://www.nhlife.co.kr/ho/on/HOON0004M00.nhl","form":"https://www.nhlife.co.kr/ho/cc/HOCC0010M00.nhl","cs":["1544-4000"],"incall":["1544-4422"],"help":["02-3786-8800"],"fax":["02-6971-6040"],"browser":"edge"},{"name":"교보생명","alt":"교보생명","cat":"life","url":"https://ga.kyobo.com","terms":"https://www.kyobo.com/dgt/web/product-official/all-product/search","form":"https://www.kyobo.com/dgt/web/customer/support/need-papers/list","cs":["1588-1001"],"incall":["1588-1636"],"help":["02-721-3130"],"fax":["콜센터 가상번호 부여"],"browser":"edge"},{"name":"동양생명","alt":"동양생명","cat":"life","url":"http://1004.myangel.co.kr","terms":"https://www.myangel.co.kr/paging/WE_AC_WEPAAP020100L","form":"https://www.myangel.co.kr/process/main","cs":["1577-1004"],"incall":["080-899-1004"],"help":["02-728-9900"],"fax":["02-3289-4517"],"browser":"chrome"},{"name":"라이나생명","alt":"라이나생명","cat":"life","url":"https://ga.lina.co.kr","terms":"https://www.lina.co.kr/disclosure/product_list.htm?productState=01&productKind=01","form":"https://www.lina.co.kr/cyber/accident-insurance/document-zero","cs":["1588-0058"],"incall":["1588-2442"],"help":["1588-2215"],"fax":["02-6944-1200"],"browser":"edge"},{"name":"메트라이프생명","alt":"메트라이프","cat":"life","url":"http://metplus.metlife.co.kr","terms":"https://brand.metlife.co.kr/pn/paReal/insuProductDisclMain.do","form":"https://cyber.metlife.co.kr/claim/requiredDocumentNotice","cs":["1588-9600"],"incall":["1588-9609"],"help":["1899-0751"],"fax":["02-3469-9428"],"browser":"chrome"},{"name":"미래에셋생명","alt":"미래에셋","cat":"life","url":"http://www.loveageplan.com","terms":"https://life.miraeasset.com/micro/disclosure/product/PC-HO-080301-000000.do","form":"https://life.miraeasset.com/home/index.do#MO-HO-030501-010000","cs":["1588-0220"],"incall":["1588-0220"],"help":["02-3271-5108"],"fax":["콜센터 가상번호 부여"],"browser":"edge"},{"name":"삼성생명","alt":"삼성생명","cat":"life","url":"http://u-channel-ga.samsunglife.com","terms":"https://www.samsunglife.com/individual/products/disclosure/sales/PDO-PRPRI010110M","form":"https://www.samsunglife.com/individual/mysamsunglife/insurance/internet/MDP-MYINT020110M","cs":["1588-3114"],"incall":["1588-3115"],"help":["02-311-4500"],"fax":["콜센터 가상번호 부여"],"browser":"edge"},{"name":"신한라이프","alt":"신한라이프","cat":"life","url":"https://ga.shinhanlife.co.kr","terms":"https://www.shinhanlife.co.kr/hp/cdhi0010.do","form":"https://www.shinhanlife.co.kr/hp/cdhf0020t02.do","cs":["1588-5580"],"incall":["1522-2285"],"help":["02-3455-4119"],"fax":["콜센터 가상번호 부여"],"browser":"edge"},{"name":"처브라이프","alt":"처브라이프","cat":"life","url":"http://esmart.chubblife.co.kr","terms":"https://www.chubblife.co.kr/front/official/sale/list.do","form":"https://www.chubblife.co.kr/front/ctmcenter/insurance/listDocu.do","cs":["1599-4600"],"incall":["1599-4600"],"help":["1599-4646"],"fax":["02-3480-7801"],"browser":"edge"},{"name":"푸본현대생명","alt":"푸본현대생명","cat":"life","url":"http://wsfa.fubonhyundai.com","terms":"https://www.fubonhyundai.com/#CUSI150102010101","form":"https://www.fubonhyundai.com/#CUSI070100000000","cs":["1577-3311"],"incall":[],"help":["080-860-1212"],"fax":["0505-106-0311"],"browser":"edge"},{"name":"흥국생명","alt":"흥국생명","cat":"life","url":"https://e-life.heungkuklife.co.kr","terms":"https://www.heungkuklife.co.kr/front/public/saleProduct.do?searchFlgSale=Y","form":"https://www.heungkuklife.co.kr/jsps/front/help/customer_require_tab.jsp","cs":["1588-2288"],"incall":["1877-7006"],"help":["031-786-8088"],"fax":["콜센터 가상번호 부여"],"browser":"edge"},{"name":"한화생명","alt":"한화생명","cat":"life","url":"https://hmp.hanwhalife.com/online/ga","terms":"https://www.hanwhalife.com/main/disclosure/goods/disclosurenotice/DF_GDDN000_P10000.do?MENU_ID1=DF_GDGL000","form":"https://www.hanwhalife.com/static/main/myPage/insurance/accident/document/MY_INAPADC_T10000.jsp","cs":["1588-6363"],"incall":["1800-6633"],"help":["02-1522-6379"],"fax":["콜센터 가상번호 부여"],"browser":"chrome"},{"name":"하나생명","alt":"하나생명","cat":"life","url":"https://www.hanalife.co.kr/","terms":"https://www.hanalife.co.kr/anm/product/allProduct.do?status=on","form":"https://www.hanalife.co.kr/csc/accidentGuideRenew/accidentPaymentDocument.do","cs":["1577-1112"],"incall":["1577-1112"],"help":[],"fax":["02-6719-6722"],"browser":"chrome"},{"name":"MG새마을금고보험","alt":"MG새마을금고보험","cat":"gongje","url":"https://insu.kfcc.co.kr/main.do","terms":"https://insu.kfcc.co.kr/ino/inoGuide.do","form":"https://insu.kfcc.co.kr/ics/cybIcsChargeProcessinfo.do","cs":["1599-9010"],"incall":[],"help":[],"fax":["콜센터 가상번호 부여"],"browser":"edge"},{"name":"더케이 교직원공제","alt":"더케이 교직원공제","cat":"gongje","url":"https://www.ktcu.or.kr/MH/MH-P010M01.do","terms":"https://www.ktcu.or.kr/IS/IS-P170M01.do","form":"https://www.ktcu.or.kr/IS/IS-P120T01.do","cs":["1577-3993"],"incall":[],"help":[],"fax":["02-3278-9696"],"browser":"edge"},{"name":"우체국 보험","alt":"우체국 보험","cat":"gongje","url":"https://epostlife.go.kr/LNLNDM10DM.do","terms":"https://mall.epostbank.go.kr/IPPSKE0000.do","form":"https://epostlife.go.kr/IPDSDC0001.do","cs":["1599-0100"],"incall":[],"help":[],"fax":["지역별로 상이(콜센터 문의)"],"browser":"edge"},{"name":"수협공제","alt":"수협공제","cat":"gongje","url":"https://www.suhyup-bank.com/","terms":"https://www.suhyup-bank.com/ib20/mnu/FPD00127#859","form":"https://www.suhyup-bank.com/","cs":["1588-4119"],"incall":[],"help":[],"fax":["콜센터 가상번호 부여"],"browser":"edge"},{"name":"신협공제","alt":"신협공제","cat":"gongje","url":"https://openbank.cu.co.kr/?sub=6000","terms":"https://openbank.cu.co.kr/?sub=6000","form":"https://openbank.cu.co.kr/?sub=6000","cs":["1544-3030"],"incall":[],"help":[],"fax":["콜센터 가상번호 부여"],"browser":"edge"}];
+
+const COPY_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M15 5.5A2.5 2.5 0 0 0 12.5 3H6a3 3 0 0 0-3 3v6.5A2.5 2.5 0 0 0 5.5 15"/></svg>';
+const GO_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7"/><path d="M9 7h8v8"/></svg>';
+const PHONE = /\d{2,4}-\d{3,4}-\d{4}|\d{4}-\d{4}/;
+const CATS = [['fire','손해보험'],['life','생명보험'],['gongje','공제회사']];
+
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function norm(s){ return String(s).toLowerCase().replace(/[\s\-()·.]/g,''); }
+function tel(p){ return 'tel:' + p.replace(/[^0-9+]/g,''); }
+
+/* 전화번호 문자열 → [설명, 번호, 설명] 토큰 (원문 순서 유지: "치아: 02-6913-8482") */
+function splitLine(l){
+  const s = String(l);
+  const m = s.match(PHONE);
+  if(!m) return [{t:'x', v:s.trim()}];
+  const out = [];
+  const pre = s.slice(0, m.index).trim(), post = s.slice(m.index + m[0].length).trim();
+  if(pre) out.push({t:'x', v:pre});
+  out.push({t:'n', v:m[0]});
+  if(post) out.push({t:'x', v:post});
+  return out;
+}
+function tokHTML(tok, withCopy){
+  if(tok.t !== 'n') return '<span class="sub">'+esc(tok.v)+'</span>';
+  const a = '<a class="tel" href="'+tel(tok.v)+'">'+esc(tok.v)+'</a>';
+  if(!withCopy) return a;
+  return a + '<button class="cp" type="button" data-copy="'+esc(tok.v)+'" title="'+esc(tok.v)+' 복사" aria-label="'+esc(tok.v)+' 복사">'+COPY_SVG+'</button>';
+}
+function renderLines(lines, withCopy){
+  return lines.map(l => splitLine(l).map(t => tokHTML(t, withCopy)).join(' ')).join(' <span class="sep">·</span> ');
+}
+
+/* 한 칸(전화번호 열) — 번호는 tel: 링크 + 복사, 부가설명은 작은 회색 글씨 */
+function phoneCell(lines, extraClass){
+  lines = (lines || []).filter(x => String(x).trim());
+  if(!lines.length) return '<td class="num na '+(extraClass||'')+'">—</td>';
+  const multi = lines.length > 1 || lines.some(l => !PHONE.test(l));
+  return '<td class="num'+(multi ? ' sm' : '')+' '+(extraClass||'')+'" title="'+esc(lines.join(' · '))+'">'
+       + renderLines(lines, true) + '</td>';
+}
+
+function keyOf(it){
+  return norm([it.name, it.alt, it.cs.join(''), it.incall.join(''), it.help.join(''), it.fax.join(''), it.url.replace(/^https?:\/\//,'')].join(' '));
+}
+function acts(it, compact){
+  return '<a class="pill go" href="'+esc(it.url)+'" target="_blank" rel="noopener noreferrer" title="'+esc(it.name)+' 전산 접속">전산'+GO_SVG+'</a>'
+       + '<a class="pill" href="'+esc(it.terms)+'" target="_blank" rel="noopener noreferrer">약관</a>'
+       + '<a class="pill" href="'+esc(it.form)+'" target="_blank" rel="noopener noreferrer">양식</a>';
+}
+
+/* 데스크톱 테이블 */
+let tbody = '', mlist = '';
+CATS.forEach(([cat, label]) => {
+  const rows = DATA.filter(d => d.cat === cat);
+  if(!rows.length) return;
+  tbody += '<tr class="grp '+cat+'"><td colspan="6"><span class="gbar"></span>'+label+'<span class="gc">'+rows.length+'</span></td></tr>';
+  mlist += '<div class="m-grp '+cat+'"><span class="gbar"></span>'+label+'<span class="gc">'+rows.length+'</span></div>';
+  rows.forEach(it => {
+    const k = esc(keyOf(it));
+    const brw = it.browser ? '<span class="brw" title="전산 접속 브라우저">'+(it.browser === 'chrome' ? 'C' : 'E')+'</span>' : '';
+    tbody += '<tr class="item '+it.cat+'" data-key="'+k+'">'
+      + '<td class="nm '+(it.cat === 'fire' ? '' : it.cat)+'"><span class="dot '+it.cat+'"></span>'+esc(it.name)+brw+'</td>'
+      + '<td>' + acts(it) + '</td>'
+      + phoneCell(it.cs) + phoneCell(it.incall) + phoneCell(it.help) + phoneCell(it.fax)
+      + '</tr>';
+    /* 모바일: 2~3줄 */
+    const n = (lab, arr, copy) => {
+      const ls = (arr||[]).filter(x => String(x).trim());
+      if(!ls.length) return '';
+      return '<span class="n"><i>'+lab+'</i>'+renderLines(ls, !!copy)+'</span>';
+    };
+    mlist += '<div class="m-row" data-key="'+k+'">'
+      + '<div class="m-l1"><span class="dot '+it.cat+'"></span><span class="m-name">'+esc(it.name)+'</span>'+brw
+      + '<span class="m-acts">'+acts(it)+'</span></div>'
+      + '<div class="m-l2">'+ n('고객', it.cs) + n('인콜', it.incall) + n('헬프', it.help) + n('팩스', it.fax, true) + '</div>'
+      + '</div>';
+  });
+});
+document.getElementById('tbody').innerHTML = tbody;
+document.getElementById('mlist').innerHTML = mlist;
+
+/* 넘치는 칸은 2줄로 풀어 정보를 가리지 않음 */
+function fixWrapHtml(){
+  document.querySelectorAll('#tbody td.num').forEach(td => {
+    if(!td.clientWidth) return;
+    td.classList.remove('wrap2');
+    if(td.scrollWidth - td.clientWidth > 1) td.classList.add('wrap2');
+  });
+}
+
+/* ── 필터 ── */
+let cat = 'all';
+const q = document.getElementById('q');
+const clearq = document.getElementById('clearq');
+const statusEl = document.getElementById('status');
+const empty = document.getElementById('empty');
+const trItems = [...document.querySelectorAll('#tbody tr.item')];
+const mItems = [...document.querySelectorAll('#mlist .m-row')];
+
+function apply(){
+  const term = norm(q.value);
+  let shown = 0;
+  trItems.forEach(el => {
+    const hit = (cat === 'all' || el.classList.contains(cat)) && (!term || el.dataset.key.indexOf(term) !== -1);
+    el.style.display = hit ? '' : 'none';
+    if(hit) shown++;
+  });
+  mItems.forEach(el => {
+    const c = el.querySelector('.dot').classList[1];
+    const hit = (cat === 'all' || c === cat) && (!term || el.dataset.key.indexOf(term) !== -1);
+    el.style.display = hit ? '' : 'none';
+  });
+  /* 그룹 머리글 숨기기 */
+  [...document.querySelectorAll('#tbody tr.grp')].forEach(g => {
+    let el = g.nextElementSibling, any = false;
+    while(el && !el.classList.contains('grp')){ if(el.style.display !== 'none') any = true; el = el.nextElementSibling; }
+    g.style.display = any ? '' : 'none';
+  });
+  [...document.querySelectorAll('#mlist .m-grp')].forEach(g => {
+    let el = g.nextElementSibling, any = false;
+    while(el && !el.classList.contains('m-grp')){ if(el.style.display !== 'none') any = true; el = el.nextElementSibling; }
+    g.style.display = any ? '' : 'none';
+  });
+  statusEl.innerHTML = '<b>' + shown + '</b>개사';
+  fixWrapHtml();
+  empty.classList.toggle('show', shown === 0);
+  document.getElementById('emptyq').textContent = q.value.trim();
+  clearq.style.display = q.value ? 'block' : 'none';
+}
+q.addEventListener('input', apply);
+clearq.addEventListener('click', () => { q.value = ''; q.focus(); apply(); });
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
+  document.querySelectorAll('.tab').forEach(x => x.setAttribute('aria-selected', x === t ? 'true' : 'false'));
+  cat = t.dataset.cat;
+  apply();
+}));
+document.addEventListener('keydown', e => {
+  if(e.key === '/' && document.activeElement !== q){ e.preventDefault(); q.focus(); }
+  if(e.key === 'Escape' && document.activeElement === q){ q.value = ''; apply(); q.blur(); }
+});
+
+/* ── 복사 ── */
+let toastTimer = null;
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 1500);
+}
+function legacyCopy(text){
+  const ta = document.createElement('textarea');
+  ta.value = text; ta.setAttribute('readonly',''); ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select();
+  let ok = false; try{ ok = document.execCommand('copy'); }catch(e){}
+  document.body.removeChild(ta); return ok;
+}
+document.addEventListener('click', async e => {
+  const b = e.target.closest('.cp'); if(!b) return;
+  const text = b.dataset.copy || '';
+  try{
+    if(navigator.clipboard && window.isSecureContext){ await navigator.clipboard.writeText(text); toast('복사했어요 · ' + text); return; }
+    throw 0;
+  }catch(_){
+    if(legacyCopy(text)) toast('복사했어요 · ' + text);
+    else toast('복사하지 못했어요. 길게 눌러 복사해 주세요.');
+  }
+});
+
+/* ── sticky 헤더 높이 맞춤 ── */
+const bar = document.getElementById('bar');
+function setBarH(){ document.documentElement.style.setProperty('--barH', bar.offsetHeight + 'px'); }
+setBarH();
+window.addEventListener('resize', setBarH);
+window.addEventListener('scroll', () => bar.classList.toggle('stuck', window.scrollY > 4), {passive:true});
+apply();
+</script>
+</body>
+</html>
