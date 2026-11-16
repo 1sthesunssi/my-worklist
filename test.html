@@ -4837,7 +4837,7 @@ function renderMemos(){
       else if(y)th=`<img src="https://i.ytimg.com/vi/${y}/mqdefault.jpg" alt=""><span class="mmn-play" aria-hidden="true">▶</span>`;
       else if(k==='link'&&pi&&wallIsUrl(pi))th=`<img src="${esc(pi)}" alt="" referrerpolicy="no-referrer" onerror="this.parentNode.remove()">`;
       const sub=(k==='photo'?'🖼️ 사진':k==='youtube'?'▶️ 유튜브':'🔗 '+((m.preview&&m.preview.site)||wallHost(m.url)))+((m.tags||[]).length?' · '+m.tags.map(t=>'#'+t).join(' '):'');
-      const rb=((m.title||(m.preview&&m.preview.title))&&m.text)?m.text.trim():''; // 제목이 따로 있으면 본문도 보여 줌
+      const rb=((m.title||(m.preview&&m.preview.title))&&m.text)?m.text.trim().replace(/\n[ \t]*\n+/g,'\n'):''; // 제목이 따로 있으면 본문도 보여 줌 (빈 줄은 접어서)
       n.classList.add('mmn-rich');
       n.innerHTML=`${m.pin?'<span class="mmn-pin" title="꼭 띄우기">🔔</span>':''}${th?`<div class="mmn-img">${th}</div>`:''}<div class="mmn-t">${esc(memoLabel(m))}</div>${rb?`<div class="mmn-rb">${esc(rb)}</div>`:`<div class="mmn-sub">${esc(sub)}</div>`}`;
     }
@@ -4845,8 +4845,19 @@ function renderMemos(){
     memoBindDrag(n,m.id);
     wrap.appendChild(n);
   });
+  memoFitRb(wrap);
   if(document.getElementById('__memolist'))renderMemoList();
 }
+// 첫 화면 메모(사진·링크): 본문을 칸 아래 끝까지 채울 만큼 줄 수를 정함 (2026-11-16)
+function memoFitRb(wrap){
+  requestAnimationFrame(()=>{(wrap||document).querySelectorAll('.memo-mini-note .mmn-rb').forEach(rb=>{
+    const n=rb.parentElement,r=n.getBoundingClientRect();if(!r.height)return;
+    const lh=parseFloat(getComputedStyle(rb).lineHeight)||16,pb=parseFloat(getComputedStyle(n).paddingBottom)||0;
+    const k=Math.max(1,Math.floor((r.bottom-pb-rb.getBoundingClientRect().top)/lh));
+    rb.style.webkitLineClamp=k;rb.style.lineClamp=k;
+  });});
+}
+window.addEventListener('resize',()=>{clearTimeout(window.__mfr);window.__mfr=setTimeout(()=>memoFitRb(document.getElementById('memo-recent')),150);});
 
 function startMemoEdit(row,id){
   const m=ensureMemos().find(x=>x.id===id);if(!m)return;
