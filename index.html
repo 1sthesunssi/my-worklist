@@ -256,7 +256,11 @@ body{font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFo
   #home-screen h2{font-size:15px}
   #home-top{flex-wrap:nowrap;align-items:center;margin-bottom:16px}
   #home-top{display:grid!important;grid-template-columns:minmax(0,1fr) auto;column-gap:10px;align-items:start!important}
-  #ht-wid{grid-column:1;grid-row:1;flex-direction:column;gap:8px}
+  #ht-wid{display:none!important}
+  #ht-mline{display:block!important;grid-column:1;grid-row:1}
+  #htm-time{display:block;font-size:34px;font-weight:800;letter-spacing:-1px;line-height:1;color:var(--text);font-variant-numeric:tabular-nums}
+  #htm-info{display:block;font-size:12.5px;line-height:1.5;color:#42526e;margin-top:4px}
+  #htm-info b{color:var(--text)}
   #home-top #ht-flip{--w:100px;--h:116px;--fs:70px;--r:12px}
   #ht-wx{min-height:0}
   #ht-wx .wx-now{padding:8px 12px;gap:10px}
@@ -783,7 +787,8 @@ a.wl-site:hover{text-decoration:underline}
 .sec-caret{display:none!important}           /* 접기 표시는 숨기고, 제목을 누르면 접히는 기능은 그대로 */
 .sec-ico{width:32px;height:32px;border-radius:9px;font-size:17px}
 #home-top{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;margin:2px 0 20px}
-/* ── 첫 화면 위젯: 넘어가는 시계(플립) + 7일 날씨 (2026-11-16) ── */
+/* ── 첫 화면 위젯: 넘어가는 시계(플립) + 7일 날씨 (2026-11-16, PC만 · 휴대폰은 예전 한 줄) ── */
+#ht-mline{display:none}
 #ht-wid{display:flex;gap:14px;align-items:stretch;flex:1 1 680px;min-width:0;max-width:1040px}
 #ht-flip{--w:124px;--h:146px;--fs:88px;--r:14px;display:flex;gap:8px;perspective:600px;flex-shrink:0}
 #ht-flip .fl{position:relative;width:var(--w);height:var(--h);font-weight:900;font-size:var(--fs);color:#f2f2f2;letter-spacing:-3px;font-variant-numeric:tabular-nums;font-family:'Pretendard Variable',Pretendard,system-ui,sans-serif}
@@ -2326,7 +2331,7 @@ a.wl-site:hover{text-decoration:underline}
 <!-- HOME -->
 <div id="home-screen">
   <!-- 시간 · 날짜 · 날씨 한 줄 -->
-  <div id="home-top"><div id="ht-wid"><div id="ht-flip" aria-label="지금 시각"></div><div id="ht-wx" title="서울 날씨 (30분마다 새로 받아요)"></div></div><span id="home-sub"><span id="diary-section"><span id="diary-collapsed-strip"></span><button type="button" class="ht-round" onclick="openGeminiDiary()" title="제미나이에서 일기 쓰기" aria-label="제미나이에서 일기 쓰기">✍️</button><button type="button" class="ht-round" onclick="openDiaryList()" title="일기 전체" aria-label="일기 전체">📚</button></span><span class="ht-div" aria-hidden="true"></span></span><span class="m-only m-top-btns"><button type="button" class="ht-round" onclick="mOpenDiary()" aria-label="일기">📔</button><button type="button" class="ht-round" onclick="slPeriod='month';openSales()" aria-label="매출 보기">💰</button></span></div>
+  <div id="home-top"><div id="ht-mline"><span id="htm-time"></span><span id="htm-info"></span></div><div id="ht-wid"><div id="ht-flip" aria-label="지금 시각"></div><div id="ht-wx" title="서울 날씨 (30분마다 새로 받아요)"></div></div><span id="home-sub"><span id="diary-section"><span id="diary-collapsed-strip"></span><button type="button" class="ht-round" onclick="openGeminiDiary()" title="제미나이에서 일기 쓰기" aria-label="제미나이에서 일기 쓰기">✍️</button><button type="button" class="ht-round" onclick="openDiaryList()" title="일기 전체" aria-label="일기 전체">📚</button></span><span class="ht-div" aria-hidden="true"></span></span><span class="m-only m-top-btns"><button type="button" class="ht-round" onclick="mOpenDiary()" aria-label="일기">📔</button><button type="button" class="ht-round" onclick="slPeriod='month';openSales()" aria-label="매출 보기">💰</button></span></div>
   <!-- 보드 -->
   <div class="home-sec" id="boards-section" data-sec="boards">
     <h2><span class="sec-caret">▾</span><span class="sec-ico" style="background:#e6f9f0;color:#0d9668">📌</span><span class="sec-label">Boards</span></h2>
@@ -5582,6 +5587,15 @@ function htSet(el,v){
   el.classList.remove('go');void el.offsetWidth;el.classList.add('go');el.setAttribute('data-v',v);
   setTimeout(()=>{s[1].textContent=v;},650);
 }
+// 휴대폰: 위젯 대신 예전처럼 '시간 / 날짜 · 날씨' 한 줄
+function htMobileLine(){
+  const t=document.getElementById('htm-time'),i=document.getElementById('htm-info');if(!t||!i)return;
+  const n=new Date();
+  t.textContent=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
+  let w='';
+  if(hwCache&&hwCache.temp!=null){const [ico,txt]=hwSky(hwCache.code,hwCache.day);w=` · ${ico} ${txt} ${Math.round(hwCache.temp)}°`+(hwCache.dust?` · 미세먼지 ${hwCache.dust}`:'');}
+  i.innerHTML=`<b>${n.getMonth()+1}월 ${n.getDate()}일 (${'일월화수목금토'[n.getDay()]})</b>${w}`;
+}
 function renderHomeTop(){
   const now=new Date(),DAYS=['일','월','화','수','목','금','토'];
   const box=document.getElementById('ht-flip');if(!box)return;
@@ -5594,6 +5608,7 @@ function renderHomeTop(){
   htSet(f[1],String(now.getMinutes()).padStart(2,'0'));
   f[0].querySelector('.ap').textContent=H<12?'AM':'PM';
   const dk=localDateStr(now);if(box.dataset.day!==dk){box.dataset.day=dk;hwPaint();}
+  htMobileLine();
   box.setAttribute('aria-label',`${H<12?'오전':'오후'} ${H%12||12}시 ${now.getMinutes()}분`);
   hwLoad();
 }
@@ -5620,6 +5635,7 @@ function hwDust(pm10,pm25){
   return['좋음','보통','나쁨','매우 나쁨'][g];
 }
 function hwPaint(){
+  htMobileLine();
   const el=document.getElementById('ht-wx');if(!el)return;
   if(!hwCache||hwCache.temp==null){const n=new Date();el.innerHTML=`<div class="wx-now"><div><div class="wx-date">${n.getMonth()+1}월 ${n.getDate()}일</div><div class="wx-dow${n.getDay()===0?'':n.getDay()===6?' sat':' wk'}">${'일월화수목금토'[n.getDay()]}요일</div></div><div class="wx-sub">🌤️ 날씨를 불러오는 중…</div></div>`;return;}
   const [ico,txt]=hwSky(hwCache.code,hwCache.day),W=['일','월','화','수','목','금','토'];
