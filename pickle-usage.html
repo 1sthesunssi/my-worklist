@@ -1,204 +1,271 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" data-svc="pickle">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>피클 사용량 · 일별·월별 추적</title>
-<meta name="description" content="피클 일일 사용량 한도와 초기화 티켓 사용을 날짜별로 기록하고, 월별 평균 사용률과 100% 도달 일수, 티켓 사용량을 한눈에 봅니다.">
+<meta name="description" content="피클·Hark 일일 사용량 한도와 초기화 티켓 사용을 탭으로 나눠 날짜별로 기록하고, 월별 평균 사용률과 100% 도달 일수, 티켓 사용량을 한눈에 봅니다.">
 <meta name="color-scheme" content="light">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%2310b981'/%3E%3Ctext x='50' y='68' font-size='56' text-anchor='middle'%3E%F0%9F%A5%92%3C/text%3E%3C/svg%3E">
 <style>
   :root{
     --bg:#f6faf8; --card:#ffffff; --line:#e3ece8; --line2:#eef4f1;
     --ink:#10231c; --muted:#657b72; --soft:#93a8a0;
-    --green:#10b981; --green-d:#059669; --green-dd:#047857;
+    --acc:#10b981; --acc-d:#059669; --acc-dd:#047857;
+    --acc-soft:#e7f8f0; --acc-line:#8fd8ba; --acc-line2:#cfe3d9;
+    --acc-ring:rgba(16,185,129,.14);
+    --acc-badge-line:rgba(4,120,87,.28);
+    --seg-track:#e9f3ee;
+    --bar-a:#34d399; --bar-b:#059669;
+    --tbar-a:#22d3ee; --tbar-b:#0e7490;
     --mint:#dcf7ea; --lime:#e9f6b6; --amber:#fde3c4; --coral:#fecaca;
     --sun:#e11d48; --sat:#2563eb;
     --r:12px;
   }
-  *{box-sizing:border-box}
-  html{-webkit-text-size-adjust:100%}
+  /* Hark 탭: 보라·인디고 포인트 */
+  html[data-svc="hark"]{
+    --bg:#f6f6fc; --line:#e5e5f2; --line2:#eeeef8;
+    --ink:#14142a; --muted:#686880; --soft:#9696ad;
+    --acc:#6366f1; --acc-d:#4f46e5; --acc-dd:#4338ca;
+    --acc-soft:#ececfd; --acc-line:#a5a7f5; --acc-line2:#d6d6f7;
+    --acc-ring:rgba(99,102,241,.16);
+    --acc-badge-line:rgba(67,56,202,.3);
+    --seg-track:#eaeafb;
+    --bar-a:#8b8cf7; --bar-b:#4f46e5;
+    --tbar-a:#22d3ee; --tbar-b:#0e7490;
+  }
+  *,*::before,*::after{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%;max-width:100%;overflow-x:clip}
   body{
-    margin:0;background:var(--bg);color:var(--ink);font-size:13px;line-height:1.5;
+    margin:0;max-width:100%;overflow-x:clip;
+    background:var(--bg);color:var(--ink);font-size:13px;line-height:1.5;
     font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","맑은 고딕","Noto Sans KR","Segoe UI",Roboto,sans-serif;
     -webkit-font-smoothing:antialiased;
+    transition:background .18s, color .18s;
   }
-  button,input,textarea{font-family:inherit;color:inherit}
-  a{color:var(--green-dd);text-decoration:none}
+  img,svg,canvas{max-width:100%}
+  button,input,textarea{font-family:inherit;color:inherit;max-width:100%}
+  a{color:var(--acc-dd);text-decoration:none}
 
   /* ── 상단 바 ── */
   .bar{
-    position:sticky;top:0;z-index:30;background:rgba(255,255,255,.94);
+    position:sticky;top:0;z-index:30;background:rgba(255,255,255,.95);
     -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
     border-bottom:1px solid var(--line);
   }
-  .bar-in{max-width:1060px;margin:0 auto;padding:8px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .bar-in{
+    max-width:1060px;margin:0 auto;padding:8px 14px 6px;
+    display:flex;align-items:center;gap:10px;flex-wrap:wrap;row-gap:6px;
+  }
   .back{
     display:inline-flex;align-items:center;gap:4px;flex:0 0 auto;height:28px;padding:0 9px;
     border:1px solid var(--line);border-radius:8px;background:#fff;color:#3d5148;
     font-size:11.5px;font-weight:700;white-space:nowrap;
   }
-  .back:hover{background:#f1f8f4;border-color:#cfe3d9;color:var(--green-dd)}
-  .title{display:flex;align-items:center;gap:6px;font-size:15px;font-weight:800;letter-spacing:-.02em;margin:0}
-  .title .tt{color:var(--ink)}
-  .title .sub{font-size:10.5px;font-weight:700;color:var(--green-dd);background:#e7f8f0;border-radius:20px;padding:1px 7px;line-height:15px}
-  .acts{margin-left:auto;display:flex;gap:6px;flex:0 0 auto}
+  .back:hover{background:var(--acc-soft);border-color:var(--acc-line2);color:var(--acc-dd)}
+  .title{
+    display:flex;align-items:center;gap:6px;min-width:0;flex:1 1 auto;
+    font-size:15px;font-weight:800;letter-spacing:-.02em;margin:0;
+  }
+  .title .em{font-size:16px;line-height:1;flex:0 0 auto}
+  .title .tt{color:var(--ink);min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .title .sub{
+    flex:0 0 auto;font-size:10.5px;font-weight:700;color:var(--acc-dd);background:var(--acc-soft);
+    border-radius:20px;padding:1px 7px;line-height:15px;
+  }
+  .acts{margin-left:auto;display:flex;gap:6px;flex:0 0 auto;flex-wrap:wrap;justify-content:flex-end}
   .btn{
     height:28px;padding:0 10px;border-radius:8px;border:1px solid var(--line);background:#fff;
-    font-size:11.5px;font-weight:700;color:#42584e;cursor:pointer;white-space:nowrap;
+    font-size:11.5px;font-weight:700;color:#42584e;cursor:pointer;white-space:nowrap;flex:0 0 auto;
   }
-  .btn:hover{background:#f1f8f4;border-color:#cfe3d9}
-  .btn.primary{background:var(--green-d);border-color:var(--green-d);color:#fff}
-  .btn.primary:hover{background:var(--green-dd);border-color:var(--green-dd)}
+  .btn:hover{background:var(--acc-soft);border-color:var(--acc-line2)}
+  .btn.primary{background:var(--acc-d);border-color:var(--acc-d);color:#fff}
+  .btn.primary:hover{background:var(--acc-dd);border-color:var(--acc-dd)}
   .btn.ghost{background:transparent}
   .btn:disabled{opacity:.45;cursor:default}
 
+  /* ── 피클 / Hark 전환 탭 ── */
+  .segbar{
+    max-width:1060px;margin:0 auto;padding:0 14px 8px;
+    display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  }
+  .seg{
+    display:inline-flex;gap:3px;padding:3px;border-radius:11px;
+    background:var(--seg-track);border:1px solid var(--line);flex:0 0 auto;max-width:100%;
+  }
+  .seg-btn{
+    display:inline-flex;align-items:center;gap:5px;height:29px;padding:0 12px;border:0;border-radius:8px;
+    background:transparent;color:var(--muted);font-size:12.5px;font-weight:800;letter-spacing:-.01em;
+    cursor:pointer;white-space:nowrap;flex:0 0 auto;
+    transition:background .15s,color .15s,box-shadow .15s;
+  }
+  .seg-btn .em{font-size:13.5px;line-height:1}
+  .seg-btn:hover{color:var(--ink)}
+  .seg-btn:focus-visible{outline:2px solid var(--acc-line);outline-offset:2px}
+  .seg-btn.on{background:var(--acc-d);color:#fff;box-shadow:0 1px 3px rgba(16,35,28,.16)}
+  .seg-btn.on:hover{color:#fff}
+  .seg-note{
+    margin-left:auto;min-width:0;font-size:11px;font-weight:700;color:var(--muted);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .seg-note b{color:var(--acc-dd)}
+
   /* ── 본문 ── */
-  main{max-width:1060px;margin:0 auto;padding:12px 14px 34px}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:0 1px 2px rgba(16,35,28,.04)}
-  .card-h{display:flex;align-items:center;gap:8px;padding:10px 12px 0}
+  main{max-width:1060px;margin:0 auto;padding:12px 14px 34px;width:100%}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:0 1px 2px rgba(16,35,28,.04);max-width:100%}
+  .card-h{display:flex;align-items:center;gap:8px;padding:10px 12px 0;flex-wrap:wrap}
   .card-h h2{font-size:12.5px;font-weight:800;margin:0;letter-spacing:-.01em}
   .card-h .hint{font-size:10.5px;color:var(--soft);font-weight:600}
 
   /* KPI */
   .kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:12px}
-  .kpi{padding:10px 11px 9px;border-radius:var(--r);background:#fff;border:1px solid var(--line);box-shadow:0 1px 2px rgba(16,35,28,.04)}
+  .kpi{padding:10px 11px 9px;border-radius:var(--r);background:#fff;border:1px solid var(--line);box-shadow:0 1px 2px rgba(16,35,28,.04);min-width:0}
   .kpi .k{display:flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;color:var(--muted);letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .kpi .v{font-size:22px;font-weight:800;letter-spacing:-.03em;line-height:1.25;font-variant-numeric:tabular-nums;margin-top:1px}
   .kpi .v small{font-size:11px;font-weight:700;color:var(--muted);margin-left:1px;letter-spacing:0}
   .kpi .u{font-size:10.5px;color:var(--soft);font-weight:600;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .kpi.a .v{color:var(--green-dd)}
+  .kpi.a .v{color:var(--acc-dd)}
   .kpi.b .v{color:#c2410c}
   .kpi.c .v{color:#0369a1}
   .kpi.d .v{color:#0f172a}
 
   /* 2단 배치 */
   .cols{display:grid;grid-template-columns:minmax(0,1.32fr) minmax(0,1fr);gap:12px;align-items:start}
-  @media(max-width:820px){ .cols{grid-template-columns:minmax(0,1fr)} .kpis{grid-template-columns:repeat(2,minmax(0,1fr))} }
 
   /* ── 달력 ── */
-  .cal{padding-bottom:6px}
-  .cal-top{display:flex;align-items:center;gap:6px;padding:9px 10px 7px}
+  .cal{padding-bottom:6px;min-width:0;overflow:hidden}
+  .cal-top{display:flex;align-items:center;gap:6px;padding:9px 10px 7px;flex-wrap:wrap;row-gap:6px}
   .nav{
     width:28px;height:28px;flex:0 0 auto;border:1px solid var(--line);background:#fff;border-radius:8px;
     color:#42584e;font-size:14px;font-weight:700;line-height:1;cursor:pointer;display:inline-flex;align-items:center;justify-content:center
   }
-  .nav:hover{background:#f1f8f4;border-color:#cfe3d9}
-  .cal-title{font-size:13.5px;font-weight:800;letter-spacing:-.02em;min-width:112px;text-align:center;font-variant-numeric:tabular-nums}
-  .cal-title b{color:var(--green-dd)}
-  .today-btn{margin-left:auto;height:26px;padding:0 8px;border-radius:7px;border:1px solid var(--line);background:#fff;font-size:11px;font-weight:700;color:#42584e;cursor:pointer}
-  .today-btn:hover{background:#f1f8f4}
+  .nav:hover{background:var(--acc-soft);border-color:var(--acc-line2)}
+  .cal-title{
+    font-size:13.5px;font-weight:800;letter-spacing:-.02em;flex:1 1 auto;min-width:0;text-align:center;
+    font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .cal-title b{color:var(--acc-dd)}
+  .today-btn{
+    margin-left:auto;flex:0 0 auto;height:26px;padding:0 8px;border-radius:7px;border:1px solid var(--line);
+    background:#fff;font-size:11px;font-weight:700;color:#42584e;cursor:pointer;white-space:nowrap
+  }
+  .today-btn:hover{background:var(--acc-soft)}
   .dow{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;padding:0 10px}
-  .dow span{text-align:center;font-size:10.5px;font-weight:800;color:var(--soft);padding-bottom:3px}
+  .dow span{text-align:center;font-size:10.5px;font-weight:800;color:var(--soft);padding-bottom:3px;min-width:0}
   .dow span.s{color:var(--sun)} .dow span.t{color:var(--sat)}
   .grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;padding:0 10px 8px}
   .cell{
-    position:relative;min-height:54px;border-radius:9px;border:1px solid transparent;background:#fbfdfc;
-    padding:4px 5px 3px;cursor:pointer;display:flex;flex-direction:column;gap:1px;
+    position:relative;min-width:0;min-height:54px;border-radius:9px;border:1px solid transparent;background:#fbfdfc;
+    padding:4px 5px 3px;cursor:pointer;display:flex;flex-direction:column;gap:1px;overflow:hidden;
     transition:box-shadow .12s, transform .06s;
   }
   .cell.blank{background:transparent;border:0;cursor:default}
-  .cell:hover{border-color:#bfe6d4}
+  .cell:hover{border-color:var(--acc-line2)}
   .cell:active{transform:scale(.97)}
   .cell .d{font-size:11.5px;font-weight:800;color:#33453d;font-variant-numeric:tabular-nums;line-height:1.25}
   .cell.sun .d{color:var(--sun)} .cell.sat .d{color:var(--sat)}
-  .cell .pct{font-size:11px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.2}
+  .cell .pct{font-size:11px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .cell .tk{display:flex;gap:2px;flex-wrap:wrap;margin-top:auto}
   .tk i{
     font-style:normal;font-size:8.5px;font-weight:800;line-height:11px;height:11px;padding:0 3px;border-radius:4px;
-    background:#fff;border:1px solid rgba(4,120,87,.28);color:var(--green-dd);letter-spacing:0
+    background:#fff;border:1px solid var(--acc-badge-line);color:var(--acc-dd);letter-spacing:0;white-space:nowrap
   }
-  .tk i.full{background:var(--green-dd);border-color:var(--green-dd);color:#fff}
+  .tk i.full{background:var(--acc-dd);border-color:var(--acc-dd);color:#fff}
   .cell.lv0{background:#f8fbfa}
-  .cell.lv1{background:var(--mint);border-color:#c3efdd}
+  .cell.lv1{background:var(--mint);border-radius:9px;border-color:#c3efdd}
   .cell.lv2{background:var(--lime);border-color:#d9efa0}
   .cell.lv3{background:var(--amber);border-color:#fbd0a4}
   .cell.lv4{background:var(--coral);border-color:#fca5a5}
   .cell.lv1 .pct{color:#0b7a5b} .cell.lv2 .pct{color:#5b7a06} .cell.lv3 .pct{color:#b45309} .cell.lv4 .pct{color:#b91c1c}
-  .cell.today{box-shadow:inset 0 0 0 2px var(--green-d)}
+  .cell.today{box-shadow:inset 0 0 0 2px var(--acc-d)}
   .cell.sel{box-shadow:0 0 0 2px #0f172a}
-  .cell.today.sel{box-shadow:0 0 0 2px #0f172a, inset 0 0 0 2px var(--green)}
-  .legend{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:2px 12px 6px;border-top:1px solid var(--line2);margin-top:2px}
-  .lg{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;color:var(--muted)}
-  .lg b{width:10px;height:10px;border-radius:3px;display:inline-block}
+  .cell.today.sel{box-shadow:0 0 0 2px #0f172a, inset 0 0 0 2px var(--acc)}
+  .legend{
+    display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:2px 12px 6px;
+    border-top:1px solid var(--line2);margin-top:2px;row-gap:4px
+  }
+  .lg{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;color:var(--muted);white-space:nowrap;min-width:0}
+  .lg b{width:10px;height:10px;border-radius:3px;display:inline-block;flex:0 0 auto}
   .lg b.i1{background:var(--mint);border:1px solid #c3efdd}
   .lg b.i2{background:var(--lime);border:1px solid #d9efa0}
   .lg b.i3{background:var(--amber);border:1px solid #fbd0a4}
   .lg b.i4{background:var(--coral);border:1px solid #fca5a5}
+  .legend .lg.tkleg{margin-left:auto}
 
   /* ── 입력 패널 ── */
-  .panel{padding-bottom:12px}
-  .panel-h{display:flex;align-items:baseline;gap:7px;padding:10px 12px 0}
+  .panel{padding-bottom:12px;min-width:0}
+  .panel-h{display:flex;align-items:baseline;gap:7px;padding:10px 12px 0;flex-wrap:wrap}
   .panel-h .dt{font-size:13.5px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
   .panel-h .wd{font-size:11px;font-weight:700;color:var(--soft)}
   .panel-h .wd.s{color:var(--sun)} .panel-h .wd.t{color:var(--sat)}
-  .panel-h .mk{margin-left:auto;font-size:10.5px;font-weight:700;color:var(--green-dd);min-height:14px}
+  .panel-h .mk{margin-left:auto;font-size:10.5px;font-weight:700;color:var(--acc-dd);min-height:14px}
   .sec{padding:10px 12px 0}
-  .sec .lb{display:flex;align-items:baseline;gap:6px;font-size:11px;font-weight:800;color:#3f5750;margin-bottom:6px}
+  .sec .lb{display:flex;align-items:baseline;gap:6px;font-size:11px;font-weight:800;color:#3f5750;margin-bottom:6px;flex-wrap:wrap}
   .sec .lb .xp{font-size:10px;font-weight:600;color:var(--soft)}
-  .useRow{display:flex;align-items:center;gap:8px}
+  .useRow{display:flex;align-items:center;gap:8px;min-width:0}
   .useRow .big{
-    font-size:26px;font-weight:800;letter-spacing:-.04em;color:var(--green-dd);font-variant-numeric:tabular-nums;
-    min-width:74px;line-height:1.1
+    font-size:26px;font-weight:800;letter-spacing:-.04em;color:var(--acc-dd);font-variant-numeric:tabular-nums;
+    min-width:74px;line-height:1.1;flex:0 0 auto
   }
   .useRow .big span{font-size:13px;font-weight:700;margin-left:1px}
   input[type=range]{
-    -webkit-appearance:none;appearance:none;flex:1 1 auto;height:26px;background:transparent;cursor:pointer;margin:0
+    -webkit-appearance:none;appearance:none;flex:1 1 90px;min-width:70px;height:26px;background:transparent;cursor:pointer;margin:0
   }
   input[type=range]::-webkit-slider-runnable-track{height:8px;border-radius:6px;background:linear-gradient(90deg,#dcf7ea,#e9f6b6 40%,#fde3c4 72%,#fecaca)}
-  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;margin-top:-6px;border-radius:50%;background:#fff;border:3px solid var(--green-d);box-shadow:0 1px 3px rgba(4,120,87,.3)}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;margin-top:-6px;border-radius:50%;background:#fff;border:3px solid var(--acc-d);box-shadow:0 1px 3px rgba(4,120,87,.3)}
   input[type=range]::-moz-range-track{height:8px;border-radius:6px;background:linear-gradient(90deg,#dcf7ea,#e9f6b6 40%,#fde3c4 72%,#fecaca)}
-  input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:#fff;border:3px solid var(--green-d)}
+  input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:#fff;border:3px solid var(--acc-d)}
   input[type=range]:focus{outline:none}
   .num{
-    width:56px;height:30px;text-align:center;border:1px solid var(--line);border-radius:8px;background:#fff;
+    width:56px;flex:0 0 auto;height:30px;text-align:center;border:1px solid var(--line);border-radius:8px;background:#fff;
     font-size:13px;font-weight:800;font-variant-numeric:tabular-nums;-webkit-appearance:none;appearance:none
   }
-  .num:focus{outline:none;border-color:#8fd8ba;box-shadow:0 0 0 3px rgba(16,185,129,.14)}
-  .quick{display:flex;gap:5px;margin-top:7px}
+  .num:focus{outline:none;border-color:var(--acc-line);box-shadow:0 0 0 3px var(--acc-ring)}
+  .quick{display:flex;gap:5px;margin-top:7px;flex-wrap:wrap}
   .quick button{
-    flex:1 1 0;height:28px;border:1px solid var(--line);background:#fff;border-radius:8px;
+    flex:1 1 0;min-width:52px;height:28px;border:1px solid var(--line);background:#fff;border-radius:8px;
     font-size:11px;font-weight:800;color:#3f5750;cursor:pointer;font-variant-numeric:tabular-nums
   }
-  .quick button:hover{background:#f1f8f4;border-color:#cfe3d9}
-  .quick button.on{background:#e7f8f0;border-color:#8fd8ba;color:var(--green-dd)}
+  .quick button:hover{background:var(--acc-soft);border-color:var(--acc-line2)}
+  .quick button.on{background:var(--acc-soft);border-color:var(--acc-line);color:var(--acc-dd)}
 
   .ticks{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-  .tick{border:1px solid var(--line);border-radius:10px;padding:7px 8px;background:#fbfdfc}
-  .tick .tn{font-size:10.5px;font-weight:800;color:#3f5750;display:flex;align-items:center;gap:4px;white-space:nowrap}
-  .tick .tn em{font-style:normal;font-size:9px;font-weight:800;padding:0 4px;line-height:13px;border-radius:4px;background:#fff;border:1px solid rgba(4,120,87,.28);color:var(--green-dd)}
-  .tick.full .tn em{background:var(--green-dd);border-color:var(--green-dd);color:#fff}
+  .tick{border:1px solid var(--line);border-radius:10px;padding:7px 8px;background:#fbfdfc;min-width:0}
+  .tick .tn{font-size:10.5px;font-weight:800;color:#3f5750;display:flex;align-items:center;gap:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tick .tn em{font-style:normal;flex:0 0 auto;font-size:9px;font-weight:800;padding:0 4px;line-height:13px;border-radius:4px;background:#fff;border:1px solid var(--acc-badge-line);color:var(--acc-dd)}
+  .tick.full .tn em{background:var(--acc-dd);border-color:var(--acc-dd);color:#fff}
   .stepper{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:5px}
   .stepper button{
-    width:27px;height:27px;border-radius:8px;border:1px solid var(--line);background:#fff;font-size:15px;font-weight:800;
-    line-height:1;color:var(--green-dd);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0
+    width:27px;height:27px;flex:0 0 auto;border-radius:8px;border:1px solid var(--line);background:#fff;font-size:15px;font-weight:800;
+    line-height:1;color:var(--acc-dd);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0
   }
-  .stepper button:hover{background:#eaf9f2;border-color:#a8e2c8}
+  .stepper button:hover{background:var(--acc-soft);border-color:var(--acc-line)}
   .stepper button:disabled{opacity:.35;cursor:default;background:#fff}
   .stepper .cnt{font-size:16px;font-weight:800;font-variant-numeric:tabular-nums;min-width:20px;text-align:center}
 
-  .memoRow{display:flex;gap:6px}
+  .memoRow{display:flex;gap:6px;min-width:0}
   .memoRow input{
     flex:1 1 auto;min-width:0;height:32px;padding:0 9px;border:1px solid var(--line);border-radius:8px;background:#fff;font-size:12px
   }
   .memoRow input::placeholder{color:#a9bab2}
-  .memoRow input:focus{outline:none;border-color:#8fd8ba;box-shadow:0 0 0 3px rgba(16,185,129,.14)}
-  .panel-foot{display:flex;align-items:center;gap:8px;padding:11px 12px 0}
+  .memoRow input:focus{outline:none;border-color:var(--acc-line);box-shadow:0 0 0 3px var(--acc-ring)}
+  .memoRow .btn{height:32px;flex:0 0 auto}
+  .panel-foot{display:flex;align-items:center;gap:8px;padding:11px 12px 0;flex-wrap:wrap}
   .panel-foot .del{font-size:10.5px;font-weight:700;color:#b91c1c;background:none;border:0;cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:2px}
   .panel-foot .note{font-size:10px;color:var(--soft);margin-left:auto;font-weight:600;text-align:right}
 
   /* ── 그래프 ── */
-  .chartCard{margin-top:12px;padding-bottom:10px}
-  .chart-h{display:flex;align-items:center;gap:8px;padding:10px 12px 2px;flex-wrap:wrap}
+  .chartCard{margin-top:12px;padding-bottom:10px;min-width:0;overflow:hidden}
+  .chart-h{display:flex;align-items:center;gap:8px;padding:10px 12px 2px;flex-wrap:wrap;row-gap:4px}
   .chart-h h2{font-size:12.5px;font-weight:800;margin:0}
   .chart-h .rg{font-size:10.5px;color:var(--soft);font-weight:700}
-  .chart-h .kl{display:flex;gap:9px;margin-left:auto}
-  .chart-h .kl i{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;color:var(--muted);font-style:normal}
-  .chart-h .kl i b{width:9px;height:9px;border-radius:2px;display:inline-block;background:var(--green)}
-  .chart-h .kl i.t b{background:#0e7490}
+  .chart-h .kl{display:flex;gap:9px;margin-left:auto;flex-wrap:wrap}
+  .chart-h .kl i{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;color:var(--muted);font-style:normal;white-space:nowrap}
+  .chart-h .kl i b{width:9px;height:9px;border-radius:2px;display:inline-block;background:var(--acc);flex:0 0 auto}
+  .chart-h .kl i.t b{background:var(--tbar-b)}
   .bars{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;padding:6px 12px 0}
   .mcol{display:flex;flex-direction:column;align-items:center;gap:0;min-width:0}
-  .mcol .uv{font-size:10.5px;font-weight:800;color:var(--green-dd);font-variant-numeric:tabular-nums;height:15px;line-height:15px}
+  .mcol .uv{font-size:10.5px;font-weight:800;color:var(--acc-dd);font-variant-numeric:tabular-nums;height:15px;line-height:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
   .mcol .uv.zero{color:#c2cfc9}
   .utrack{
     width:100%;height:92px;display:flex;align-items:flex-end;justify-content:center;
@@ -206,30 +273,69 @@
     background-image:repeating-linear-gradient(to top, transparent 0, transparent calc(25% - 1px), #e9f1ec calc(25% - 1px), #e9f1ec 25%);
     border-radius:3px 3px 0 0;
   }
-  .ubar{width:58%;max-width:34px;border-radius:5px 5px 0 0;background:linear-gradient(180deg,#34d399,#059669);min-height:0;position:relative}
+  .ubar{width:58%;max-width:34px;border-radius:5px 5px 0 0;background:linear-gradient(180deg,var(--bar-a),var(--bar-b));min-height:0;position:relative}
   .ubar.hi{background:linear-gradient(180deg,#fb923c,#ea580c)}
   .ubar.max{background:linear-gradient(180deg,#f87171,#dc2626)}
   .ghost{width:58%;max-width:34px;height:100%;border:1px dashed #e2ece7;border-bottom:0;border-radius:5px 5px 0 0}
-  .mcol .tv{font-size:9.5px;font-weight:800;color:#0e7490;font-variant-numeric:tabular-nums;height:13px;line-height:13px;margin-top:2px}
+  .mcol .tv{font-size:9.5px;font-weight:800;color:var(--tbar-b);font-variant-numeric:tabular-nums;height:13px;line-height:13px;margin-top:2px}
   .mcol .tv.zero{color:#c2cfc9}
   .ttrack{width:100%;height:34px;display:flex;align-items:flex-end;justify-content:center;border-bottom:1px solid var(--line2);
     background-image:repeating-linear-gradient(to top, transparent 0, transparent calc(50% - 1px), #f0f6f3 calc(50% - 1px), #f0f6f3 50%)}
-  .tbar{width:58%;max-width:34px;border-radius:4px 4px 0 0;background:linear-gradient(180deg,#22d3ee,#0e7490)}
+  .tbar{width:58%;max-width:34px;border-radius:4px 4px 0 0;background:linear-gradient(180deg,var(--tbar-a),var(--tbar-b))}
   .mcol .ml{font-size:10.5px;font-weight:800;color:#42584e;margin-top:4px;white-space:nowrap}
-  .mcol.cur .ml{color:var(--green-dd)}
+  .mcol.cur .ml{color:var(--acc-dd)}
   .empty-hint{
     display:flex;gap:7px;align-items:flex-start;margin:10px 12px 2px;padding:9px 10px;border-radius:10px;
-    background:#f0faf6;border:1px dashed #b8e6d3;font-size:11.5px;color:#2f6a56;font-weight:600;line-height:1.55
+    background:var(--acc-soft);border:1px dashed var(--acc-line);font-size:11.5px;color:#2f6a56;font-weight:600;line-height:1.55
   }
-  .empty-hint b{font-weight:800;color:var(--green-dd)}
+  html[data-svc="hark"] .empty-hint{color:#3b3b8f}
+  .empty-hint b{font-weight:800;color:var(--acc-dd)}
   footer{max-width:1060px;margin:0 auto;padding:14px 14px 6px;text-align:center;font-size:10px;color:var(--soft);font-weight:600}
   footer b{color:#5d7a6f}
+  html[data-svc="hark"] footer b{color:#5a5a7d}
   .toast{
     position:fixed;left:50%;bottom:22px;transform:translate(-50%,14px);background:#0f2e24;color:#fff;
     font-size:11.5px;font-weight:700;padding:8px 14px;border-radius:20px;opacity:0;pointer-events:none;
-    transition:opacity .18s, transform .18s;z-index:90;box-shadow:0 8px 24px rgba(9,40,30,.28);white-space:nowrap
+    transition:opacity .18s, transform .18s;z-index:90;box-shadow:0 8px 24px rgba(9,40,30,.28);
+    max-width:calc(100% - 24px);text-align:center;line-height:1.45
   }
+  html[data-svc="hark"] .toast{background:#221c46}
   .toast.on{opacity:1;transform:translate(-50%,0)}
+
+  /* ── 반응형 ── */
+  @media(max-width:820px){
+    .cols{grid-template-columns:minmax(0,1fr)}
+    .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  }
+  @media(max-width:560px){
+    main{padding:10px 10px 28px}
+    .bar-in{padding:8px 10px 5px;gap:8px}
+    .segbar{padding:0 10px 8px}
+    footer{padding:12px 10px 6px}
+    .kpi{padding:9px 9px 8px}
+    .kpi .v{font-size:20px}
+    .sec{padding:9px 10px 0}
+    .panel-h,.panel-foot{padding-left:10px;padding-right:10px}
+    .cal-top{padding:8px 8px 6px}
+    .dow,.grid{padding-left:8px;padding-right:8px}
+    .legend{padding:2px 10px 6px}
+    .chart-h,.bars,.empty-hint{padding-left:10px;padding-right:10px}
+    .empty-hint{margin-left:10px;margin-right:10px}
+  }
+  @media(max-width:430px){
+    .seg-note{display:none}
+    .legend .lg.tkleg{margin-left:0}
+    .cell{min-height:48px;padding:3px 4px 2px}
+    .cell .d{font-size:10.5px}
+    .cell .pct{font-size:9.5px}
+    .tk i{font-size:8px;line-height:10px;height:10px;padding:0 2px}
+    .cal-title{font-size:12.5px}
+    .useRow .big{min-width:62px;font-size:23px}
+    .tick{padding:6px 6px}
+    .stepper button{width:25px;height:25px}
+    .mcol .uv{font-size:9.5px}
+    .mcol .ml{font-size:9.5px}
+  }
 </style>
 </head>
 <body>
@@ -237,12 +343,19 @@
 <header class="bar">
   <div class="bar-in">
     <a class="back" href="https://1sthesunssi.github.io/my-worklist/">← My Worklist</a>
-    <h1 class="title"><span>🥒</span><span class="tt">피클 사용량</span><span class="sub">일별·월별</span></h1>
+    <h1 class="title"><span class="em" id="hEmoji">🥒</span><span class="tt" id="hName">피클 사용량</span><span class="sub">일별·월별</span></h1>
     <div class="acts">
       <button class="btn" id="btnExport" title="JSON 파일로 백업">내보내기</button>
       <button class="btn" id="btnImport" title="JSON 백업 불러오기">불러오기</button>
       <input type="file" id="fileImport" accept="application/json,.json" hidden>
     </div>
+  </div>
+  <div class="segbar">
+    <div class="seg" id="seg" role="tablist" aria-label="사용량을 볼 서비스 선택">
+      <button class="seg-btn on" type="button" role="tab" aria-selected="true" data-svc="pickle"><span class="em">🥒</span>피클</button>
+      <button class="seg-btn" type="button" role="tab" aria-selected="false" data-svc="hark" tabindex="-1"><span class="em">✨</span>Hark</button>
+    </div>
+    <span class="seg-note" id="todayNote">오늘 기록 없음</span>
   </div>
 </header>
 
@@ -289,7 +402,7 @@
         <span class="lg"><b class="i2"></b>31~70%</span>
         <span class="lg"><b class="i3"></b>71~99%</span>
         <span class="lg"><b class="i4"></b>100%</span>
-        <span class="lg" style="margin-left:auto"><span class="tk"><i>½</i><i class="full">1</i></span>티켓</span>
+        <span class="lg tkleg"><span class="tk"><i>½</i><i class="full">1</i></span>티켓</span>
       </div>
     </section>
 
@@ -366,46 +479,31 @@
     <div class="bars" id="bars"></div>
     <div class="empty-hint" id="emptyHint">
       <span>💡</span>
-      <span>아직 기록이 없어요. 달력에서 날짜를 누르고 그날의 <b>사용률</b>과 <b>초기화 티켓</b>을 적으면, 월 평균과 추이가 여기에 쌓입니다.</span>
+      <span>아직 <b id="emptySvc">피클</b> 기록이 없어요. 달력에서 날짜를 누르고 그날의 <b>사용률</b>과 <b>초기화 티켓</b>을 적으면, 월 평균과 추이가 여기에 쌓입니다.</span>
     </div>
   </section>
 </main>
 
-<footer>기록은 이 브라우저에만 저장됩니다(localStorage) · <b>내보내기</b>로 JSON 백업을 받아 두세요</footer>
+<footer>기록은 이 브라우저에만 저장됩니다(localStorage) · <b>내보내기</b>로 피클·Hark JSON 백업을 받아 두세요</footer>
 <div class="toast" id="toast"></div>
 
 <script>
 (function(){
   "use strict";
-  var KEY = "pickle_usage_tracker_v1";
+  var KEY = "pickle_usage_tracker_v1";        // v1 시절 키 그대로(기존 기록을 살리기 위해)
+  var TAB_KEY = "pickle_usage_active_service";
   var DOW = ["일","월","화","수","목","금","토"];
+  var SVCS = {
+    pickle: { name:"피클", emoji:"🥒", title:"피클 사용량" },
+    hark:   { name:"Hark", emoji:"✨", title:"Hark 사용량" }
+  };
+  var ORDER = ["pickle","hark"];
 
-  /* ───────── 저장소 ───────── */
-  var data = { version: 1, days: {} };
-  function load(){
-    try{
-      var raw = localStorage.getItem(KEY);
-      if(!raw) return;
-      var o = JSON.parse(raw);
-      if(o && typeof o === "object" && o.days && typeof o.days === "object"){
-        data.days = {};
-        Object.keys(o.days).forEach(function(k){
-          var d = o.days[k] || {};
-          data.days[k] = {
-            usage: clampNum(d.usage),
-            half: Math.max(0, parseInt(d.half,10) || 0),
-            full: Math.max(0, parseInt(d.full,10) || 0),
-            memo: typeof d.memo === "string" ? d.memo : ""
-          };
-        });
-        if(o.version) data.version = o.version;
-      }
-    }catch(e){ /* 손상된 값은 버린다 */ }
-  }
-  function save(){
-    try{ localStorage.setItem(KEY, JSON.stringify(data)); }
-    catch(e){ toast("저장하지 못했어요 (브라우저 저장 공간 확인)"); }
-  }
+  /* ───────── 저장소 (v2: 서비스별 days) ───────── */
+  var data = { version: 2, services: { pickle:{ days:{} }, hark:{ days:{} } } };
+  var svc = "pickle";
+  var migrated = 0;
+
   function clampNum(v){
     if(v === null || v === undefined || v === "") return null;
     var n = Math.round(Number(v));
@@ -416,25 +514,75 @@
     if(!d) return false;
     return (d.usage !== null && d.usage !== undefined) || d.half > 0 || d.full > 0 || (d.memo && d.memo.length);
   }
+  function normDays(src){
+    var out = {};
+    if(!src || typeof src !== "object") return out;
+    Object.keys(src).forEach(function(k){
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(k)) return;
+      var d = src[k] || {};
+      var rec = {
+        usage: clampNum(d.usage),
+        half: Math.max(0, parseInt(d.half,10) || 0),
+        full: Math.max(0, parseInt(d.full,10) || 0),
+        memo: typeof d.memo === "string" ? d.memo : ""
+      };
+      if(hasRec(rec)) out[k] = rec;
+    });
+    return out;
+  }
+  function load(){
+    var raw = null;
+    try{ raw = localStorage.getItem(KEY); }catch(e){ return; }
+    if(!raw) return;
+    var o = null;
+    try{ o = JSON.parse(raw); }catch(e){ return; }
+    if(!o || typeof o !== "object") return;
+
+    if(o.services && typeof o.services === "object"){
+      /** v2 (피클 + Hark) */
+      ORDER.forEach(function(id){
+        var s = o.services[id] || {};
+        data.services[id].days = normDays(s.days);
+      });
+      data.version = 2;
+    }else if(o.days && typeof o.days === "object"){
+      /** v1 → services.pickle 로 이관 */
+      data.services.pickle.days = normDays(o.days);
+      data.version = 2;
+      migrated = Object.keys(data.services.pickle.days).length;
+      save();
+    }else{
+      /** 예전에 days 맵을 그대로 저장한 형태 */
+      var legacy = normDays(o);
+      if(Object.keys(legacy).length){
+        data.services.pickle.days = legacy;
+        data.version = 2;
+        migrated = Object.keys(legacy).length;
+        save();
+      }
+    }
+  }
+  function save(){
+    try{ localStorage.setItem(KEY, JSON.stringify(data)); }
+    catch(e){ toast("저장하지 못했어요 (브라우저 저장 공간 확인)"); }
+  }
+  function days(){ return data.services[svc].days; }
 
   /* ───────── 날짜 도우미 ───────── */
   function pad(n){ return (n<10?"0":"")+n; }
   function keyOf(y,m,d){ return y+"-"+pad(m+1)+"-"+pad(d); }
   function todayKey(){ var t=new Date(); return keyOf(t.getFullYear(), t.getMonth(), t.getDate()); }
-  function parseKey(k){
-    var p = k.split("-");
-    return { y:+p[0], m:(+p[1])-1, d:+p[2] };
-  }
+  function parseKey(k){ var p=k.split("-"); return { y:+p[0], m:(+p[1])-1, d:+p[2] }; }
   function daysInMonth(y,m){ return new Date(y, m+1, 0).getDate(); }
 
   /* ───────── 상태 ───────── */
   var tk = parseKey(todayKey());
-  var view = { y: tk.y, m: tk.m };          // 달력에 보이는 달
-  var sel  = todayKey();                     // 입력 대상 날짜
+  var view = { y: tk.y, m: tk.m };   // 달력에 보이는 달
+  var sel  = todayKey();             // 입력 대상 날짜(탭과 무관하게 공유)
 
   /* ───────── 요소 ───────── */
-  var $ = function(id){ return document.getElementById(id); };
-  var elGrid=$("grid"), elTitle=$("calTitle"), elKpis=$("kpis");
+  function $(id){ return document.getElementById(id); }
+  var elGrid=$("grid"), elTitle=$("calTitle");
   var elRange=$("pRange"), elNum=$("pNum"), elBig=$("pBig");
   var elHalf=$("halfCnt"), elFull=$("fullCnt");
   var elMemo=$("pMemo"), elDate=$("pDate"), elWd=$("pWd"), elMark=$("pMark"), elNote=$("pNote");
@@ -442,7 +590,7 @@
   var toastTimer=null;
   function toast(msg){
     var t=$("toast"); t.textContent=msg; t.classList.add("on");
-    clearTimeout(toastTimer); toastTimer=setTimeout(function(){ t.classList.remove("on"); }, 1600);
+    clearTimeout(toastTimer); toastTimer=setTimeout(function(){ t.classList.remove("on"); }, 1800);
   }
   function marked(){
     var d=new Date();
@@ -473,7 +621,7 @@
     for(var d=1; d<=nDays; d++){
       var k = keyOf(view.y, view.m, d);
       var wd = new Date(view.y, view.m, d).getDay();
-      var rec = data.days[k];
+      var rec = days()[k];
       var cls = "cell";
       if(wd===0) cls += " sun";
       if(wd===6) cls += " sat";
@@ -506,10 +654,10 @@
   function monthStats(y,m){
     var nDays = daysInMonth(y,m), sum=0, cnt=0, at100=0, half=0, full=0, rec=0, memos=0;
     for(var d=1; d<=nDays; d++){
-      var r = data.days[keyOf(y,m,d)];
+      var r = days()[keyOf(y,m,d)];
       if(!r) continue;
       if(hasRec(r)) rec++;
-      if(r.usage !== null){ sum += r.usage; cnt++; if(r.usage >= 100) at100++; }
+      if(r.usage !== null && r.usage !== undefined){ sum += r.usage; cnt++; if(r.usage >= 100) at100++; }
       half += r.half||0; full += r.full||0;
       if(r.memo) memos++;
     }
@@ -533,8 +681,8 @@
 
   /* ───────── 입력 패널 ───────── */
   function curRec(){
-    if(!data.days[sel]) data.days[sel] = { usage:null, half:0, full:0, memo:"" };
-    return data.days[sel];
+    if(!days()[sel]) days()[sel] = { usage:null, half:0, full:0, memo:"" };
+    return days()[sel];
   }
   function renderPanel(){
     var p = parseKey(sel);
@@ -542,13 +690,14 @@
     elDate.textContent = (p.m+1)+"월 "+p.d+"일";
     elWd.textContent = "("+DOW[wd]+")" + (sel===todayKey() ? " · 오늘" : "");
     elWd.className = "wd" + (wd===0?" s":wd===6?" t":"");
-    var r = data.days[sel] || { usage:null, half:0, full:0, memo:"" };
-    var u = (r.usage===null) ? 0 : r.usage;
-    elRange.value = u; elNum.value = (r.usage===null ? "" : r.usage);
-    elBig.innerHTML = (r.usage===null ? "–" : r.usage) + "<span>%</span>";
-    elBig.style.color = r.usage===null ? "#a9bab2" : (r.usage>=100 ? "#b91c1c" : r.usage>=71 ? "#b45309" : r.usage>=31 ? "#5b7a06" : "#047857");
+    var r = days()[sel] || { usage:null, half:0, full:0, memo:"" };
+    var u = (r.usage===null || r.usage===undefined) ? 0 : r.usage;
+    elRange.value = u;
+    elNum.value = (r.usage===null || r.usage===undefined) ? "" : r.usage;
+    elBig.innerHTML = ((r.usage===null || r.usage===undefined) ? "–" : r.usage) + "<span>%</span>";
+    elBig.style.color = (r.usage===null || r.usage===undefined) ? "#a9bab2" : (r.usage>=100 ? "#b91c1c" : r.usage>=71 ? "#b45309" : r.usage>=31 ? "#5b7a06" : "");
     Array.prototype.forEach.call($("pQuick").children, function(b){
-      b.classList.toggle("on", r.usage!==null && +b.dataset.v === r.usage);
+      b.classList.toggle("on", r.usage!==null && r.usage!==undefined && +b.dataset.v === r.usage);
     });
     elHalf.textContent = r.half||0;
     elFull.textContent = r.full||0;
@@ -563,7 +712,7 @@
     var r = curRec();
     r.usage = clampNum(v);
     if(doSave !== false) save();
-    renderCal(); renderKpis(); renderPanel(); renderChart(); updateHint();
+    renderCal(); renderKpis(); renderPanel(); renderChart(); updateHint(); updateTodayNote();
     if(doSave !== false) marked();
   }
   function bump(which, delta){
@@ -571,7 +720,7 @@
     var n = Math.max(0, (r[which]||0) + delta);
     if(n === (r[which]||0)) return;
     r[which] = n; save();
-    renderCal(); renderKpis(); renderPanel(); renderChart(); updateHint();
+    renderCal(); renderKpis(); renderPanel(); renderChart(); updateHint(); updateTodayNote();
     marked();
   }
 
@@ -611,15 +760,71 @@
     $("chartRange").textContent = ms[0].y+"년 "+(ms[0].m+1)+"월 ~ "+(ms[5].m+1)+"월";
   }
   function updateHint(){
-    var any = Object.keys(data.days).some(function(k){ return hasRec(data.days[k]); });
+    var any = Object.keys(days()).some(function(k){ return hasRec(days()[k]); });
     $("emptyHint").style.display = any ? "none" : "";
+  }
+  function updateTodayNote(){
+    var r = days()[todayKey()];
+    var el = $("todayNote");
+    if(!r || !hasRec(r)){ el.textContent = SVCS[svc].emoji + " 오늘 기록 없음"; return; }
+    var parts = [];
+    if(r.usage !== null && r.usage !== undefined) parts.push("<b>"+r.usage+"%</b>");
+    var t = (r.half||0) + (r.full||0);
+    if(t) parts.push("티켓 "+t+"장");
+    el.innerHTML = SVCS[svc].emoji + " 오늘 · " + (parts.length ? parts.join(" · ") : "메모만");
   }
 
   function renderAll(){
-    renderCal(); renderKpis(); renderPanel(); renderChart(); updateHint();
+    renderCal(); renderKpis(); renderPanel(); renderChart(); updateHint(); updateTodayNote();
+  }
+
+  /* ───────── 피클 / Hark 전환 ───────── */
+  function applyTheme(){
+    document.documentElement.setAttribute("data-svc", svc);
+    var tabs = document.querySelectorAll(".seg-btn");
+    Array.prototype.forEach.call(tabs, function(b){
+      var on = b.getAttribute("data-svc") === svc;
+      b.classList.toggle("on", on);
+      b.setAttribute("aria-selected", on ? "true" : "false");
+      b.tabIndex = on ? 0 : -1;
+    });
+    $("hEmoji").textContent = SVCS[svc].emoji;
+    $("hName").textContent = SVCS[svc].title;
+    $("emptySvc").textContent = SVCS[svc].name;
+    document.title = SVCS[svc].title + " · 일별·월별 추적";
+  }
+  function setSvc(id, persist){
+    if(!SVCS[id]) return;
+    if(id === svc && persist !== true){ return; }
+    svc = id;
+    applyTheme();
+    if(persist !== false){
+      try{ localStorage.setItem(TAB_KEY, id); }catch(e){}
+    }
+    renderAll();
   }
 
   /* ───────── 이벤트 ───────── */
+  $("seg").addEventListener("click", function(e){
+    var b = e.target.closest(".seg-btn");
+    if(!b) return;
+    setSvc(b.getAttribute("data-svc"));
+  });
+  $("seg").addEventListener("keydown", function(e){
+    if(e.key !== "ArrowLeft" && e.key !== "ArrowRight" && e.key !== "Home" && e.key !== "End") return;
+    var next;
+    if(e.key === "ArrowLeft" || e.key === "ArrowRight"){
+      var i = ORDER.indexOf(svc);
+      next = ORDER[(i + (e.key === "ArrowRight" ? 1 : ORDER.length-1)) % ORDER.length];
+    }else{
+      next = e.key === "Home" ? ORDER[0] : ORDER[ORDER.length-1];
+    }
+    e.preventDefault();
+    setSvc(next);
+    var btn = document.querySelector('.seg-btn[data-svc="'+next+'"]');
+    if(btn) btn.focus();
+  });
+
   elGrid.addEventListener("click", function(e){
     var c = e.target.closest(".cell");
     if(!c || c.classList.contains("blank")) return;
@@ -652,7 +857,7 @@
     var v = clampNum(elRange.value);
     elNum.value = v;
     elBig.innerHTML = v + "<span>%</span>";
-    elBig.style.color = v>=100 ? "#b91c1c" : v>=71 ? "#b45309" : v>=31 ? "#5b7a06" : v>=1 ? "#047857" : "#a9bab2";
+    elBig.style.color = v>=100 ? "#b91c1c" : v>=71 ? "#b45309" : v>=31 ? "#5b7a06" : v>=1 ? "" : "#a9bab2";
   });
   elRange.addEventListener("change", function(){ setUsage(elRange.value, true); });
   elNum.addEventListener("change", function(){
@@ -660,7 +865,7 @@
     if(elNum.value !== "" && v === null){ renderPanel(); return; }
     if(elNum.value === ""){ // 비우면 기록 없음
       var r = curRec(); r.usage = null; save(); marked();
-      renderCal(); renderKpis(); renderPanel(); renderChart(); updateHint(); return;
+      renderCal(); renderKpis(); renderPanel(); renderChart(); updateHint(); updateTodayNote(); return;
     }
     setUsage(v, true);
   });
@@ -677,46 +882,55 @@
     var r = curRec();
     r.memo = (elMemo.value || "").trim();
     save();
-    renderCal(); renderKpis(); updateHint();
+    renderCal(); renderKpis(); updateHint(); updateTodayNote();
     marked();
     if(!r.memo && !hasRec(r)) renderPanel();
   }
   $("pMemoSave").addEventListener("click", saveMemo);
   elMemo.addEventListener("keydown", function(e){ if(e.key === "Enter"){ e.preventDefault(); saveMemo(); } });
   elMemo.addEventListener("blur", function(){
-    var r = data.days[sel] || {};
+    var r = days()[sel] || {};
     if(((r.memo||"") !== (elMemo.value||"").trim())) saveMemo();
   });
 
   $("pClear").addEventListener("click", function(){
-    if(!hasRec(data.days[sel])) return;
-    if(!confirm("이 날짜의 기록을 지울까요?\n" + elDate.textContent + " 사용률·티켓·메모가 모두 사라집니다.")) return;
-    delete data.days[sel];
+    if(!hasRec(days()[sel])) return;
+    if(!confirm("이 날짜의 기록을 지울까요?\n" + SVCS[svc].name + " · " + elDate.textContent + " 사용률·티켓·메모가 모두 사라집니다.")) return;
+    delete days()[sel];
     save(); marked();
     renderAll();
     toast("기록을 지웠어요");
   });
 
-  /* 내보내기 */
+  /* 내보내기 (피클 + Hark 전체) */
+  function cleanDays(id){
+    var o = {}, d = data.services[id].days;
+    Object.keys(d).forEach(function(k){ if(hasRec(d[k])) o[k] = d[k]; });
+    return o;
+  }
   $("btnExport").addEventListener("click", function(){
     var now = new Date();
     var payload = {
       app: "pickle-usage-tracker",
-      version: data.version || 1,
+      version: 2,
       exportedAt: now.toISOString(),
-      days: data.days
+      services: {
+        pickle: { days: cleanDays("pickle") },
+        hark:   { days: cleanDays("hark") }
+      }
     };
     var blob = new Blob([JSON.stringify(payload, null, 2)], {type:"application/json;charset=utf-8"});
     var url = URL.createObjectURL(blob);
     var a = document.createElement("a");
     a.href = url;
-    a.download = "pickle-usage-backup-" + keyOf(now.getFullYear(), now.getMonth(), now.getDate()) + ".json";
+    a.download = "pickle-hark-usage-backup-" + keyOf(now.getFullYear(), now.getMonth(), now.getDate()) + ".json";
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(function(){ URL.revokeObjectURL(url); }, 1500);
-    toast("JSON 파일로 내려받았어요");
+    var n1 = Object.keys(cleanDays("pickle")).length, n2 = Object.keys(cleanDays("hark")).length;
+    toast("JSON으로 내려받았어요 (피클 " + n1 + "일 · Hark " + n2 + "일)");
   });
 
-  /* 불러오기 */
+  /* 불러오기 (v2: 피클+Hark 동시 복원, v1 백업은 피클 탭으로) */
   $("btnImport").addEventListener("click", function(){ $("fileImport").click(); });
   $("fileImport").addEventListener("change", function(e){
     var f = e.target.files && e.target.files[0];
@@ -726,27 +940,44 @@
       var obj;
       try{ obj = JSON.parse(String(fr.result)); }
       catch(err){ toast("JSON 파일을 읽지 못했어요"); return; }
-      var src = (obj && obj.days && typeof obj.days === "object") ? obj.days : (obj && typeof obj === "object" ? obj : null);
-      if(!src){ toast("피클 사용량 백업 파일이 아니에요"); return; }
-      var incoming = {}, n = 0;
-      Object.keys(src).forEach(function(k){
-        if(!/^\d{4}-\d{2}-\d{2}$/.test(k)) return;
-        var d = src[k] || {};
-        var rec = {
-          usage: clampNum(d.usage),
-          half: Math.max(0, parseInt(d.half,10) || 0),
-          full: Math.max(0, parseInt(d.full,10) || 0),
-          memo: typeof d.memo === "string" ? d.memo : ""
-        };
-        if(hasRec(rec)){ incoming[k] = rec; n++; }
-      });
-      if(!n){ toast("불러올 기록이 없어요"); return; }
-      var cur = Object.keys(data.days).filter(function(k){ return hasRec(data.days[k]); }).length;
-      var msg = "기록 " + n + "일을 불러옵니다.\n지금 있는 기록(" + cur + "일)은 백업 파일 내용으로 바뀝니다. 계속할까요?";
+
+      var inc = { pickle:null, hark:null };
+      if(obj && obj.services && typeof obj.services === "object"){
+        inc.pickle = normDays((obj.services.pickle || {}).days);
+        inc.hark   = normDays((obj.services.hark || {}).days);
+      }else if(obj && obj.days && typeof obj.days === "object"){
+        inc.pickle = normDays(obj.days);          // v1 백업 → 피클
+      }else if(obj && typeof obj === "object"){
+        inc.pickle = normDays(obj);               // days 맵만 있는 백업 → 피클
+      }
+
+      var n1 = inc.pickle ? Object.keys(inc.pickle).length : 0;
+      var n2 = inc.hark ? Object.keys(inc.hark).length : 0;
+      if(!n1 && !n2){ toast("불러올 기록이 없어요"); return; }
+
+      var c1 = Object.keys(cleanDays("pickle")).length, c2 = Object.keys(cleanDays("hark")).length;
+      var msg;
+      if(inc.hark === null){
+        msg = "구버전 백업이라 피클 기록 " + n1 + "일만 불러옵니다.\n"
+            + "지금 있는 피클 기록(" + c1 + "일)은 파일 내용으로 바뀌고, Hark 기록은 그대로 둡니다. 계속할까요?";
+      }else{
+        msg = "피클 " + n1 + "일 · Hark " + n2 + "일 기록을 불러옵니다.\n"
+            + "지금 있는 기록(피클 " + c1 + "일 · Hark " + c2 + "일)은 백업 파일 내용으로 바뀝니다. 계속할까요?";
+      }
       if(!confirm(msg)) return;
-      data.days = incoming;
-      save(); renderAll(); marked();
-      toast(n + "일 기록을 불러왔어요");
+
+      if(inc.pickle) data.services.pickle.days = inc.pickle;
+      if(inc.hark)   data.services.hark.days   = inc.hark;
+      data.version = 2;
+      save();
+      var curEmpty = Object.keys(cleanDays(svc)).length === 0;
+      if(curEmpty && inc.hark && Object.keys(data.services.hark.days).length && svc === "pickle"){
+        setSvc("hark");
+      }else{
+        renderAll();
+      }
+      marked();
+      toast(inc.hark === null ? (n1 + "일 기록을 불러왔어요 (피클)") : ("피클 " + n1 + "일 · Hark " + n2 + "일 불러왔어요"));
     };
     fr.readAsText(f);
     e.target.value = "";
@@ -754,7 +985,14 @@
 
   /* 시작 */
   load();
+  var savedSvc = null;
+  try{ savedSvc = localStorage.getItem(TAB_KEY); }catch(e){}
+  if(savedSvc && SVCS[savedSvc]) svc = savedSvc;
+  applyTheme();
   renderAll();
+  if(migrated){
+    setTimeout(function(){ toast("기존 피클 기록 " + migrated + "일을 그대로 옮겼어요"); }, 600);
+  }
 })();
 </script>
 </body>
