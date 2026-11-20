@@ -302,6 +302,28 @@
   html[data-svc="hark"] .toast{background:#221c46}
   .toast.on{opacity:1;transform:translate(-50%,0)}
 
+  /* ── Hark 실시간 상태 카드 ── */
+  .live{margin-bottom:12px;padding-bottom:10px;overflow:hidden}
+  .live[hidden]{display:none}
+  .live-h{display:flex;align-items:center;gap:8px;padding:9px 12px 0;flex-wrap:wrap;row-gap:4px}
+  .live-h h2{font-size:12.5px;font-weight:800;margin:0;letter-spacing:-.01em;white-space:nowrap}
+  .live-h .upd{font-size:10.5px;font-weight:700;color:var(--soft);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .live-h .btn{margin-left:auto;height:26px;padding:0 9px;font-size:11px}
+  .live-g{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:8px 12px 0}
+  .lvi{min-width:0;border:1px solid var(--line);border-radius:10px;padding:7px 9px 8px;background:#fbfbfe}
+  .lvi .k{font-size:10.5px;font-weight:800;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lvi .v{font-size:20px;font-weight:800;letter-spacing:-.03em;line-height:1.2;font-variant-numeric:tabular-nums;color:var(--acc-dd)}
+  .lvi .v small{font-size:11px;font-weight:700;color:var(--muted);margin-left:1px;letter-spacing:0}
+  .lvi.m .v{color:#0369a1}
+  .lvi .track{height:6px;border-radius:4px;background:#ececf8;overflow:hidden;margin:5px 0 4px}
+  .lvi .track i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,var(--bar-a),var(--bar-b));transition:width .3s}
+  .lvi.m .track i{background:linear-gradient(90deg,#38bdf8,#0369a1)}
+  .lvi .track i.warn{background:linear-gradient(90deg,#fb923c,#ea580c)}
+  .lvi .track i.max{background:linear-gradient(90deg,#f87171,#dc2626)}
+  .lvi .u{font-size:10px;font-weight:700;color:var(--soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .live-f{padding:7px 12px 0;font-size:10.5px;font-weight:600;color:var(--soft);line-height:1.5}
+  .live-f.err{color:#b45309}
+
   /* ── 반응형 ── */
   @media(max-width:820px){
     .cols{grid-template-columns:minmax(0,1fr)}
@@ -321,6 +343,7 @@
     .legend{padding:2px 10px 6px}
     .chart-h,.bars,.empty-hint{padding-left:10px;padding-right:10px}
     .empty-hint{margin-left:10px;margin-right:10px}
+    .live-h,.live-g,.live-f{padding-left:10px;padding-right:10px}
   }
   @media(max-width:430px){
     .seg-note{display:none}
@@ -335,6 +358,10 @@
     .stepper button{width:25px;height:25px}
     .mcol .uv{font-size:9.5px}
     .mcol .ml{font-size:9.5px}
+  }
+  @media(max-width:380px){
+    .live-g{grid-template-columns:minmax(0,1fr)}
+    .live-h h2{font-size:12px}
   }
 </style>
 </head>
@@ -360,6 +387,30 @@
 </header>
 
 <main>
+  <!-- Hark 실시간 상태 (Hark 탭에서만 표시) -->
+  <section class="card live" id="harkLive" hidden aria-live="polite">
+    <div class="live-h">
+      <h2>✨ Hark 현재 사용량</h2>
+      <span class="upd" id="liveUpd"></span>
+      <button class="btn" id="btnHarkSync" type="button" title="hark-data 브랜치에서 지금 값을 다시 읽어옵니다">새로고침</button>
+    </div>
+    <div class="live-g">
+      <div class="lvi">
+        <div class="k">일간 사용률</div>
+        <div class="v" id="lvDaily">–<small>%</small></div>
+        <div class="track"><i id="lvDailyBar" style="width:0%"></i></div>
+        <div class="u" id="lvDailySub">초기화 –</div>
+      </div>
+      <div class="lvi m">
+        <div class="k">월간 사용률</div>
+        <div class="v" id="lvMonthly">–<small>%</small></div>
+        <div class="track"><i id="lvMonthlyBar" style="width:0%"></i></div>
+        <div class="u" id="lvMonthlySub">초기화 –</div>
+      </div>
+    </div>
+    <div class="live-f" id="liveFoot">달력의 사용률은 Hark 기록으로 자동 갱신되고, 티켓·메모는 이 브라우저에 그대로 남습니다.</div>
+  </section>
+
   <!-- 월별 요약 -->
   <section class="kpis" id="kpis">
     <div class="kpi a">
@@ -567,6 +618,7 @@
     catch(e){ toast("저장하지 못했어요 (브라우저 저장 공간 확인)"); }
   }
   function days(){ return data.services[svc].days; }
+  function daysOf(id){ return data.services[id].days; }
 
   /* ───────── 날짜 도우미 ───────── */
   function pad(n){ return (n<10?"0":"")+n; }
@@ -598,6 +650,151 @@
     elMark.textContent = "✓";
     clearTimeout(marked._t);
     marked._t = setTimeout(function(){ elMark.textContent=""; }, 1300);
+  }
+
+  /* ───────── Hark 자동 연동 (hark-data 브랜치, Hark가 매시간 덮어쓰는 파일) ───────── */
+  var HARK_BASE = "https://raw.githubusercontent.com/1sthesunssi/my-worklist/hark-data/";
+  var STALE_MS = 10 * 60 * 1000;
+  var live = { status:"idle", daily:null, monthly:null, dReset:null, mReset:null, upd:null, warn:"", at:0 };
+
+  function fetchHarkJson(name){
+    var url = HARK_BASE + name + "?t=" + Date.now();
+    return fetch(url, { cache:"no-store" }).then(function(res){
+      if(!res.ok) throw new Error("HTTP " + res.status);
+      return res.json();
+    });
+  }
+
+  /* history의 날짜별 usage만 달력(Hark 탭)에 덮어쓰고, half/full/memo는 그대로 둔다 */
+  function mergeHarkDays(hist){
+    var box = hist && hist.services && hist.services.hark;
+    var src = box && box.days;
+    if(!src || typeof src !== "object") return 0;
+    var tgt = daysOf("hark"), n = 0;
+    Object.keys(src).forEach(function(k){
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(k)) return;
+      var u = clampNum((src[k] || {}).usage);
+      if(u === null) return;
+      var rec = tgt[k];
+      if(!rec) rec = tgt[k] = { usage:null, half:0, full:0, memo:"" };
+      if(rec.usage !== u){ rec.usage = u; n++; }
+    });
+    return n;
+  }
+
+  /* "2026-11-21T15:11:00+09:00" 와 "Sun 2026-12-13 3:07 PM KST (UTC+09:00)" 둘 다 처리 */
+  function parseWhen(v){
+    if(v === null || v === undefined || v === "") return null;
+    var s = String(v);
+    var m = s.match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2}))?\s*(Z|[+-]\d{2}:?\d{2})?/);
+    if(m){
+      var off = m[7] || "+09:00";
+      if(off !== "Z" && off.indexOf(":") < 0) off = off.slice(0,3) + ":" + off.slice(3);
+      var t = new Date(m[1]+"-"+m[2]+"-"+m[3]+"T"+m[4]+":"+m[5]+":"+(m[6]||"00")+off);
+      if(!isNaN(t.getTime())) return t;
+    }
+    var h = s.match(/(\d{4})-(\d{2})-(\d{2})\s+(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+    if(h){
+      var hh = (parseInt(h[4],10) % 12) + (/PM/i.test(h[6]) ? 12 : 0);
+      var t2 = new Date(Date.UTC(+h[1], (+h[2])-1, +h[3], hh-9, +h[5]));
+      if(!isNaN(t2.getTime())) return t2;
+    }
+    return null;
+  }
+  function kstOf(t){ return new Date(t.getTime() + 9*3600*1000); }
+  function absKst(v){
+    var t = parseWhen(v);
+    if(!t) return v ? String(v) : "";
+    var k = kstOf(t);
+    return pad(k.getUTCMonth()+1)+"-"+pad(k.getUTCDate())+" "+pad(k.getUTCHours())+":"+pad(k.getUTCMinutes());
+  }
+  function whenLabel(v){
+    var t = parseWhen(v);
+    if(!t) return "–";
+    var k = kstOf(t), now = kstOf(new Date());
+    var dd = Math.round((Date.UTC(k.getUTCFullYear(),k.getUTCMonth(),k.getUTCDate()) - Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),now.getUTCDate())) / 86400000);
+    var hm = pad(k.getUTCHours())+":"+pad(k.getUTCMinutes());
+    if(dd === 0) return "오늘 " + hm;
+    if(dd === 1) return "내일 " + hm;
+    if(dd === -1) return "어제 " + hm;
+    return (k.getUTCMonth()+1)+"월 "+k.getUTCDate()+"일 "+hm;
+  }
+
+  function renderLive(){
+    var box = $("harkLive");
+    if(!box) return;
+    box.hidden = (svc !== "hark");
+    var fetching = (live.status === "fetching");
+    $("btnHarkSync").disabled = fetching;
+    var upd = $("liveUpd");
+    if(fetching) upd.textContent = "불러오는 중…";
+    else if(live.status === "error") upd.textContent = "불러오기 실패";
+    else if(live.status === "ok") upd.textContent = live.upd ? ("Hark 갱신 " + absKst(live.upd)) : "동기화됨";
+    else upd.textContent = "";
+
+    var dv = live.daily, mv = live.monthly;
+    $("lvDaily").innerHTML = (dv === null ? "–" : dv) + "<small>%</small>";
+    $("lvMonthly").innerHTML = (mv === null ? "–" : mv) + "<small>%</small>";
+    var dBar = $("lvDailyBar"), mBar = $("lvMonthlyBar");
+    dBar.style.width = (dv === null ? 0 : Math.max(2, Math.min(100, dv))) + "%";
+    mBar.style.width = (mv === null ? 0 : Math.max(2, Math.min(100, mv))) + "%";
+    dBar.className = (dv !== null && dv >= 100) ? "max" : (dv !== null && dv >= 71 ? "warn" : "");
+    mBar.className = (mv !== null && mv >= 100) ? "max" : (mv !== null && mv >= 71 ? "warn" : "");
+    $("lvDailySub").textContent = live.dReset ? ("초기화 " + whenLabel(live.dReset)) : "초기화 시각 정보 없음";
+    $("lvMonthlySub").textContent = live.mReset ? ("초기화 " + whenLabel(live.mReset)) : "초기화 시각 정보 없음";
+
+    var f = $("liveFoot");
+    if(live.status === "error"){
+      f.className = "live-f err";
+      f.textContent = "Hark 원격 데이터를 불러오지 못했어요. 이 브라우저에 저장된 기록만 보입니다 · 새로고침으로 다시 시도할 수 있어요.";
+    }else if(live.warn){
+      f.className = "live-f err";
+      f.textContent = live.warn;
+    }else{
+      f.className = "live-f";
+      f.textContent = "달력의 사용률은 Hark 기록으로 자동 갱신되고, 티켓·메모는 이 브라우저에 그대로 남습니다. (하루 경계 04:00)";
+    }
+  }
+
+  function syncHark(user){
+    if(live.status === "fetching") return;
+    live.status = "fetching";
+    if(user) live.warn = "";
+    renderLive();
+    var curP = fetchHarkJson("hark-usage.json").then(function(j){ return { ok:true, v:j }; }, function(){ return { ok:false }; });
+    var hisP = fetchHarkJson("hark-usage-history.json").then(function(j){ return { ok:true, v:j }; }, function(){ return { ok:false }; });
+    Promise.all([curP, hisP]).then(function(r){
+      var cur = r[0], his = r[1];
+      if(!cur.ok && !his.ok){
+        live.status = "error";
+        renderLive();
+        if(user) toast("Hark 데이터를 못 불러왔어요 (저장된 기록은 그대로)");
+        return;
+      }
+      var changed = his.ok ? mergeHarkDays(his.v) : 0;
+      var c = cur.ok ? (cur.v || {}) : {};
+      var h = his.ok ? (his.v || {}) : {};
+      var dv = (c.daily_percent === null || c.daily_percent === undefined) ? null : clampNum(c.daily_percent);
+      var mv = (c.monthly_percent === null || c.monthly_percent === undefined) ? null : clampNum(c.monthly_percent);
+      if(mv === null && h.monthly_percent !== null && h.monthly_percent !== undefined) mv = clampNum(h.monthly_percent);
+      if(dv !== null) live.daily = dv;
+      if(mv !== null) live.monthly = mv;
+      if(c.daily_resets_at || h.daily_resets_at) live.dReset = c.daily_resets_at || h.daily_resets_at;
+      if(c.monthly_resets_at || h.monthly_resets_at) live.mReset = c.monthly_resets_at || h.monthly_resets_at;
+      if(c.updated_at || h.updated_at) live.upd = c.updated_at || h.updated_at;
+      live.at = Date.now();
+      live.status = "ok";
+      live.warn = "";
+      if(!cur.ok) live.warn = "현재 사용률은 못 읽어 날짜별 기록만 반영했어요.";
+      else if(!his.ok) live.warn = "날짜별 기록을 못 읽어 달력은 이 브라우저에 저장된 기록 그대로예요.";
+      if(changed) save();
+      renderAllSoft();
+      renderLive();
+      if(user) toast(changed ? ("Hark 사용량을 동기화했어요 (" + changed + "일 갱신)") : "Hark 사용량을 동기화했어요");
+    }).catch(function(){
+      live.status = "error";
+      renderLive();
+    });
   }
 
   /* ───────── 레벨 ───────── */
@@ -777,6 +974,15 @@
   function renderAll(){
     renderCal(); renderKpis(); renderPanel(); renderChart(); updateHint(); updateTodayNote();
   }
+  /* 원격 동기화로 다시 그릴 때, 입력 중인 칸의 글자를 덮어쓰지 않도록 */
+  function renderAllSoft(){
+    var ae = document.activeElement;
+    if(ae && (ae === elMemo || ae === elNum || ae === elRange)){
+      renderCal(); renderKpis(); renderChart(); updateHint(); updateTodayNote();
+    }else{
+      renderAll();
+    }
+  }
 
   /* ───────── 피클 / Hark 전환 ───────── */
   function applyTheme(){
@@ -792,6 +998,7 @@
     $("hName").textContent = SVCS[svc].title;
     $("emptySvc").textContent = SVCS[svc].name;
     document.title = SVCS[svc].title + " · 일별·월별 추적";
+    renderLive();
   }
   function setSvc(id, persist){
     if(!SVCS[id]) return;
@@ -802,6 +1009,8 @@
       try{ localStorage.setItem(TAB_KEY, id); }catch(e){}
     }
     renderAll();
+    /* Hark 탭으로 올 때, 값이 없거나 10분 넘게 묵었으면 조용히 다시 읽는다 */
+    if(id === "hark" && (live.status === "idle" || (live.at && Date.now() - live.at > STALE_MS))) syncHark();
   }
 
   /* ───────── 이벤트 ───────── */
@@ -990,6 +1199,8 @@
   if(savedSvc && SVCS[savedSvc]) svc = savedSvc;
   applyTheme();
   renderAll();
+  $("btnHarkSync").addEventListener("click", function(){ syncHark(true); });
+  syncHark();
   if(migrated){
     setTimeout(function(){ toast("기존 피클 기록 " + migrated + "일을 그대로 옮겼어요"); }, 600);
   }
