@@ -12014,5 +12014,46 @@ function ciSaveEdit(){
 }
 
 </script>
+
+<!-- ── Hark 사용량 칸 (2026-11-20, Hark가 매시간 hark-data 브랜치의 hark-usage.json을 갱신) ── -->
+<style>
+#ai-usage-row{display:flex;flex-wrap:wrap;gap:10px;margin:-8px 0 18px}
+.aiu-card{flex:0 1 320px;min-width:240px;background:#f3f1ec;border-radius:14px;padding:10px 14px;color:#3a3a3a;font-size:12.5px}
+.aiu-card .aiu-h{display:flex;justify-content:space-between;align-items:baseline;font-weight:800;font-size:13.5px;margin-bottom:6px}
+.aiu-card .aiu-h small{font-weight:500;color:#8a8a8a;font-size:11.5px}
+.aiu-line{display:grid;grid-template-columns:52px 1fr 40px;align-items:center;gap:8px;margin:4px 0}
+.aiu-bar{height:8px;border-radius:99px;background:#e2ded5;overflow:hidden}
+.aiu-bar i{display:block;height:100%;border-radius:99px;background:#5b8def}
+.aiu-bar i.warn{background:#e6a23c}.aiu-bar i.hot{background:#d9534f}
+.aiu-pct{text-align:right;font-weight:700}
+.aiu-reset{color:#8a8a8a;font-size:11.5px;margin-top:4px}
+@media (max-width:760px){#ai-usage-row{margin:0 0 14px}.aiu-card{flex:1 1 100%}}
+</style>
+<script>
+(function(){
+  const URL_='https://raw.githubusercontent.com/1sthesunssi/my-worklist/hark-data/hark-usage.json';
+  const fmt=iso=>{try{const d=new Date(iso);return (d.getMonth()+1)+'/'+d.getDate()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}catch(e){return '';}};
+  const cls=p=>p>=90?'hot':p>=70?'warn':'';
+  const line=(label,p)=>`<div class="aiu-line"><span>${label}</span><div class="aiu-bar"><i class="${cls(p)}" style="width:${Math.min(100,Math.max(0,p))}%"></i></div><span class="aiu-pct">${p}%</span></div>`;
+  function ensure(){
+    let row=document.getElementById('ai-usage-row');
+    if(!row){const top=document.getElementById('home-top');if(!top)return null;row=document.createElement('div');row.id='ai-usage-row';top.insertAdjacentElement('afterend',row);}
+    let c=document.getElementById('hark-usage');
+    if(!c){c=document.createElement('div');c.id='hark-usage';c.className='aiu-card';row.appendChild(c);}
+    return c;
+  }
+  async function load(){
+    const c=ensure();if(!c)return;
+    try{
+      const j=await (await fetch(URL_+'?t='+Date.now(),{cache:'no-store'})).json();
+      c.innerHTML=`<div class="aiu-h">Hark 사용량 <small>${fmt(j.updated_at)} 기준</small></div>`+
+        line('오늘',j.daily_percent)+line('이번 달',j.monthly_percent)+
+        `<div class="aiu-reset">오늘 한도 ${fmt(j.daily_resets_at)} · 월 한도 ${fmt(j.monthly_resets_at)} 리셋</div>`;
+    }catch(e){c.innerHTML='<div class="aiu-h">Hark 사용량</div><div class="aiu-reset">불러오지 못했어요</div>';}
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',load);else load();
+  setInterval(load,30*60*1000);
+})();
+</script>
 </body>
 </html>
