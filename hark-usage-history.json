@@ -2,8 +2,25 @@
   "version": 2,
   "day_boundary": "04:00 Asia/Seoul",
   "rule": "usage = 그날(04:00~다음날 04:00 KST) 관측된 Hark 하루 사용률 최고치(%)",
-  "updated_at": "Mon 2026-11-23 11:45 AM KST (UTC+09:00)",
+  "updated_at": "Mon 2026-11-23 12:44 PM KST (UTC+09:00)",
   "monthly_percent": 84,
   "monthly_resets_at": "Sun 2026-12-13 3:07 PM KST (UTC+09:00)",
-  "services": {"hark": {"days": {"2026-11-20": {"usage": 30},"2026-11-21": {"usage": 47},"2026-11-22": {"usage": 18},"2026-11-23": {"usage": 12}}}}
+  "services": {
+    "hark": {
+      "days": {
+        "2026-11-20": {
+          "usage": 30
+        },
+        "2026-11-21": {
+          "usage": 47
+        },
+        "2026-11-22": {
+          "usage": 18
+        },
+        "2026-11-23": {
+          "usage": 12
+        }
+      }
+    }
+  }
 }
