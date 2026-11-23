@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>보험 상령일 계산기</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/* 레이아웃: 위에 입력 두 칸, 아래에 결과 카드 하나와 일정 표. 한 화면 폭 520px. */
+:root {
+  --bg: #f4f5f7;
+  --surface: #ffffff;
+  --ink: #172b4d;
+  --muted: #5d6b66;
+  --line: #dfe1e6;
+  --accent: #0052cc;
+  --accent-soft: #e9f1ff;
+  --warn: #9a5b00;
+  --warn-soft: #fbf0dc;
+  --font: "Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121816;
+    --surface: #1a2220;
+    --ink: #e8efec;
+    --muted: #9db0a9;
+    --line: #2c3a36;
+    --accent: #6ea8ff;
+    --accent-soft: #1b2b4a;
+    --warn: #f0b95a;
+    --warn-soft: #3a2f16;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121816;
+  --surface: #1a2220;
+  --ink: #e8efec;
+  --muted: #9db0a9;
+  --line: #2c3a36;
+  --accent: #6ea8ff;
+  --accent-soft: #1b2b4a;
+  --warn: #f0b95a;
+  --warn-soft: #3a2f16;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.55;
+  padding: 24px 16px 48px;
+}
+main { max-width: 520px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+h1 { font-size: 22px; line-height: 1.3; margin: 0; text-wrap: balance; }
+.sub { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px;
+}
+.inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 420px) { .inputs { grid-template-columns: 1fr; } }
+label { display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 500; }
+input[type="date"] {
+  font: inherit;
+  font-weight: 400;
+  color: var(--ink);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  min-height: 44px;
+  width: 100%;
+}
+input[type="date"]:focus-visible, button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.row-actions { display: flex; gap: 8px; margin-top: 12px; }
+button {
+  font: inherit;
+  font-size: 14px;
+  color: var(--accent);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 12px;
+  min-height: 40px;
+  cursor: pointer;
+}
+button:hover { background: var(--accent-soft); }
+.error { color: var(--warn); background: var(--warn-soft); border-radius: 8px; padding: 10px 12px; font-size: 14px; }
+.hero { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.hero .big { font-size: 44px; font-weight: 700; line-height: 1; color: var(--accent); font-variant-numeric: tabular-nums; }
+.hero .label { font-size: 14px; color: var(--muted); }
+.hero .man { margin-left: auto; font-size: 14px; color: var(--muted); }
+dl { margin: 16px 0 0; display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 15px; }
+dt { color: var(--muted); }
+dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+.notice { margin-top: 16px; padding: 12px; border-radius: 8px; background: var(--accent-soft); font-size: 14px; }
+.notice.soon { background: var(--warn-soft); color: var(--warn); }
+.notice strong { font-weight: 700; }
+h2 { font-size: 15px; margin: 0 0 8px; }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { color: var(--muted); font-weight: 500; }
+tr:last-child td { border-bottom: 0; }
+.foot { font-size: 12px; color: var(--muted); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>보험 상령일 계산기</h1>
+    <p class="sub">생년월일과 기준일을 넣으면 보험나이와 상령일을 알려 드려요.</p>
+  </header>
+
+  <section class="card" aria-label="입력">
+    <div class="inputs">
+      <label for="birth">생년월일
+        <input type="date" id="birth" value="1990-06-15">
+      </label>
+      <label for="ref">기준일 (계약일)
+        <input type="date" id="ref">
+      </label>
+    </div>
+    <div class="row-actions">
+      <button type="button" id="today">기준일을 오늘로</button>
+    </div>
+  </section>
+
+  <div id="out"></div>
+
+  <p class="foot">상령일은 직전 생일에서 6개월 뒤 날짜이고, 그날부터 보험나이가 한 살 올라가는 것으로 계산했어요. 생일에서 6개월 뒤 날짜가 없는 달(예: 8월 31일생)은 그 달의 마지막 날을 써요. 회사와 상품에 따라 당일 적용 여부가 다를 수 있으니 청약 전에 해당 보험사 기준을 확인하세요.</p>
+</main>
+
+<script>
+/*LOGIC-START*/
+function daysInMonth(y, m) { return new Date(Date.UTC(y, m, 0)).getUTCDate(); }
+function mk(y, m, d) { return { y: y, m: m, d: Math.min(d, daysInMonth(y, m)) }; }
+function key(t) { return t.y * 10000 + t.m * 100 + t.d; }
+function utc(t) { return Date.UTC(t.y, t.m - 1, t.d); }
+function parse(s) {
+  var p = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || "");
+  if (!p) return null;
+  return { y: +p[1], m: +p[2], d: +p[3] };
+}
+function birthdayOf(b, y) { return mk(y, b.m, b.d); }
+function sangryeong(b, y) {
+  var m = b.m + 6, yy = y;
+  if (m > 12) { m -= 12; yy += 1; }
+  return mk(yy, m, b.d);
+}
+function addDays(t, n) {
+  var dt = new Date(utc(t) + n * 86400000);
+  return { y: dt.getUTCFullYear(), m: dt.getUTCMonth() + 1, d: dt.getUTCDate() };
+}
+function diffDays(a, b) { return Math.round((utc(b) - utc(a)) / 86400000); }
+function calc(b, r) {
+  var by = b.y, i, s, last = null, lastAge = 0, next = null, nextAge = 0;
+  for (i = by; i <= r.y + 2; i++) {
+    s = sangryeong(b, i);
+    if (key(s) <= key(r)) { last = s; lastAge = i - by + 1; }
+    else if (!next) { next = s; nextAge = i - by + 1; }
+  }
+  var lastBirthday = birthdayOf(b, r.y);
+  if (key(lastBirthday) > key(r)) lastBirthday = birthdayOf(b, r.y - 1);
+  var man = lastBirthday.y - by;
+  var upcoming = [];
+  for (i = by; i <= r.y + 6 && upcoming.length < 3; i++) {
+    s = sangryeong(b, i);
+    if (key(s) > key(r)) upcoming.push({ date: s, age: i - by + 1 });
+  }
+  return { man: man, age: lastAge, lastBirthday: lastBirthday, last: last, next: next, nextAge: nextAge, upcoming: upcoming };
+}
+/*LOGIC-END*/
+
+var WD = ["일", "월", "화", "수", "목", "금", "토"];
+function fmt(t) {
+  var w = WD[new Date(utc(t)).getUTCDay()];
+  return t.y + "년 " + t.m + "월 " + t.d + "일 (" + w + ")";
+}
+function todayStr() {
+  var n = new Date();
+  var mm = String(n.getMonth() + 1).padStart(2, "0");
+  var dd = String(n.getDate()).padStart(2, "0");
+  return n.getFullYear() + "-" + mm + "-" + dd;
+}
+function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+
+function render() {
+  var b = parse(document.getElementById("birth").value);
+  var r = parse(document.getElementById("ref").value);
+  var out = document.getElementById("out");
+  if (!b || !r) {
+    out.innerHTML = '<div class="error" role="alert">생년월일과 기준일을 모두 골라 주세요.</div>';
+    return;
+  }
+  if (key(r) < key(b)) {
+    out.innerHTML = '<div class="error" role="alert">기준일이 생년월일보다 빨라요. 날짜를 다시 확인해 주세요.</div>';
+    return;
+  }
+  var c = calc(b, r);
+  var html = '<section class="card" aria-live="polite">';
+  html += '<div class="hero"><span class="big">' + c.age + '세</span><span class="label">보험나이</span><span class="man">만 나이 ' + c.man + '세</span></div>';
+  html += '<dl>';
+  html += '<dt>직전 생일</dt><dd>' + fmt(c.lastBirthday) + '</dd>';
+  html += '<dt>직전 상령일</dt><dd>' + (c.last ? fmt(c.last) : '아직 없음') + '</dd>';
+  html += '<dt>다음 상령일</dt><dd>' + fmt(c.next) + '</dd>';
+  var dd = diffDays(r, c.next);
+  html += '<dt>다음 상령일까지</dt><dd>' + dd + '일 남음</dd>';
+  html += '</dl>';
+  var before = addDays(c.next, -1);
+  var soon = dd <= 30;
+  html += '<div class="notice' + (soon ? ' soon' : '') + '">' +
+    '<strong>' + fmt(before) + '</strong>까지 가입하면 보험나이 <strong>' + c.age + '세</strong>, ' +
+    '<strong>' + fmt(c.next) + '</strong>부터는 <strong>' + c.nextAge + '세</strong>로 계산돼요.' +
+    (soon ? ' 30일 이내라 안내가 급해요.' : '') + '</div>';
+  html += '</section>';
+
+  html += '<section class="card"><h2>앞으로의 상령일</h2><div class="table-wrap"><table><thead><tr><th>상령일</th><th>그날부터 보험나이</th><th>기준일부터</th></tr></thead><tbody>';
+  for (var i = 0; i < c.upcoming.length; i++) {
+    var u = c.upcoming[i];
+    html += '<tr><td>' + esc(fmt(u.date)) + '</td><td>' + u.age + '세</td><td>' + diffDays(r, u.date) + '일 후</td></tr>';
+  }
+  html += '</tbody></table></div></section>';
+  out.innerHTML = html;
+}
+
+document.getElementById("ref").value = todayStr();
+document.getElementById("birth").addEventListener("input", render);
+document.getElementById("ref").addEventListener("input", render);
+document.getElementById("today").addEventListener("click", function () {
+  document.getElementById("ref").value = todayStr();
+  render();
+});
+render();
+</script>
+</body>
+</html>
