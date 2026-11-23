@@ -184,14 +184,14 @@
       <button class="tab" role="tab" data-cat="gongje" aria-selected="false"><span class="lg">공제회사</span><span class="sh">공제</span> <span class="n">5</span></button>
       <button class="tab" role="tab" data-cat="digital" aria-selected="false"><span class="lg">디지털</span><span class="sh">디지털</span> <span class="n">8</span></button>
     </div>
-    <div class="status" id="status"><b>47</b>개사</div>
+    <div class="status" id="status"><b>47</b>항목</div>
   </div>
 
   <main id="main">
     <p class="claim-guide">보험사 이름을 누르면 보험금 청구·서류 안내가 새 창으로 열립니다. 우편 주소 옆 ⧉는 복사입니다.</p>
     <table id="tbl">
       <colgroup>
-        <col style="width:200px"><col style="width:150px"><col style="width:110px"><col style="width:125px"><col style="width:130px"><col style="width:190px"><col>
+        <col style="width:190px"><col style="width:180px"><col style="width:110px"><col style="width:125px"><col style="width:130px"><col style="width:190px"><col>
       </colgroup>
       <thead>
         <tr><th>보험사</th><th>바로가기</th><th>고객센터</th><th>인콜</th><th>헬프데스크</th><th>청구팩스</th><th>우편 청구 주소</th></tr>
@@ -356,7 +356,7 @@ function apply(){
     while(el && !el.classList.contains('m-grp')){ if(el.style.display !== 'none') any = true; el = el.nextElementSibling; }
     g.style.display = any ? '' : 'none';
   });
-  statusEl.innerHTML = '<b>' + shown + '</b>개사';
+  statusEl.innerHTML = '<b>' + shown + '</b>항목';
   fixWrapHtml();
   empty.classList.toggle('show', shown === 0);
   document.getElementById('emptyq').textContent = q.value.trim();
