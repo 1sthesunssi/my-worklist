@@ -8253,7 +8253,7 @@ function silsonOpen(){
       try{const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();ok=document.execCommand('copy');ta.remove();}catch(e2){ok=false;}
     }
     window.open(url,'_blank','noopener');
-    showToast(ok?'📋':'⚠️',ok?(b.dataset.ai==='gemini'?'복사했어요! 실손 스킬 대화창에 붙여넣고(Ctrl+V) 영수증 사진을 올려 주세요':'복사했어요! 새 창에 붙여넣고(Ctrl+V) 영수증 사진을 올려 주세요'):'복사가 안 됐어요. 미리보기 글을 직접 복사해 주세요',5000);
+    showToast(ok?'📋':'⚠️',ok?(b.dataset.ai==='gemini'?'복사했어요! 새 창에 붙여넣고(Ctrl+V) 영수증 사진을 올려 주세요':'복사했어요! 새 창에 붙여넣고(Ctrl+V) 영수증 사진을 올려 주세요'):'복사가 안 됐어요. 미리보기 글을 직접 복사해 주세요',5000);
     if(ok)close();
   }));
   paint();
@@ -9803,7 +9803,7 @@ function ensureJournal(){state.journal=state.journal||{};return state.journal;}
 // 앱에 직접 쓴 예전 일기(state.journal)도 함께 보여 줍니다.
 const DIARY_CAL_ID='e643664f9354e3572bce8254ade6bcc4ae6b20055ad8207be0d9090dc0f11054@group.calendar.google.com';
 const GEMINI_DIARY_URL='https://gemini.google.com/app/93741f67fe47a8d2';
-const SILSON_GEMINI_URL='https://gemini.google.com/app/a48d90117b212543';  // 실손 가드레일 스킬이 적용된 제미나이 대화창
+const SILSON_GEMINI_URL='https://gemini.google.com/app';  // 새 대화창 (실손 스킬은 제미나이 설정에 저장돼 있어 새 대화에서도 사용)
 const CAL_RO_SCOPE='https://www.googleapis.com/auth/calendar.readonly';
 let calRoClient=null,calRoToken=localStorage.getItem('cal_ro_token')||null,calRoExp=Number(localStorage.getItem('cal_ro_token_exp')||0);
 let calDiary={};          // 'YYYY-MM-DD' → {text, wx, cmt, n}
