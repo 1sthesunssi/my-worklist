@@ -2333,6 +2333,34 @@ a.wl-site:hover{text-decoration:underline}
 #hdr-clock span{color:#8fa0bd;font-size:12.5px}
 @media (max-width:1100px){#hdr-clock #hc-wx{display:none}}
 @media (max-width:760px){#hdr-clock{margin-left:6px;padding:2px;gap:0;border:0;background:none}#hdr-clock #hc-date{display:none}#hdr-clock b{font-size:14px}}
+/* 🩺 실손 점검 (2026-11-25) */
+.silson-tile{position:relative;border-color:#0c66e4!important;background:#f3f8ff!important}
+.silson-tile .auto-icon{color:#0c66e4!important}.silson-tile .auto-name{color:#0c3d8a!important;font-weight:800}
+.silson-new{position:absolute;top:-8px;right:-6px;background:#0c66e4;color:#fff;font-size:9.5px;font-weight:900;padding:1px 6px;border-radius:999px;z-index:2}
+#auto-grid .auto-hint{grid-column:2/-1}
+#auto-grid .silson-tile{align-self:start}
+#silson-ov{position:fixed;inset:0;background:rgba(9,30,66,.45);z-index:3000;display:flex;align-items:center;justify-content:center;padding:16px}
+#silson-ov .sl-box{background:#fff;border-radius:16px;width:min(520px,100%);max-height:calc(100vh - 32px);overflow:auto;box-shadow:0 24px 60px rgba(9,30,66,.35);font-family:'Pretendard Variable',Pretendard,system-ui,sans-serif;color:#172b4d}
+#silson-ov .sl-head{display:flex;align-items:center;gap:8px;padding:15px 18px;border-bottom:1px solid #eef0f3;font-size:16px}
+#silson-ov .sl-head small{font-size:12px;color:#6b778c}
+#silson-ov .sl-x{margin-left:auto;border:0;background:none;font-size:16px;color:#6b778c;cursor:pointer;width:32px;height:32px;border-radius:50%}
+#silson-ov .sl-x:hover{background:#f1f2f4}
+#silson-ov .sl-body{padding:14px 18px;display:flex;flex-direction:column;gap:13px}
+#silson-ov .sl-lab{font-size:12.5px;font-weight:800;color:#44546f;margin-bottom:6px}
+#silson-ov .sl-row{display:flex;gap:6px;flex-wrap:wrap}
+#silson-ov .sl-ch{border:1px solid #c1c7d0;border-radius:999px;padding:6px 13px;font:inherit;font-size:13px;font-weight:600;color:#42526e;background:#fff;cursor:pointer}
+#silson-ov .sl-ch.on{background:#0c66e4;border-color:#0c66e4;color:#fff}
+#silson-ov .sl-inp{border:1px solid #c1c7d0;border-radius:8px;padding:8px 11px;font:inherit;font-size:13.5px;box-sizing:border-box}
+#silson-ov .sl-gen{display:inline-block;margin-left:8px;font-size:12px;color:#8590a2}
+#silson-ov .sl-gen.on{background:#e7f6ec;color:#1f7a3a;font-weight:800;padding:5px 10px;border-radius:8px}
+#silson-ov .sl-gen.warn{background:#fff4dc;color:#8a5300}
+#silson-ov .sl-prev{background:#f7f8fa;border:1px dashed #c1c7d0;border-radius:10px;padding:10px 12px;font-size:12.5px;color:#42526e;line-height:1.6;white-space:pre-line;user-select:all}
+#silson-ov .sl-priv{font-size:11.5px;color:#6b778c;margin-top:6px}
+#silson-ov .sl-foot{display:flex;gap:8px;padding:14px 18px;border-top:1px solid #eef0f3;background:#fafbfc;border-radius:0 0 16px 16px}
+#silson-ov .sl-btn{flex:1;border:0;border-radius:10px;padding:11px 0;font:inherit;font-size:14px;font-weight:800;color:#fff;cursor:pointer}
+#silson-ov .sl-btn.g{background:#1a73e8}#silson-ov .sl-btn.c{background:#d97757}
+#silson-ov .sl-btn:hover{filter:brightness(1.07)}
+@media (max-width:760px){#silson-ov .sl-gen{display:block;margin:6px 0 0;width:auto;line-height:1.5}}
 </style>
 </head>
 <body>
@@ -2359,6 +2387,7 @@ a.wl-site:hover{text-decoration:underline}
     <div id="more-wrap">
       <button class="hdr-btn icon-only" id="more-btn" onclick="toggleMoreMenu(event)" title="더 보기">···</button>
       <div id="more-menu">
+        <button onclick="closeMoreMenu();silsonOpen()"><span>🩺 실손 점검</span></button>
         <button onclick="closeMoreMenu();slPeriod='month';openSales()"><span>💰 매출</span></button>
         <button onclick="closeMoreMenu();openCalendar()"><span>🗓️ 캘린더 (마감·일기)</span></button>
         <div class="mm-sep"></div>
@@ -8140,6 +8169,84 @@ function helperBatPath(){
   return p||'G:\\내 드라이브\\1_AI 자동화\\0_MY Wokrlist\\Launcher\\자동화도우미_시작.bat';
 }
 
+// ── 🩺 실손 점검: 제미나이·Claude의 '실손 약관 가드레일' 스킬로 조건을 챙겨 보내기 (2026-11-25)
+// 앱 안에서만 동작(자동화 도우미 필요 없음). 고객 이름·주민번호·전화번호는 넣지 않음. 고른 값은 기억하지 않음.
+const SILSON_NEW_UNTIL='2026-12-02';
+function silsonTile(){
+  const el=document.createElement('div');
+  el.className='auto-item silson-tile';
+  el.style.setProperty('--tc','#0c66e4');el.style.setProperty('--tcbg','#e9f2ff');
+  el.title='실손 점검 — 제미나이·Claude 스킬로 보내기';
+  const isNew=localDateStr(new Date())<=SILSON_NEW_UNTIL;
+  el.innerHTML=`${isNew?'<span class="silson-new">NEW</span>':''}<div class="auto-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v5a4 4 0 0 0 8 0V3"/><path d="M5 3H4M13 3h1"/><path d="M9 12v3a5 5 0 0 0 10 0v-2"/><circle cx="19" cy="11" r="2"/></svg></div><div class="auto-name">실손 점검</div>`;
+  el.addEventListener('click',silsonOpen);
+  return el;
+}
+function silsonGen(ym){
+  if(!/^\d{4}-\d{2}$/.test(ym||''))return null;
+  if(ym<='2009-09')return {g:'1세대',r:'~2009.09'};
+  if(ym<='2017-03')return {g:'2세대',r:'2009.10~2017.03'};
+  if(ym<='2021-06')return {g:'3세대',r:'2017.04~2021.06'};
+  if(ym<='2026-04')return {g:'4세대',r:'2021.07~2026.05.05'};
+  if(ym==='2026-05')return {g:'4세대 또는 5세대',r:'5/6 기준 — 증권 확인',warn:1};
+  return {g:'5세대',r:'2026.05.06~'};
+}
+function silsonOpen(){
+  let ov=document.getElementById('silson-ov');if(ov)ov.remove();
+  ov=document.createElement('div');ov.id='silson-ov';
+  const chips=(name,opts,on)=>`<div class="sl-row" data-k="${name}">${opts.map(o=>`<button type="button" class="sl-ch${o===on?' on':''}" data-v="${o}">${o}</button>`).join('')}</div>`;
+  ov.innerHTML=`<div class="sl-box" role="dialog" aria-label="실손 점검">
+    <div class="sl-head">🩺 <b>실손 점검</b><small>AI 스킬로 보내기</small><button type="button" class="sl-x" aria-label="닫기">✕</button></div>
+    <div class="sl-body">
+      <div><div class="sl-lab">가입 연월</div><input type="month" class="sl-inp" id="sl-ym" min="1990-01" max="2035-12"><span class="sl-gen" id="sl-gen">모르면 비워 두세요 — AI가 물어봐요</span></div>
+      <div><div class="sl-lab">실손 종류</div>${chips('kind',['일반 실손','유병력자 실손','모름'],'일반 실손')}</div>
+      <div><div class="sl-lab">진료</div>${chips('care',['통원','입원'],'통원')}</div>
+      <div><div class="sl-lab">병원</div>${chips('hosp',['의원','병원','상급·종합병원'],'의원')}</div>
+      <div><div class="sl-lab">메모 <span style="font-weight:500;color:#8590a2">(선택)</span></div><input type="text" class="sl-inp" id="sl-memo" style="width:100%" placeholder="예: 허리 도수치료 3회, 영수증 2장" maxlength="200"></div>
+      <div><div class="sl-lab">이렇게 복사돼요</div><div class="sl-prev" id="sl-prev"></div>
+        <div class="sl-priv">🔒 고객 이름·주민번호·전화번호는 넣지 않아요. 영수증 사진은 가린 뒤 올려 주세요.</div></div>
+    </div>
+    <div class="sl-foot"><button type="button" class="sl-btn g" data-ai="gemini">✨ 제미나이로 열기</button><button type="button" class="sl-btn c" data-ai="claude">✳️ Claude로 열기</button></div>
+  </div>`;
+  document.body.appendChild(ov);
+  const st={kind:'일반 실손',care:'통원',hosp:'의원'};
+  const text=()=>{
+    const ym=ov.querySelector('#sl-ym').value,g=silsonGen(ym),memo=ov.querySelector('#sl-memo').value.trim();
+    const kind=st.kind==='모름'?'실손 종류 모름(물어봐 줘)':st.kind;
+    const join=ym?`${ym.slice(0,4)}년 ${+ym.slice(5)}월${g?` (${g.g})`:''}`:'모름 (물어봐 줘)';
+    return `실손 약관 가드레일 점검해 줘.\n가입: ${join} · ${kind}\n진료: ${st.care} · ${st.hosp}`+(memo?`\n메모: ${memo}`:'')+`\n영수증 사진을 함께 올립니다.`;
+  };
+  const paint=()=>{
+    const ym=ov.querySelector('#sl-ym').value,g=silsonGen(ym),gen=ov.querySelector('#sl-gen');
+    if(g){gen.textContent=`→ ${g.g} (${g.r})`+(ym>='2018-04'&&st.kind!=='유병력자 실손'?' · 유병력자 실손인지도 확인':'');gen.className='sl-gen on'+(g.warn?' warn':'');}
+    else{gen.textContent='모르면 비워 두세요 — AI가 물어봐요';gen.className='sl-gen';}
+    ov.querySelector('#sl-prev').textContent=text();
+  };
+  ov.querySelectorAll('.sl-row').forEach(r=>r.addEventListener('click',e=>{
+    const b=e.target.closest('.sl-ch');if(!b)return;
+    r.querySelectorAll('.sl-ch').forEach(x=>x.classList.toggle('on',x===b));st[r.dataset.k]=b.dataset.v;paint();
+  }));
+  ov.querySelector('#sl-ym').addEventListener('input',paint);
+  ov.querySelector('#sl-memo').addEventListener('input',paint);
+  const close=()=>{ov.remove();document.removeEventListener('keydown',esc);};
+  const esc=e=>{if(e.key==='Escape')close();};
+  document.addEventListener('keydown',esc);
+  ov.addEventListener('click',e=>{if(e.target===ov)close();});
+  ov.querySelector('.sl-x').onclick=close;
+  ov.querySelectorAll('.sl-btn').forEach(b=>b.addEventListener('click',async()=>{
+    const url=b.dataset.ai==='gemini'?'https://gemini.google.com/app':'https://claude.ai/new';
+    const t=text();
+    let ok=true;
+    try{await navigator.clipboard.writeText(t);}catch(e){
+      try{const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();ok=document.execCommand('copy');ta.remove();}catch(e2){ok=false;}
+    }
+    window.open(url,'_blank','noopener');
+    showToast(ok?'📋':'⚠️',ok?'복사했어요! 새 창에 붙여넣고(Ctrl+V) 영수증 사진을 올려 주세요':'복사가 안 됐어요. 미리보기 글을 직접 복사해 주세요',5000);
+    if(ok)close();
+  }));
+  paint();
+  setTimeout(()=>ov.querySelector('#sl-ym').focus(),50);
+}
 function autoOfflineHtml(){
   const p=helperBatPath();
   return `<div class="auto-hint">
@@ -8210,6 +8317,7 @@ async function renderAutoGrid(){
   if(!data||!data.ok){
     st.className='off';st.textContent='도우미 꺼짐';
     grid.innerHTML=autoOfflineHtml();
+    grid.prepend(silsonTile());
     const cb=document.getElementById('auto-copy-btn');
     if(cb)cb.addEventListener('click',copyHelperCommand);
     return;
@@ -8224,6 +8332,7 @@ async function renderAutoGrid(){
     return;
   }
 
+  grid.appendChild(silsonTile());
   data.items.forEach(it=>{
     const el=document.createElement('div');
     el.className='auto-item'+(it.exists?'':' missing');
