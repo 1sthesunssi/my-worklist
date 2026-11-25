@@ -8204,7 +8204,7 @@ function silsonOpen(){
       <div><div class="sl-lab">가입 연월</div><input type="month" class="sl-inp" id="sl-ym" min="1990-01" max="2035-12"><span class="sl-gen" id="sl-gen">모르면 비워 두세요 — AI가 물어봐요</span></div>
       <div><div class="sl-lab">실손 종류</div>${chips('kind',['일반 실손','유병력자 실손','모름'],'일반 실손')}</div>
       <div><div class="sl-lab">진료</div>${chips('care',['통원','입원'],'통원')}</div>
-      <div><div class="sl-lab">병원</div>${chips('hosp',['의원','병원','상급·종합병원'],'의원')}</div>
+      <div><div class="sl-lab">병원</div>${chips('hosp',['의원','병원','종합병원','상급종합병원'],'의원')}</div>
       <div><div class="sl-lab">메모 <span style="font-weight:500;color:#8590a2">(선택)</span></div><input type="text" class="sl-inp" id="sl-memo" style="width:100%" placeholder="예: 허리 도수치료 3회, 영수증 2장" maxlength="200"></div>
       <div><div class="sl-lab">이렇게 복사돼요</div><div class="sl-prev" id="sl-prev"></div>
         <div class="sl-priv">🔒 고객 이름·주민번호·전화번호는 넣지 않아요. 영수증 사진은 가린 뒤 올려 주세요.</div></div>
@@ -8241,7 +8241,7 @@ function silsonOpen(){
     const q=new URLSearchParams();const ym=ov.querySelector('#sl-ym').value;
     if(st.kind==='유병력자 실손')q.set('kind','sick');else if(ym)q.set('ym',ym);
     q.set('type',st.care==='입원'?'inpatient':'outpatient');
-    q.set('hosp',st.hosp==='의원'?'clinic':st.hosp==='병원'?'hospital':'general');
+    q.set('hosp',{'의원':'clinic','병원':'hospital','종합병원':'general','상급종합병원':'tertiary'}[st.hosp]||'clinic');
     window.open('silson-calc.html?'+q.toString(),'_blank','noopener');
     close();
   });

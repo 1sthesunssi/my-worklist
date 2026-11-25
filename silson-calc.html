@@ -57,7 +57,8 @@
               <select id="in-hospital" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <option value="clinic" selected>의원급</option>
                 <option value="hospital">병원급</option>
-                <option value="general">종합 · 상급종합병원</option>
+                <option value="general">종합병원</option>
+                <option value="tertiary">상급종합병원</option>
               </select>
             </div>
           </div>
@@ -281,8 +282,8 @@
       const effNon3 = Math.round(effNonAll * ratioNon3);
       const effNonEtc = Math.max(0, effNonAll - effNon3);
 
-      const minOut23 = hospital === 'clinic' ? 10000 : (hospital === 'hospital' ? 15000 : 20000);
-      const minOut45 = hospital === 'general' ? 20000 : 10000;
+      const minOut23 = hospital === 'clinic' ? 10000 : (hospital === 'hospital' ? 15000 : 20000); // 종합·상급종합 2만
+      const minOut45 = (hospital === 'general' || hospital === 'tertiary') ? 20000 : 10000;
       const roomPay = type === 'inpatient' ? (gen === '1' ? roomDiff : Math.min(100000, Math.round(roomDiff * 0.5))) : 0;
 
       if (gen === '1') {
@@ -370,7 +371,7 @@
 
       if (gen === '5') {
         const isSevere = subopt === '5_severe';
-        const nhiRate = hospital === 'clinic' ? 0.3 : (hospital === 'hospital' ? 0.4 : 0.6);
+        const nhiRate = hospital === 'clinic' ? 0.3 : (hospital === 'hospital' ? 0.4 : (hospital === 'general' ? 0.5 : 0.6)); // 외래 건보 본인부담률(일반환자): 의원30·병원40·종합50(읍면45)·상급60
         const covDeduct = type === 'outpatient'
           ? Math.max(minOut45, Math.round(effCov * nhiRate), Math.round(effCov * 0.2))
           : Math.round(effCov * 0.2);
@@ -416,7 +417,9 @@
       };
     }
 
+    let lastPay = 0;
     function update() {
+      lastPay = 0;
       const name = document.getElementById('in-name').value.trim() || '고객';
       const visitDate = document.getElementById('in-visit-date').value || '-';
       const type = document.getElementById('in-type').value;
@@ -445,7 +448,7 @@
       };
       const grossTotal = input.covTotal + input.nonDosu + input.nonInj + input.nonMri + input.nonEtc + (type === 'inpatient' ? input.roomDiff : 0);
 
-      const hospLabel = hospital === 'clinic' ? '의원급' : (hospital === 'hospital' ? '병원급' : '종합·상급종합병원');
+      const hospLabel = hospital === 'clinic' ? '의원급' : (hospital === 'hospital' ? '병원급' : (hospital === 'general' ? '종합병원' : '상급종합병원'));
       const typeLabel = type === 'outpatient' ? '통원(외래)' : '입원';
       document.getElementById('out-client-name').textContent = `${name} 님`;
       document.getElementById('out-visit-summary').textContent = `${hospLabel} · ${typeLabel} · 진료일 ${visitDate} · 총 환자부담 ${fmt(grossTotal)}`;
@@ -522,6 +525,7 @@
       } else {
         allgenPanel.classList.add('hidden');
         const res = calcForGen(effectiveGen, subopt, input);
+        lastPay = res.total;
         genBadge.textContent = `DB손해보험 ${res.label}`;
         const pct = grossTotal > 0 ? Math.min(100, (res.total / grossTotal) * 100).toFixed(1) : '0.0';
         heroCard.className = 'bg-blue-50 border border-blue-200 rounded-2xl p-5 sm:p-6';
@@ -560,16 +564,23 @@
       }
       if (effectiveGen === '3' && (input.nonDosu > 0 || input.nonInj > 0 || input.nonMri > 0) && !String(subopt).startsWith('3_without')) {
         const lim = [];
-        if (input.nonDosu > 0) lim.push('도수·체외충격파·증식 연 350만 원·50회, 10회마다 효과 확인');
+        if (input.nonDosu > 0) lim.push('도수·체외충격파·증식 연 350만 원·50회 (장기 치료 시 치료 목적 소견서 확인)');
         if (input.nonInj > 0) lim.push('비급여 주사 연 250만 원·50회');
         if (input.nonMri > 0) lim.push('비급여 MRI·MRA 연 300만 원');
-        rows.push(['3세대 3종 특약 한도', '누적 확인', lim.join(' / ') + ' (상품별 약관 확인)']);
+        rows.push(['3세대 3종 특약 한도', '누적 확인', lim.join(' / ')]);
       }
       if (rawGen === 'bydate' && joinYm === '2026-05') {
         rows.push(['세대 경계 (2026년 5월)', '증권 확인', '5월 5일까지 4세대, 5월 6일부터 5세대 — 가입일을 증권에서 확인']);
       }
-      if (type === 'outpatient' && grossTotal > 250000 && ['1','2','3'].includes(effectiveGen)) {
-        rows.push(['통원 회당 한도', '한도 확인', '1~3세대 통원은 회당 한도(상품별 약 25~30만 원, 처방조제 포함)가 있어요 — 예상액보다 적게 나올 수 있음']);
+      if (effectiveGen === '4' && input.nonDosu > 0) {
+        rows.push(['4세대 도수·체외충격파', '효과 확인', '연 350만 원·50회, 10회마다 병적 완화 효과 객관적 증빙 필요(4세대 약관)']);
+      }
+      if (type === 'outpatient' && lastPay > 0) {
+        if (effectiveGen === '1' && lastPay > 100000) rows.push(['1세대 통원 한도', '증권 확인', '1일 10만~30만 원 등 상품별 상이 (외래·처방 합산 여부도 상품별)']);
+        if ((effectiveGen === '2' || effectiveGen === '3') && lastPay > 250000) rows.push(['통원 1일 한도', '한도 초과 가능', '2·3세대 표준: 외래+처방 합산 1일 30만 원(대표 배분 외래 25만 + 처방 5만, 상품별 상이·연 180회) — 예상액보다 적게 나올 수 있음']);
+      }
+      if ((effectiveGen === '4' || effectiveGen === '5') && val('amt-cov-full') > 0) {
+        rows.push(['전액본인부담 면책 예외', '내역 확인', '4·5세대: 특발성 저신장 성장호르몬제, 응급실 비응급 응급의료관리료 등 일부 전액본인부담은 보상 제외']);
       }
       if (effectiveGen === '5' && (input.nonDosu > 0 || input.nonInj > 0) && subopt === '5_mild') {
         rows.push(['5세대 비중증 제외', '보장 제외', '도수치료·체외충격파·비급여 주사제는 5세대 비중증 비급여 제외']);
@@ -669,7 +680,7 @@
       ['in-name', 'amt-cov-part', 'amt-cov-full', 'amt-non-dosu', 'amt-non-inj', 'amt-non-mri', 'amt-non-etc', 'amt-room', 'amt-deduct-special'].forEach(id => { document.getElementById(id).value = id === 'in-name' ? '' : 0; });
       set('in-visit-date', new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10));
       if (q.get('type') === 'inpatient' || q.get('type') === 'outpatient') set('in-type', q.get('type'));
-      if (['clinic', 'hospital', 'general'].includes(q.get('hosp'))) set('in-hospital', q.get('hosp'));
+      if (['clinic', 'hospital', 'general', 'tertiary'].includes(q.get('hosp'))) set('in-hospital', q.get('hosp'));
       if (q.get('kind') === 'sick') set('in-gen', 'sick');
       else if (/^\d{4}-\d{2}$/.test(q.get('ym') || '')) { set('in-gen', 'bydate'); set('in-join-ym', q.get('ym')); }
       else if (q.get('gen')) set('in-gen', q.get('gen'));
