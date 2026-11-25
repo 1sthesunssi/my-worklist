@@ -511,7 +511,7 @@
           const eligNon = Math.max(0, effNonAll - nonDosu - nonInj);
           const d5 = type === 'outpatient' ? Math.max(50000, Math.round(eligNon * 0.5)) : Math.round(eligNon * 0.5);
           const raw5 = Math.max(0, eligNon - d5);
-          const cap5 = type === 'outpatient' ? 200000 : 3000000;   // 비중증 비급여: 입원 1회당 300만 · 통원 1회당 20만 (연 1,000만)
+          const cap5 = type === 'outpatient' ? 200000 : ((hospital === 'clinic' || hospital === 'hospital') ? 3000000 : Infinity);   // 비중증 비급여: 병·의원 입원 1회당 300만(종합·상급종합은 회당 한도 없음) · 통원 1회당 20만 (연 1,000만)
           nonPay = Math.min(raw5, cap5);
           nonNote2 = `비중증(특약2): 도수·체외충격파·비급여주사 제외, ${type === 'outpatient' ? '5만 vs 50%' : '50%'}` + (raw5 > cap5 ? ` → ${type === 'outpatient' ? '통원 1회당 20만' : '입원 1회당 300만'} 한도 적용 (${fmt(raw5)} → ${fmt(cap5)})` : '');
         }
@@ -743,7 +743,7 @@
         rows.push(['5세대 비중증 제외', '보장 제외', '도수치료·체외충격파·비급여 주사제는 5세대 비중증 비급여 제외']);
       }
       if (effectiveGen === '5' && subopt === '5_mild' && hasNon) {
-        rows.push(['5세대 비중증 한도', '한도 확인', '입원 1회당 300만 원 · 통원 1회당 20만 원 · 연간 1,000만 원 — 올해 이미 받은 비중증 비급여 보험금과 합산 확인']);
+        rows.push(['5세대 비중증 한도', '한도 확인', (type === 'inpatient' ? ((hospital === 'clinic' || hospital === 'hospital') ? '병·의원 입원 1회당 300만 원' : '종합·상급종합 입원은 회당 한도 없음(연간 한도만)') : '통원 1회당 20만 원') + ' · 연간 1,000만 원 — 올해 이미 받은 비중증 비급여 보험금과 합산 확인']);
       }
 
       document.getElementById('guardrail-tbody').innerHTML = rows.map(r => `
