@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>실손 계산기</title>
+  <meta name="robots" content="noindex">
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <style>
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Malgun Gothic', sans-serif; }
+    .num { font-variant-numeric: tabular-nums; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen">
+  <div class="max-w-6xl mx-auto px-4 py-6 sm:py-8">
+    <header class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">DB손해보험 · 손해보험 표준약관</span>
+          <span class="text-xs text-slate-500">1~5세대 · 유병력자 통합</span>
+        </div>
+        <h1 class="text-xl sm:text-2xl font-bold text-slate-900 mt-1.5">실손의료비 약관 가드레일 계산기</h1>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button type="button" id="btn-preset-outpatient" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 transition">외래 예시 (체외충격파)</button>
+        <button type="button" id="btn-preset-inpatient" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 transition">입원 예시 (상급병실·주사)</button>
+        <button type="button" id="btn-reset" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-slate-500 transition">초기화</button>
+      </div>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <!-- 입력 패널 -->
+      <section class="lg:col-span-5 space-y-4">
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+          <h2 class="text-sm font-bold text-slate-800">1. 고객 · 가입 조건</h2>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label for="in-name" class="block text-xs font-medium text-slate-600 mb-1">고객명 (선택)</label>
+              <input id="in-name" type="text" value="이지은" placeholder="예: 홍길동" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+              <label for="in-visit-date" class="block text-xs font-medium text-slate-600 mb-1">진료일</label>
+              <input id="in-visit-date" type="date" value="2026-11-23" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label for="in-type" class="block text-xs font-medium text-slate-600 mb-1">진료 형태</label>
+              <select id="in-type" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="outpatient" selected>통원 (외래)</option>
+                <option value="inpatient">입원</option>
+              </select>
+            </div>
+            <div>
+              <label for="in-hospital" class="block text-xs font-medium text-slate-600 mb-1">병원 규모</label>
+              <select id="in-hospital" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="clinic" selected>의원급</option>
+                <option value="hospital">병원급</option>
+                <option value="general">종합 · 상급종합병원</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label for="in-gen" class="block text-xs font-medium text-slate-600 mb-1">실손 가입 세대</label>
+            <select id="in-gen" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="unknown">모름 (1~5세대 · 유병력자 전체 비교)</option>
+              <option value="bydate">가입 연월로 자동 판별</option>
+              <option value="1">1세대 (~2009.09)</option>
+              <option value="2">2세대 (2009.10~2017.03)</option>
+              <option value="3" selected>3세대 착한실손 (2017.04~2021.06)</option>
+              <option value="4">4세대 (2021.07~2026.05.05)</option>
+              <option value="5">5세대 (2026.05.06~)</option>
+              <option value="sick">유병력자 실손 (2018.04~)</option>
+            </select>
+          </div>
+
+          <div id="wrap-join-ym" class="hidden">
+            <label for="in-join-ym" class="block text-xs font-medium text-slate-600 mb-1">가입 연월 (자동 세대 판별)</label>
+            <input id="in-join-ym" type="month" value="2021-03" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div id="wrap-subopt">
+              <label for="in-subopt" class="block text-xs font-medium text-slate-600 mb-1">세부 유형 / 특약</label>
+              <select id="in-subopt" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="3_with" selected>선택형(급여10%) · 3종 특약 가입</option>
+              </select>
+            </div>
+            <div>
+              <label for="in-burden" class="block text-xs font-medium text-slate-600 mb-1">부담보 여부</label>
+              <select id="in-burden" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="none" selected>부담보 없음</option>
+                <option value="unknown">모름 (증권 확인 경고)</option>
+                <option value="active">있음 (이번 진료 부위 해당)</option>
+                <option value="expired">기간 한정 부담보 만료됨</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-3">
+          <h2 class="text-sm font-bold text-slate-800">2. 진료비 영수증 금액 (원)</h2>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label for="amt-cov-part" class="block text-xs font-medium text-slate-600 mb-1">급여 일부본인부담</label>
+              <input id="amt-cov-part" type="number" min="0" step="100" value="15900" class="num w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+              <label for="amt-cov-full" class="block text-xs font-medium text-slate-600 mb-1">급여 전액본인부담</label>
+              <input id="amt-cov-full" type="number" min="0" step="100" value="8720" class="num w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+              <label for="amt-non-dosu" class="block text-xs font-medium text-slate-600 mb-1">비급여 도수·체외충격파</label>
+              <input id="amt-non-dosu" type="number" min="0" step="100" value="120000" class="num w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+              <label for="amt-non-inj" class="block text-xs font-medium text-slate-600 mb-1">비급여 주사료</label>
+              <input id="amt-non-inj" type="number" min="0" step="100" value="0" class="num w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+              <label for="amt-non-mri" class="block text-xs font-medium text-slate-600 mb-1">비급여 MRI · MRA</label>
+              <input id="amt-non-mri" type="number" min="0" step="100" value="0" class="num w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+              <label for="amt-non-etc" class="block text-xs font-medium text-slate-600 mb-1">기타 일반 비급여</label>
+              <input id="amt-non-etc" type="number" min="0" step="100" value="0" class="num w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div id="wrap-room" class="hidden">
+              <label for="amt-room" class="block text-xs font-medium text-slate-600 mb-1">상급병실료 차액 (입원)</label>
+              <input id="amt-room" type="number" min="0" step="100" value="0" class="num w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+              <label for="amt-deduct-special" class="block text-xs font-medium text-slate-600 mb-1">공단환급·산재·자보 제외액</label>
+              <input id="amt-deduct-special" type="number" min="0" step="100" value="0" class="num w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 결과 패널 -->
+      <section class="lg:col-span-7 space-y-4">
+        <!-- 최상단 헤더 -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <div class="flex flex-wrap items-center gap-2">
+              <span id="out-client-name" class="text-lg font-bold text-slate-900">이지은 님</span>
+              <span id="out-gen-badge" class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700">DB손해보험 3세대 실손</span>
+              <span id="out-burden-badge" class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700">부담보 없음</span>
+            </div>
+            <p id="out-visit-summary" class="text-xs text-slate-500 mt-1">의원급 · 통원 (외래) · 진료일 2026-11-23 · 총 환자부담 144,620원</p>
+          </div>
+          <button type="button" id="btn-copy-msg" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-900 text-white hover:bg-slate-800 transition shrink-0">고객 안내 문구 복사</button>
+        </div>
+
+        <!-- 예상 수령액 대형 카드 -->
+        <div id="hero-card" class="bg-blue-50 border border-blue-200 rounded-2xl p-5 sm:p-6">
+          <div class="flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <div class="text-xs font-semibold text-blue-700">예상 수령액</div>
+              <div id="out-payout" class="num text-3xl sm:text-4xl font-bold text-slate-900 mt-1">98,620원</div>
+              <div id="out-payout-sub" class="text-xs text-slate-600 mt-1">급여 14,620원 + 비급여 84,000원</div>
+            </div>
+            <span id="out-rate-pill" class="num px-3 py-1 rounded-full text-xs font-semibold bg-blue-600 text-white">총액 대비 68.2% 보장</span>
+          </div>
+          <div class="w-full h-2 bg-white rounded-full overflow-hidden mt-4">
+            <div id="out-rate-bar" class="h-full bg-blue-600 rounded-full transition-all duration-300" style="width: 68.2%;"></div>
+          </div>
+        </div>
+
+        <!-- 전체 세대 비교표 (모름 모드일 때 표시) -->
+        <div id="allgen-panel" class="hidden bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+          <h3 class="text-sm font-bold text-slate-800 mb-3">1~5세대 · 유병력자 실손 전체 케이스 비교</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs sm:text-sm">
+              <thead>
+                <tr class="border-b border-slate-200 text-slate-500">
+                  <th class="py-2 pr-3 font-semibold">가입 세대</th>
+                  <th class="py-2 px-3 font-semibold">예상 수령액</th>
+                  <th class="py-2 pl-3 font-semibold">핵심 유의사항</th>
+                </tr>
+              </thead>
+              <tbody id="allgen-tbody" class="divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 2열 불릿 세부내역 카드 -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-sm">
+            <div class="flex items-baseline justify-between mb-2.5">
+              <span class="text-sm font-bold text-slate-800">급여 내역</span>
+              <span id="out-cov-payout" class="num text-base font-bold text-slate-900">14,620원</span>
+            </div>
+            <ul id="out-cov-list" class="list-disc pl-4 space-y-1 text-xs text-slate-600 num"></ul>
+          </div>
+          <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-sm">
+            <div class="flex items-baseline justify-between mb-2.5">
+              <span class="text-sm font-bold text-slate-800">비급여 · 상급병실</span>
+              <span id="out-non-payout" class="num text-base font-bold text-slate-900">84,000원</span>
+            </div>
+            <ul id="out-non-list" class="list-disc pl-4 space-y-1 text-xs text-slate-600 num"></ul>
+          </div>
+        </div>
+
+        <!-- 가드레일 서류·부담보 점검표 -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+          <h3 class="text-sm font-bold text-slate-800 mb-3">가드레일 필수 점검표 (서류 · 부담보 · 할증)</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="border-b border-slate-200 text-slate-500">
+                  <th class="py-2 pr-3 font-semibold">점검 항목</th>
+                  <th class="py-2 px-3 font-semibold">상태</th>
+                  <th class="py-2 pl-3 font-semibold">안내 및 유의사항</th>
+                </tr>
+              </thead>
+              <tbody id="guardrail-tbody" class="divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <p class="text-xs text-slate-500 px-1">
+          ※ 산출 금액은 DB손해보험(손해보험 표준약관) 기준 예상치이며, 실제 지급액은 보험사 심사·특약 가입 여부·부담보·면책 항목에 따라 달라질 수 있습니다.
+        </p>
+      </section>
+    </div>
+  </div>
+
+  <div id="toast" class="fixed bottom-5 right-5 px-4 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-medium shadow-lg opacity-0 pointer-events-none transition-opacity duration-200">
+    고객 안내 문구를 복사했습니다.
+  </div>
+
+  <script>
+    const fmt = (n) => Math.round(Math.max(0, n)).toLocaleString('ko-KR') + '원';
+    const val = (id) => Math.max(0, Number(document.getElementById(id).value) || 0);
+
+    const SUBOPTS = {
+      '1': [{ v: '1_sonbo', t: '손보형 (자기부담 0%)' }, { v: '1_20', t: '자기부담 20% 상품' }],
+      '2': [{ v: '2_select', t: '선택형 (급여10%·비급여20%)' }, { v: '2_std', t: '표준형 (급여·비급여 20%)' }],
+      '3': [{ v: '3_with', t: '선택형(급여10%) · 3종 특약 가입' }, { v: '3_with_std', t: '표준형(급여20%) · 3종 특약 가입' }, { v: '3_without', t: '선택형(급여10%) · 3종 특약 미가입' }, { v: '3_without_std', t: '표준형(급여20%) · 3종 특약 미가입' }],
+      '4': [{ v: '4_std', t: '4세대 표준 (급여20%·비급여30%)' }],
+      '5': [{ v: '5_mild', t: '5세대 비중증 (특약2 · 일반질환)' }, { v: '5_severe', t: '5세대 중증 (특약1 · 산정특례)' }],
+      'sick': [{ v: 'sick_std', t: '유병력자 실손 (30% 공제)' }]
+    };
+
+    function detectGenFromYm(ym) {
+      if (!ym) return '4';
+      if (ym <= '2009-09') return '1';
+      if (ym <= '2017-03') return '2';
+      if (ym <= '2021-06') return '3';
+      if (ym <= '2026-04') return '4';
+      return '5';
+    }
+
+    function refreshSubOpts(gen) {
+      const sel = document.getElementById('in-subopt');
+      const wrap = document.getElementById('wrap-subopt');
+      if (gen === 'unknown') {
+        wrap.classList.add('hidden');
+        return;
+      }
+      wrap.classList.remove('hidden');
+      const opts = SUBOPTS[gen] || SUBOPTS['4'];
+      const prev = sel.value;
+      sel.innerHTML = opts.map(o => `<option value="${o.v}">${o.t}</option>`).join('');
+      if (opts.some(o => o.v === prev)) sel.value = prev;
+    }
+
+    function calcForGen(gen, subopt, input) {
+      const { type, hospital, covTotal, nonDosu, nonInj, nonMri, nonEtc, roomDiff, specialDeduct } = input;
+      const non3Total = nonDosu + nonInj + nonMri;
+      const nonAllTotal = non3Total + nonEtc;
+      const totalMedical = Math.max(0, covTotal + nonAllTotal + (type === 'inpatient' ? roomDiff : 0) - specialDeduct);
+
+      const effCov = Math.max(0, covTotal - Math.min(covTotal, specialDeduct));
+      const remSpecial = Math.max(0, specialDeduct - covTotal);
+      const effNonAll = Math.max(0, nonAllTotal - remSpecial);
+      const ratioNon3 = nonAllTotal > 0 ? (non3Total / nonAllTotal) : 0;
+      const effNon3 = Math.round(effNonAll * ratioNon3);
+      const effNonEtc = Math.max(0, effNonAll - effNon3);
+
+      const minOut23 = hospital === 'clinic' ? 10000 : (hospital === 'hospital' ? 15000 : 20000);
+      const minOut45 = hospital === 'general' ? 20000 : 10000;
+      const roomPay = type === 'inpatient' ? (gen === '1' ? roomDiff : Math.min(100000, Math.round(roomDiff * 0.5))) : 0;
+
+      if (gen === '1') {
+        const rate = subopt === '1_20' ? 0.2 : 0;
+        const base = effCov + effNonAll;
+        const deduct = type === 'outpatient' ? Math.max(5000, Math.round(base * rate)) : Math.round(base * rate);
+        const pay = Math.max(0, base - deduct) + roomPay;
+        return {
+          label: '1세대 (손보 기준)',
+          total: pay,
+          covPay: effCov,
+          nonPay: Math.max(0, pay - effCov),
+          covNotes: [`보장대상 합계: ${fmt(effCov)}`, `공제: ${type === 'outpatient' ? '통원 5,000원 기준' : '입원 0%'}`],
+          nonNotes: [`비급여 합계: ${fmt(effNonAll)}`, type === 'inpatient' ? `상급병실 차액: ${fmt(roomPay)}` : '구 상품 약관별 한도 확인'],
+          warn: '구 상품별 세부 약관 차이 확인 필요'
+        };
+      }
+
+      if (gen === '2') {
+        const covRate = subopt === '2_std' ? 0.2 : 0.1;
+        const nonRate = 0.2;
+        const rawDeduct = Math.round(effCov * covRate) + Math.round(effNonAll * nonRate);
+        const deduct = type === 'outpatient' ? Math.max(minOut23, rawDeduct) : rawDeduct;
+        const basePay = Math.max(0, effCov + effNonAll - deduct);
+        const covShare = (effCov + effNonAll) > 0 ? Math.round(basePay * (effCov / (effCov + effNonAll))) : 0;
+        const nonShare = Math.max(0, basePay - covShare) + roomPay;
+        return {
+          label: subopt === '2_std' ? '2세대 표준형' : '2세대 선택형',
+          total: basePay + roomPay,
+          covPay: covShare,
+          nonPay: nonShare,
+          covNotes: [`보장대상 급여: ${fmt(effCov)}`, `자기부담률: ${covRate * 100}% (${type === 'outpatient' ? `최소 ${fmt(minOut23)} 비교` : '입원'})`],
+          nonNotes: [`비급여(체외·주사·MRI 포함): ${fmt(effNonAll)} (20% 공제)`, type === 'inpatient' ? `상급병실 차액 50%: ${fmt(roomPay)}` : '통원 일 25~30만 원 한도'],
+          warn: subopt === '2_std' ? '표준형 20% 기준 (선택형은 급여 10%)' : '선택형 급여10%·비급여20% 기준'
+        };
+      }
+
+      if (gen === '3') {
+        const hasOpt = !String(subopt).startsWith('3_without');
+        const covRate3 = String(subopt).endsWith('_std') ? 0.2 : 0.1;
+        const baseSum = effCov + effNonEtc;
+        const baseRateDeduct = Math.round(effCov * covRate3) + Math.round(effNonEtc * 0.2);
+        const baseDeduct = type === 'outpatient' ? Math.max(minOut23, baseRateDeduct) : baseRateDeduct;
+        const basePay = Math.max(0, baseSum - baseDeduct);
+        const covPay = baseSum > 0 ? Math.round(basePay * (effCov / baseSum)) : 0;
+        const etcPay = Math.max(0, basePay - covPay);
+
+        let non3Pay = 0;
+        if (hasOpt && effNon3 > 0) {
+          const d3 = type === 'outpatient' ? Math.max(20000, Math.round(effNon3 * 0.3)) : Math.round(effNon3 * 0.3);
+          non3Pay = Math.max(0, effNon3 - d3);
+        }
+        return {
+          label: `3세대 ${covRate3 === 0.2 ? '표준형' : '선택형'} (${hasOpt ? '3종 특약 가입' : '특약 미가입'})`,
+          total: basePay + non3Pay + roomPay,
+          covPay,
+          nonPay: etcPay + non3Pay + roomPay,
+          covNotes: [`보장대상 급여: ${fmt(effCov)}`, `공제: ${type === 'outpatient' ? `최소 ${fmt(minOut23)} vs 급여 ${covRate3 * 100}%·일반 비급여 20%` : `급여 ${covRate3 * 100}%`}`],
+          nonNotes: [
+            `일반 비급여: ${fmt(effNonEtc)} (20% 공제)`,
+            hasOpt ? `3대 비급여: ${fmt(effNon3)} → ${fmt(non3Pay)} (${type === 'outpatient' ? '2만 vs 30%' : '30%'})` : `3대 비급여: ${fmt(effNon3)} → 0원 (특약 미가입)`,
+            ...(type === 'inpatient' && roomDiff > 0 ? [`상급병실 차액 50%: ${fmt(roomPay)}`] : [])
+          ],
+          warn: '3대 비급여(도수·체외충격파·주사·MRI) 특약 가입 여부 확인'
+        };
+      }
+
+      if (gen === '4') {
+        const covDeduct = type === 'outpatient' ? Math.max(minOut45, Math.round(effCov * 0.2)) : Math.round(effCov * 0.2);
+        const covPay = Math.max(0, effCov - covDeduct);
+        const nonDeduct = type === 'outpatient' ? Math.max(30000, Math.round(effNonAll * 0.3)) : Math.round(effNonAll * 0.3);
+        const rawNonPay = Math.max(0, effNonAll - nonDeduct);
+        const nonPay = type === 'outpatient' ? Math.min(200000, rawNonPay) : rawNonPay;
+        const covPayCap = type === 'outpatient' ? Math.min(200000, covPay) : covPay;
+        return {
+          label: '4세대 실손',
+          total: covPayCap + nonPay + roomPay,
+          covPay: covPayCap,
+          nonPay: nonPay + roomPay,
+          covNotes: [`보장대상 급여: ${fmt(effCov)}`, `공제: ${fmt(covDeduct)} (${type === 'outpatient' ? `최소 ${fmt(minOut45)} vs 20%` : '20%'})`],
+          nonNotes: [`비급여 전체: ${fmt(effNonAll)}`, `공제: ${fmt(nonDeduct)} (${type === 'outpatient' ? '최소 3만 vs 30%' : '30%'})`, ...(type === 'inpatient' && roomDiff > 0 ? [`상급병실 차액 50%: ${fmt(roomPay)}`] : [])],
+          warn: '비급여 연 100만 원 이상 수령 시 차년도 100~300% 할증 유의'
+        };
+      }
+
+      if (gen === '5') {
+        const isSevere = subopt === '5_severe';
+        const nhiRate = hospital === 'clinic' ? 0.3 : (hospital === 'hospital' ? 0.4 : 0.6);
+        const covDeduct = type === 'outpatient'
+          ? Math.max(minOut45, Math.round(effCov * nhiRate), Math.round(effCov * 0.2))
+          : Math.round(effCov * 0.2);
+        const covPay = Math.max(0, effCov - covDeduct);
+
+        let nonPay = 0;
+        let nonNote2 = '';
+        if (isSevere) {
+          nonPay = Math.max(0, effNonAll - Math.round(effNonAll * 0.3));
+          nonNote2 = '중증(특약1): 비급여 30% 공제';
+        } else {
+          const eligNon = Math.max(0, effNonAll - nonDosu - nonInj);
+          const d5 = type === 'outpatient' ? Math.max(50000, Math.round(eligNon * 0.5)) : Math.round(eligNon * 0.5);
+          nonPay = Math.max(0, eligNon - d5);
+          nonNote2 = '비중증(특약2): 도수·체외충격파·비급여주사 제외, 5만 vs 50%';
+        }
+        return {
+          label: isSevere ? '5세대 중증(특약1)' : '5세대 비중증(특약2)',
+          total: covPay + nonPay + roomPay,
+          covPay,
+          nonPay: nonPay + roomPay,
+          covNotes: [`보장대상 급여: ${fmt(effCov)}`, `공제: ${fmt(covDeduct)} (${type === 'outpatient' ? `건보 ${nhiRate * 100}% 연동` : '입원 20%'})`],
+          nonNotes: [`비급여 청구: ${fmt(effNonAll)}`, nonNote2, ...(type === 'inpatient' && roomDiff > 0 ? [`상급병실 차액 50%: ${fmt(roomPay)}`] : [])],
+          warn: '비중증 시 도수치료·체외충격파·비급여 주사제 보장 제외'
+        };
+      }
+
+      // sick (유병력자)
+      const eligSick = effCov + effNonEtc;
+      const minSick = type === 'inpatient' ? 100000 : 20000;
+      const sickDeduct = Math.max(minSick, Math.round(eligSick * 0.3));
+      const sickPay = Math.max(0, eligSick - sickDeduct);
+      const covShare = eligSick > 0 ? Math.round(sickPay * (effCov / eligSick)) : 0;
+      const nonShare = Math.max(0, sickPay - covShare) + roomPay;
+      return {
+        label: '유병력자 실손',
+        total: sickPay + roomPay,
+        covPay: covShare,
+        nonPay: nonShare,
+        covNotes: [`보장대상(급여+일반비급여): ${fmt(eligSick)}`, `공제: ${fmt(sickDeduct)} (최소 ${fmt(minSick)} vs 30%)`],
+        nonNotes: [`3대 비급여(${fmt(effNon3)}): 전액 면책`, ...(type === 'inpatient' && roomDiff > 0 ? [`상급병실 차액 50%: ${fmt(roomPay)}`] : ['처방조제비(약제비) 면책'])],
+        warn: '3대 비급여 및 약국 처방조제비 보장 제외'
+      };
+    }
+
+    function update() {
+      const name = document.getElementById('in-name').value.trim() || '고객';
+      const visitDate = document.getElementById('in-visit-date').value || '-';
+      const type = document.getElementById('in-type').value;
+      const hospital = document.getElementById('in-hospital').value;
+      const rawGen = document.getElementById('in-gen').value;
+      const joinYm = document.getElementById('in-join-ym').value;
+      const burden = document.getElementById('in-burden').value;
+
+      document.getElementById('wrap-join-ym').classList.toggle('hidden', rawGen !== 'bydate');
+      document.getElementById('wrap-room').classList.toggle('hidden', type !== 'inpatient');
+
+      const effectiveGen = rawGen === 'bydate' ? detectGenFromYm(joinYm) : rawGen;
+      refreshSubOpts(effectiveGen);
+      const subopt = document.getElementById('in-subopt').value;
+
+      const input = {
+        type,
+        hospital,
+        covTotal: val('amt-cov-part') + val('amt-cov-full'),
+        nonDosu: val('amt-non-dosu'),
+        nonInj: val('amt-non-inj'),
+        nonMri: val('amt-non-mri'),
+        nonEtc: val('amt-non-etc'),
+        roomDiff: val('amt-room'),
+        specialDeduct: val('amt-deduct-special')
+      };
+      const grossTotal = input.covTotal + input.nonDosu + input.nonInj + input.nonMri + input.nonEtc + (type === 'inpatient' ? input.roomDiff : 0);
+
+      const hospLabel = hospital === 'clinic' ? '의원급' : (hospital === 'hospital' ? '병원급' : '종합·상급종합병원');
+      const typeLabel = type === 'outpatient' ? '통원(외래)' : '입원';
+      document.getElementById('out-client-name').textContent = `${name} 님`;
+      document.getElementById('out-visit-summary').textContent = `${hospLabel} · ${typeLabel} · 진료일 ${visitDate} · 총 환자부담 ${fmt(grossTotal)}`;
+
+      const burdenBadge = document.getElementById('out-burden-badge');
+      if (burden === 'active') {
+        burdenBadge.textContent = '부담보 부위 해당 (면책)';
+        burdenBadge.className = 'px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-100 text-rose-700';
+      } else if (burden === 'unknown') {
+        burdenBadge.textContent = '부담보 미확인 (증권 체크)';
+        burdenBadge.className = 'px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800';
+      } else if (burden === 'expired') {
+        burdenBadge.textContent = '기간 한정 부담보 만료';
+        burdenBadge.className = 'px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700';
+      } else {
+        burdenBadge.textContent = '부담보 없음';
+        burdenBadge.className = 'px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700';
+      }
+
+      const heroCard = document.getElementById('hero-card');
+      const outPayout = document.getElementById('out-payout');
+      const outPayoutSub = document.getElementById('out-payout-sub');
+      const outRatePill = document.getElementById('out-rate-pill');
+      const outRateBar = document.getElementById('out-rate-bar');
+      const allgenPanel = document.getElementById('allgen-panel');
+      const genBadge = document.getElementById('out-gen-badge');
+
+      if (burden === 'active') {
+        genBadge.textContent = effectiveGen === 'unknown' ? 'DB손해보험 · 세대 미확인' : `DB손해보험 ${effectiveGen === 'sick' ? '유병력자' : effectiveGen + '세대'} 실손`;
+        heroCard.className = 'bg-rose-50 border border-rose-200 rounded-2xl p-5 sm:p-6';
+        outPayout.textContent = '0원';
+        outPayoutSub.textContent = '이번 진료 부위·질병이 부담보 특약에 해당하여 급여·비급여 전액 면책';
+        outRatePill.className = 'num px-3 py-1 rounded-full text-xs font-semibold bg-rose-600 text-white';
+        outRatePill.textContent = '보장 제외 (0.0%)';
+        outRateBar.style.width = '0%';
+        allgenPanel.classList.add('hidden');
+        document.getElementById('out-cov-payout').textContent = '0원';
+        document.getElementById('out-non-payout').textContent = '0원';
+        document.getElementById('out-cov-list').innerHTML = `<li>청구 급여: ${fmt(input.covTotal)}</li><li>부담보 해당으로 전액 면책</li>`;
+        document.getElementById('out-non-list').innerHTML = `<li>청구 비급여: ${fmt(input.nonDosu + input.nonInj + input.nonMri + input.nonEtc)}</li><li>기간 한정 부담보 만료 여부만 확인</li>`;
+      } else if (effectiveGen === 'unknown') {
+        genBadge.textContent = 'DB손해보험 · 전체 세대 비교';
+        allgenPanel.classList.remove('hidden');
+        const cases = [
+          calcForGen('1', '1_sonbo', input),
+          calcForGen('2', '2_select', input),
+          calcForGen('3', '3_with', input),
+          calcForGen('4', '4_std', input),
+          calcForGen('5', '5_mild', input),
+          calcForGen('sick', 'sick_std', input)
+        ];
+        const minPay = Math.min(...cases.map(c => c.total));
+        const maxPay = Math.max(...cases.map(c => c.total));
+        heroCard.className = 'bg-blue-50 border border-blue-200 rounded-2xl p-5 sm:p-6';
+        outPayout.textContent = `${fmt(minPay)} ~ ${fmt(maxPay)}`;
+        outPayoutSub.textContent = '가입 세대 및 특약에 따라 달라집니다 (아래 전체 비교표 확인)';
+        outRatePill.className = 'num px-3 py-1 rounded-full text-xs font-semibold bg-blue-600 text-white';
+        outRatePill.textContent = '1~5세대 · 유병력자 비교';
+        const midPct = grossTotal > 0 ? Math.min(100, (maxPay / grossTotal) * 100).toFixed(1) : '0.0';
+        outRateBar.style.width = `${midPct}%`;
+
+        document.getElementById('allgen-tbody').innerHTML = cases.map(c => `
+          <tr>
+            <td class="py-2 pr-3 font-semibold text-slate-800">${c.label}</td>
+            <td class="py-2 px-3 num font-bold text-blue-700">${fmt(c.total)}</td>
+            <td class="py-2 pl-3 text-slate-600">${c.warn}</td>
+          </tr>
+        `).join('');
+
+        document.getElementById('out-cov-payout').textContent = fmt(input.covTotal);
+        document.getElementById('out-non-payout').textContent = fmt(input.nonDosu + input.nonInj + input.nonMri + input.nonEtc);
+        document.getElementById('out-cov-list').innerHTML = `<li>일부본인부담: ${fmt(val('amt-cov-part'))}</li><li>전액본인부담: ${fmt(val('amt-cov-full'))}</li>`;
+        document.getElementById('out-non-list').innerHTML = `<li>도수·체외충격파: ${fmt(input.nonDosu)}</li><li>주사·MRI·기타: ${fmt(input.nonInj + input.nonMri + input.nonEtc)}</li>`;
+      } else {
+        allgenPanel.classList.add('hidden');
+        const res = calcForGen(effectiveGen, subopt, input);
+        genBadge.textContent = `DB손해보험 ${res.label}`;
+        const pct = grossTotal > 0 ? Math.min(100, (res.total / grossTotal) * 100).toFixed(1) : '0.0';
+        heroCard.className = 'bg-blue-50 border border-blue-200 rounded-2xl p-5 sm:p-6';
+        outPayout.textContent = fmt(res.total);
+        outPayoutSub.textContent = `급여 ${fmt(res.covPay)} + 비급여·병실 ${fmt(res.nonPay)}`;
+        outRatePill.className = 'num px-3 py-1 rounded-full text-xs font-semibold bg-blue-600 text-white';
+        outRatePill.textContent = `총액 대비 ${pct}% 보장`;
+        outRateBar.style.width = `${pct}%`;
+
+        document.getElementById('out-cov-payout').textContent = fmt(res.covPay);
+        document.getElementById('out-non-payout').textContent = fmt(res.nonPay);
+        document.getElementById('out-cov-list').innerHTML = res.covNotes.map(n => `<li>${n}</li>`).join('');
+        document.getElementById('out-non-list').innerHTML = res.nonNotes.map(n => `<li>${n}</li>`).join('');
+      }
+
+      // 서류·가드레일 점검표
+      const hasNon = (input.nonDosu + input.nonInj + input.nonMri + input.nonEtc) > 0;
+      const rows = [];
+      if (type === 'inpatient') {
+        rows.push(['입원 필수 서류', '필수 준비', '진료비 계산서, 진료비 세부내역서, 진단서(50만 이하 입·퇴원확인서 대체 가능)']);
+      } else if (grossTotal > 100000) {
+        rows.push(['통원 10만 원 초과', '진단명 서류 필수', '영수증 + 세부내역서 + 진단서·통원확인서·소견서·진료차트 중 택1']);
+      } else if (grossTotal > 30000) {
+        rows.push(['통원 3~10만 원', '처방전 필수', '영수증 + 질병분류기호 기재 처방전' + (hasNon ? ' + 진료비 세부내역서' : '')]);
+      } else {
+        rows.push(['통원 3만 원 이하', '기본 서류', '영수증' + (hasNon ? ' + 비급여 포함으로 진료비 세부내역서 필수' : '만으로 청구 가능')]);
+      }
+
+      if (burden === 'unknown') {
+        rows.push(['부담보 특약 여부', '증권 확인 필요', '이번 진료 부위 부담보가 있다면 0원 면책 (기간 한정 만료일 함께 확인)']);
+      } else if (burden === 'active') {
+        rows.push(['부담보 특약', '면책 적용', '기간 한정 부담보(1~5년) 만료 및 무치료 조건 충족 시에만 보상 가능']);
+      }
+      if (effectiveGen === '4' && hasNon) {
+        rows.push(['4세대 비급여 할증', '유의 필요', '연간 누적 비급여 수령액 100만 원 이상 시 100~300% 할증 가능']);
+      }
+      if (effectiveGen === '3' && (input.nonDosu > 0 || input.nonInj > 0 || input.nonMri > 0) && !String(subopt).startsWith('3_without')) {
+        const lim = [];
+        if (input.nonDosu > 0) lim.push('도수·체외충격파·증식 연 350만 원·50회, 10회마다 효과 확인');
+        if (input.nonInj > 0) lim.push('비급여 주사 연 250만 원·50회');
+        if (input.nonMri > 0) lim.push('비급여 MRI·MRA 연 300만 원');
+        rows.push(['3세대 3종 특약 한도', '누적 확인', lim.join(' / ') + ' (상품별 약관 확인)']);
+      }
+      if (rawGen === 'bydate' && joinYm === '2026-05') {
+        rows.push(['세대 경계 (2026년 5월)', '증권 확인', '5월 5일까지 4세대, 5월 6일부터 5세대 — 가입일을 증권에서 확인']);
+      }
+      if (type === 'outpatient' && grossTotal > 250000 && ['1','2','3'].includes(effectiveGen)) {
+        rows.push(['통원 회당 한도', '한도 확인', '1~3세대 통원은 회당 한도(상품별 약 25~30만 원, 처방조제 포함)가 있어요 — 예상액보다 적게 나올 수 있음']);
+      }
+      if (effectiveGen === '5' && (input.nonDosu > 0 || input.nonInj > 0) && subopt === '5_mild') {
+        rows.push(['5세대 비중증 제외', '보장 제외', '도수치료·체외충격파·비급여 주사제는 5세대 비중증 비급여 제외']);
+      }
+
+      document.getElementById('guardrail-tbody').innerHTML = rows.map(r => `
+        <tr>
+          <td class="py-2 pr-3 font-semibold text-slate-800">${r[0]}</td>
+          <td class="py-2 px-3 font-semibold text-blue-700">${r[1]}</td>
+          <td class="py-2 pl-3 text-slate-600">${r[2]}</td>
+        </tr>
+      `).join('');
+    }
+
+    document.querySelectorAll('input, select').forEach(el => {
+      el.addEventListener('input', update);
+      el.addEventListener('change', update);
+    });
+
+    document.getElementById('btn-preset-outpatient').addEventListener('click', () => {
+      document.getElementById('in-name').value = '이지은';
+      document.getElementById('in-type').value = 'outpatient';
+      document.getElementById('in-hospital').value = 'clinic';
+      document.getElementById('in-gen').value = '3';
+      document.getElementById('in-burden').value = 'none';
+      document.getElementById('amt-cov-part').value = 15900;
+      document.getElementById('amt-cov-full').value = 8720;
+      document.getElementById('amt-non-dosu').value = 120000;
+      document.getElementById('amt-non-inj').value = 0;
+      document.getElementById('amt-non-mri').value = 0;
+      document.getElementById('amt-non-etc').value = 0;
+      document.getElementById('amt-room').value = 0;
+      document.getElementById('amt-deduct-special').value = 0;
+      update();
+    });
+
+    document.getElementById('btn-preset-inpatient').addEventListener('click', () => {
+      document.getElementById('in-name').value = '홍길동';
+      document.getElementById('in-type').value = 'inpatient';
+      document.getElementById('in-hospital').value = 'general';
+      document.getElementById('in-gen').value = '4';
+      document.getElementById('in-burden').value = 'none';
+      document.getElementById('amt-cov-part').value = 171625;
+      document.getElementById('amt-cov-full').value = 0;
+      document.getElementById('amt-non-dosu').value = 0;
+      document.getElementById('amt-non-inj').value = 50000;
+      document.getElementById('amt-non-mri').value = 0;
+      document.getElementById('amt-non-etc').value = 31880;
+      document.getElementById('amt-room').value = 100000;
+      document.getElementById('amt-deduct-special').value = 0;
+      update();
+    });
+
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      ['amt-cov-part', 'amt-cov-full', 'amt-non-dosu', 'amt-non-inj', 'amt-non-mri', 'amt-non-etc', 'amt-room', 'amt-deduct-special'].forEach(id => {
+        document.getElementById(id).value = 0;
+      });
+      update();
+    });
+
+    document.getElementById('btn-copy-msg').addEventListener('click', () => {
+      const name = document.getElementById('in-name').value.trim() || '고객';
+      const gen = document.getElementById('out-gen-badge').textContent;
+      const payout = document.getElementById('out-payout').textContent;
+      const msg = `[${name} 님 실손 청구 사전 안내]\n• 적용 기준: ${gen}\n• 예상 수령액: ${payout}\n• 참고: 최종 지급액은 DB손해보험 심사 및 특약·부담보 여부에 따라 달라질 수 있습니다.`;
+      const showToast = () => {
+        const t = document.getElementById('toast');
+        t.style.opacity = '1';
+        setTimeout(() => { t.style.opacity = '0'; }, 2000);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(msg).then(showToast).catch(() => {
+          const ta = document.createElement('textarea');
+          ta.value = msg;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+          showToast();
+        });
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = msg;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        showToast();
+      }
+    });
+
+    // My Worklist '🩺 실손 점검' 창에서 넘겨준 조건 미리 채우기 (?gen=3&ym=2019-03&type=outpatient&hosp=clinic&kind=sick)
+    (function prefillFromUrl() {
+      const q = new URLSearchParams(location.search);
+      if (![...q.keys()].length) return;
+      const set = (id, v) => { const el = document.getElementById(id); if (el && v != null && v !== '') el.value = v; };
+      ['in-name', 'amt-cov-part', 'amt-cov-full', 'amt-non-dosu', 'amt-non-inj', 'amt-non-mri', 'amt-non-etc', 'amt-room', 'amt-deduct-special'].forEach(id => { document.getElementById(id).value = id === 'in-name' ? '' : 0; });
+      set('in-visit-date', new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10));
+      if (q.get('type') === 'inpatient' || q.get('type') === 'outpatient') set('in-type', q.get('type'));
+      if (['clinic', 'hospital', 'general'].includes(q.get('hosp'))) set('in-hospital', q.get('hosp'));
+      if (q.get('kind') === 'sick') set('in-gen', 'sick');
+      else if (/^\d{4}-\d{2}$/.test(q.get('ym') || '')) { set('in-gen', 'bydate'); set('in-join-ym', q.get('ym')); }
+      else if (q.get('gen')) set('in-gen', q.get('gen'));
+      else set('in-gen', 'unknown');
+    })();
+
+    update();
+  </script>
+</body>
+</html>

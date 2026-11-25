@@ -2356,6 +2356,9 @@ a.wl-site:hover{text-decoration:underline}
 #silson-ov .sl-gen.warn{background:#fff4dc;color:#8a5300}
 #silson-ov .sl-prev{background:#f7f8fa;border:1px dashed #c1c7d0;border-radius:10px;padding:10px 12px;font-size:12.5px;color:#42526e;line-height:1.6;white-space:pre-line;user-select:all}
 #silson-ov .sl-priv{font-size:11.5px;color:#6b778c;margin-top:6px}
+#silson-ov .sl-calc{padding:0 18px 12px}
+#silson-ov .sl-calc-btn{width:100%;border:1px dashed #8fb3e8;background:#f3f8ff;color:#0c3d8a;border-radius:10px;padding:9px 12px;font:inherit;font-size:13px;cursor:pointer;text-align:left}
+#silson-ov .sl-calc-btn:hover{background:#e9f2ff}
 #silson-ov .sl-foot{display:flex;gap:8px;padding:14px 18px;border-top:1px solid #eef0f3;background:#fafbfc;border-radius:0 0 16px 16px}
 #silson-ov .sl-btn{flex:1;border:0;border-radius:10px;padding:11px 0;font:inherit;font-size:14px;font-weight:800;color:#fff;cursor:pointer}
 #silson-ov .sl-btn.g{background:#1a73e8}#silson-ov .sl-btn.c{background:#d97757}
@@ -8578,6 +8581,7 @@ function silsonOpen(){
       <div><div class="sl-lab">이렇게 복사돼요</div><div class="sl-prev" id="sl-prev"></div>
         <div class="sl-priv">🔒 고객 이름·주민번호·전화번호는 넣지 않아요. 영수증 사진은 가린 뒤 올려 주세요.</div></div>
     </div>
+    <div class="sl-calc"><button type="button" class="sl-calc-btn" id="sl-calc">🧮 영수증 금액을 알면 — <b>실손 계산기</b>로 바로 계산</button></div>
     <div class="sl-foot"><button type="button" class="sl-btn g" data-ai="gemini">✨ 제미나이로 열기</button><button type="button" class="sl-btn c" data-ai="claude">✳️ Claude로 열기</button></div>
   </div>`;
   document.body.appendChild(ov);
@@ -8605,6 +8609,14 @@ function silsonOpen(){
   document.addEventListener('keydown',esc);
   ov.addEventListener('click',e=>{if(e.target===ov)close();});
   ov.querySelector('.sl-x').onclick=close;
+  ov.querySelector('#sl-calc').addEventListener('click',()=>{
+    const q=new URLSearchParams();const ym=ov.querySelector('#sl-ym').value;
+    if(st.kind==='유병력자 실손')q.set('kind','sick');else if(ym)q.set('ym',ym);
+    q.set('type',st.care==='입원'?'inpatient':'outpatient');
+    q.set('hosp',st.hosp==='의원'?'clinic':st.hosp==='병원'?'hospital':'general');
+    window.open('silson-calc.html?'+q.toString(),'_blank','noopener');
+    close();
+  });
   ov.querySelectorAll('.sl-btn').forEach(b=>b.addEventListener('click',async()=>{
     const url=b.dataset.ai==='gemini'?'https://gemini.google.com/app':'https://claude.ai/new';
     const t=text();
