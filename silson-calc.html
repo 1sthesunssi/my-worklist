@@ -505,8 +505,10 @@
         let nonPay = 0;
         let nonNote2 = '';
         if (isSevere) {
-          nonPay = Math.max(0, effNonAll - Math.round(effNonAll * 0.3));
-          nonNote2 = '중증(특약1): 비급여 30% 공제';
+          const big = type === 'inpatient' && (hospital === 'general' || hospital === 'tertiary');
+          const d30 = Math.round(effNonAll * 0.3), dSev = big ? Math.min(d30, 5000000) : d30;   // 종합·상급종합 입원: 연간 본인부담 상한 500만
+          nonPay = Math.max(0, effNonAll - dSev);
+          nonNote2 = '중증(특약1): 비급여 30% 공제' + (big ? (d30 > dSev ? ` → 종합·상급종합 입원 연간 본인부담 상한 500만 적용 (${fmt(d30)} → ${fmt(dSev)})` : ' · 종합·상급종합 입원 연간 본인부담 상한 500만') : '');
         } else {
           const eligNon = Math.max(0, effNonAll - nonDosu - nonInj);
           const d5 = type === 'outpatient' ? Math.max(50000, Math.round(eligNon * 0.5)) : Math.round(eligNon * 0.5);
@@ -709,7 +711,7 @@
       }
 
       if (type !== 'inpatient') {
-        rows.push(['통원 횟수·면책', '한도 확인', '1세대 통원 180일 면책 확인 / 2·3세대 연 180회 / 4세대 비급여 연 100회 한도']);
+        rows.push(['통원 횟수·면책', '한도 확인', '1세대 통원 180일 면책 확인 / 2·3세대·유병력자 연 180회 / 4세대 비급여 연 100회 한도']);
       }
       if (burden === 'unknown') {
         rows.push(['부담보 특약 여부', '증권 확인 필요', '이번 진료 부위 부담보가 있다면 0원 면책 (기간 한정 만료일 함께 확인)']);
