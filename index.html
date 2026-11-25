@@ -2390,7 +2390,7 @@ a.wl-site:hover{text-decoration:underline}
     <div id="more-wrap">
       <button class="hdr-btn icon-only" id="more-btn" onclick="toggleMoreMenu(event)" title="더 보기">···</button>
       <div id="more-menu">
-        <button onclick="closeMoreMenu();silsonOpen()"><span>🩺 실손 점검</span></button>
+        <button onclick="closeMoreMenu();silsonOpen()"><span>🩺 실손보상예상</span></button>
         <button onclick="closeMoreMenu();slPeriod='month';openSales()"><span>💰 매출</span></button>
         <button onclick="closeMoreMenu();openCalendar()"><span>🗓️ 캘린더 (마감·일기)</span></button>
         <div class="mm-sep"></div>
@@ -8179,9 +8179,9 @@ function silsonTile(){
   const el=document.createElement('div');
   el.className='auto-item silson-tile';
   el.style.setProperty('--tc','#0c66e4');el.style.setProperty('--tcbg','#e9f2ff');
-  el.title='실손 점검 — 제미나이·Claude 스킬로 보내기';
+  el.title='실손보상예상 — 제미나이·Claude 스킬로 보내기';
   const isNew=localDateStr(new Date())<=SILSON_NEW_UNTIL;
-  el.innerHTML=`${isNew?'<span class="silson-new">NEW</span>':''}<div class="auto-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v5a4 4 0 0 0 8 0V3"/><path d="M5 3H4M13 3h1"/><path d="M9 12v3a5 5 0 0 0 10 0v-2"/><circle cx="19" cy="11" r="2"/></svg></div><div class="auto-name">실손 점검</div>`;
+  el.innerHTML=`${isNew?'<span class="silson-new">NEW</span>':''}<div class="auto-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v5a4 4 0 0 0 8 0V3"/><path d="M5 3H4M13 3h1"/><path d="M9 12v3a5 5 0 0 0 10 0v-2"/><circle cx="19" cy="11" r="2"/></svg></div><div class="auto-name">실손보상예상</div>`;
   el.addEventListener('click',silsonOpen);
   return el;
 }
@@ -8198,8 +8198,8 @@ function silsonOpen(){
   let ov=document.getElementById('silson-ov');if(ov)ov.remove();
   ov=document.createElement('div');ov.id='silson-ov';
   const chips=(name,opts,on)=>`<div class="sl-row" data-k="${name}">${opts.map(o=>`<button type="button" class="sl-ch${o===on?' on':''}" data-v="${o}">${o}</button>`).join('')}</div>`;
-  ov.innerHTML=`<div class="sl-box" role="dialog" aria-label="실손 점검">
-    <div class="sl-head">🩺 <b>실손 점검</b><small>AI 스킬로 보내기</small><button type="button" class="sl-x" aria-label="닫기">✕</button></div>
+  ov.innerHTML=`<div class="sl-box" role="dialog" aria-label="실손보상예상">
+    <div class="sl-head">🩺 <b>실손보상예상</b><small>AI 스킬로 보내기</small><button type="button" class="sl-x" aria-label="닫기">✕</button></div>
     <div class="sl-body">
       <div><div class="sl-lab">가입 연월</div><input type="month" class="sl-inp" id="sl-ym" min="1990-01" max="2035-12"><span class="sl-gen" id="sl-gen">모르면 비워 두세요 — AI가 물어봐요</span></div>
       <div><div class="sl-lab">실손 종류</div>${chips('kind',['일반 실손','유병력자 실손','모름'],'일반 실손')}</div>
