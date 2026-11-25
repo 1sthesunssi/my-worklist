@@ -141,6 +141,14 @@
               <input id="amt-deduct-special" type="number" min="0" step="100" value="0" class="num w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
           </div>
+          <div id="wrap-adm" class="hidden mt-3 pt-3 border-t border-dashed border-slate-200">
+            <p class="text-xs font-bold text-slate-700 mb-2">입원 보상기간·면책기간 점검 <span class="font-normal text-slate-400">(경고만 표시 · 금액은 그대로 계산)</span></p>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div><label for="adm-first" class="block text-xs font-medium text-slate-600 mb-1">① 같은 질병 첫 입원일</label><input id="adm-first" type="date" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
+              <div><label for="adm-last" class="block text-xs font-medium text-slate-600 mb-1">② 직전 퇴원일 <span class="text-slate-400">(선택)</span></label><input id="adm-last" type="date" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
+              <div><label for="adm-paid" class="block text-xs font-medium text-slate-600 mb-1">③ 지금까지 받은 입원 보험금</label><input id="adm-paid" type="number" min="0" step="10000" value="0" class="num w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
+            </div>
+          </div>
         </div>
 
         <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-3">
@@ -260,6 +268,56 @@
       '5': [{ v: '5_mild', t: '5세대 비중증 (특약2 · 일반질환)' }, { v: '5_severe', t: '5세대 중증 (특약1 · 산정특례)' }],
       'sick': [{ v: 'sick_std', t: '유병력자 실손 (30% 공제)' }]
     };
+
+    // 입원 보상기간·면책기간 점검 (경고만, 금액은 건드리지 않음)
+    function admRows(gen, rawGen, joinYm, thisPay) {
+      const v = id => document.getElementById(id).value;
+      const day = s => s ? new Date(s + 'T00:00:00') : null;
+      const addD = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+      const ds = d => `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
+      const visit = day(v('in-visit-date')) || new Date(), first = day(v('adm-first')), last = day(v('adm-last'));
+      const paid = Number(v('adm-paid')) || 0, sum = paid + (thisPay || 0);
+      const el = first ? Math.floor((visit - first) / 864e5) : null;
+      const out = [];
+      const LIMIT = 50000000;
+      // 2세대는 가입 연월로 전기(~2015.12)/후기(2016.01~) 구분, 모르면 둘 다 안내
+      let g = gen;
+      if (gen === '2') g = rawGen === 'bydate' && joinYm ? (joinYm <= '2015-12' ? '2a' : '2b') : '2?';
+      if (gen === 'unknown' || gen === 'sick') {
+        out.push(['입원 보상·면책기간', '세대 확인 후 판단', '1세대 상품별 / 2009.10~2015.12: 365일 보상 후 90일 면책 / 2016.01~2021.06: 5,000만 원 소진 시 면책 / 2021.07~: 연간 한도 방식']);
+      }
+      if (g === '1') {
+        out.push(['1세대 입원 보상기간', '개별 약관 확인 필요', '상품별 상이 (손보 대표형: 365일 보상 후 180일 면책)' + (el !== null ? ` — 첫 입원일부터 ${el}일 경과` : '')]);
+      }
+      if (g === '2a' || g === '2?') {
+        const pre = g === '2?' ? '(2015.12 이전 가입이면) ' : '';
+        if (el !== null && el >= 365) {
+          out.push(['입원 365일 경과', '90일 면책 구간일 수 있음', `${pre}첫 입원일(${ds(first)})부터 ${el}일 경과 — 보상 365일 후 90일(${ds(addD(first, 365))}~${ds(addD(first, 454))}) 면책 가능`]);
+        } else if (el !== null) {
+          out.push(['입원 보상기간', '365일 이내', `${pre}첫 입원일부터 ${el}일 경과 — 365일(${ds(addD(first, 364))})까지 보상`]);
+        } else {
+          out.push(['입원 보상기간', '첫 입원일 입력', `${pre}같은 질병 첫 입원일을 넣으면 365일 경과(90일 면책) 여부를 점검해요`]);
+        }
+        if (last) {
+          const gap = Math.floor((visit - last) / 864e5);
+          if (gap >= 180) out.push(['직전 퇴원 후 180일 경과', '새 입원으로 인정될 수 있음', `직전 퇴원일(${ds(last)})부터 ${gap}일 — 2014.04 이후 개정 약관이면 새 입원으로 봐요 (약관 확인)`]);
+        }
+      }
+      if (g === '2b' || g === '2?' || g === '3') {
+        const pre = g === '2?' ? '(2016.01 이후 가입이면) ' : '';
+        if (sum >= LIMIT) {
+          out.push(['입원 보상한도 소진', '면책 경고', `${pre}누적 ${fmt(sum)} (이번 포함) — 5,000만 원 소진일+90일 면책 (단, 최초 입원일부터 275일 이내 조기 소진 시 최초 입원일+365일 경과 시까지 면책)` + (first ? ` · 최초 입원일+365일: ${ds(addD(first, 365))}` : '')]);
+        } else if (paid > 0) {
+          out.push(['입원 보상한도', '여유 있음', `${pre}누적 ${fmt(sum)} (이번 포함) / 5,000만 원 — 365일 경과만으로는 면책 아님`]);
+        }
+      }
+      if (g === '4' || g === '5') {
+        const lim = g === '4' ? '입·통원 합산 연 5,000만 원' : '계약연도별 연간 한도';
+        out.push(['입원 보상기간', '365일+90일 규칙 없음', `${g}세대: ${lim} 방식` + (sum >= LIMIT && g === '4' ? ` — 이번 계약연도 누적 ${fmt(sum)}(이번 포함), 한도 소진 가능` : '')]);
+      }
+      if (out.length) out.push(['면책기간 중 입원비', '소급 청구 불가', '면책기간에 생긴 입원비는 면책이 끝난 뒤에도 청구할 수 없어요']);
+      return out;
+    }
 
     function detectGenFromYm(ym) {
       if (!ym) return '4';
@@ -493,6 +551,7 @@
 
       document.getElementById('wrap-join-ym').classList.toggle('hidden', rawGen !== 'bydate');
       document.getElementById('wrap-room').classList.toggle('hidden', type !== 'inpatient');
+      document.getElementById('wrap-adm').classList.toggle('hidden', type !== 'inpatient');
 
       const effectiveGen = rawGen === 'bydate' ? detectGenFromYm(joinYm) : rawGen;
       refreshSubOpts(effectiveGen);
@@ -633,6 +692,7 @@
         if (skipped.length) rows.push(['세대 해당 없음', '차감 안 함', skipped.map(x => exItem(x.k).t.split(' (')[0]).join(' · ') + ` — ${g === 'sick' ? '유병력자' : g + '세대'}에는 이 면책이 적용되지 않아 그대로 계산했어요`]);
       }
       if (type === 'inpatient') {
+        rows.push(...admRows(effectiveGen, rawGen, joinYm, lastPay));
         rows.push(['입원 필수 서류', '필수 준비', '진료비 계산서, 진료비 세부내역서, 진단서(50만 이하 입·퇴원확인서 대체 가능)']);
       } else if (grossTotal > 100000) {
         rows.push(['통원 10만 원 초과', '진단명 서류 필수', '영수증 + 세부내역서 + 진단서·통원확인서·소견서·진료차트 중 택1']);
@@ -642,6 +702,9 @@
         rows.push(['통원 3만 원 이하', '기본 서류', '영수증' + (hasNon ? ' + 비급여 포함으로 진료비 세부내역서 필수' : '만으로 청구 가능')]);
       }
 
+      if (type !== 'inpatient') {
+        rows.push(['통원 횟수·면책', '한도 확인', '1세대 통원 180일 면책 확인 / 2·3세대 연 180회 / 4세대 비급여 연 100회 한도']);
+      }
       if (burden === 'unknown') {
         rows.push(['부담보 특약 여부', '증권 확인 필요', '이번 진료 부위 부담보가 있다면 0원 면책 (기간 한정 만료일 함께 확인)']);
       } else if (burden === 'active') {
