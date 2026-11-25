@@ -175,6 +175,7 @@
             <div>
               <div class="text-xs font-semibold text-blue-700">예상 수령액</div>
               <div id="out-payout" class="num text-3xl sm:text-4xl font-bold text-slate-900 mt-1">98,620원</div>
+              <div id="out-base-line" class="hidden text-xs font-semibold text-slate-700 mt-1"></div>
               <div id="out-payout-sub" class="text-xs text-slate-600 mt-1">급여 14,620원 + 비급여 84,000원</div>
             </div>
             <span id="out-rate-pill" class="num px-3 py-1 rounded-full text-xs font-semibold bg-blue-600 text-white">총액 대비 68.2% 보장</span>
@@ -538,6 +539,7 @@
       const allgenPanel = document.getElementById('allgen-panel');
       const genBadge = document.getElementById('out-gen-badge');
 
+      document.getElementById('out-base-line').classList.add('hidden');
       if (burden === 'active') {
         genBadge.textContent = effectiveGen === 'unknown' ? 'DB손해보험 · 세대 미확인' : `DB손해보험 ${effectiveGen === 'sick' ? '유병력자' : effectiveGen + '세대'} 실손`;
         heroCard.className = 'bg-rose-50 border border-rose-200 rounded-2xl p-5 sm:p-6';
@@ -588,13 +590,26 @@
         allgenPanel.classList.add('hidden');
         const res = calcForGen(effectiveGen, subopt, input);
         lastPay = res.total;
+        // 보장률: 대표 = 낸 돈(영수증 총 청구) 기준, 보조 = 약관상 보장대상 기준 (면책·제외 차감액이 있을 때만) — 제미나이와 합의한 라벨
+        const exSum = exRows().filter(x => exApplies(x, effectiveGen)).reduce((a, x) => a + x.amt, 0);
+        const cutSum = Math.min(grossTotal, exSum + input.specialDeduct);
+        const baseAmt = Math.max(0, grossTotal - cutSum);
+        const baseLine = document.getElementById('out-base-line');
+        if (cutSum > 0 && baseAmt > 0) {
+          const pct2 = Math.min(100, (res.total / baseAmt) * 100).toFixed(1);
+          const parts = [];
+          if (exSum > 0) parts.push(`면책 ${fmt(exSum)} 제외`);
+          if (input.specialDeduct > 0) parts.push(`공단환급·산재·자보 ${fmt(input.specialDeduct)} 제외`);
+          baseLine.textContent = `약관상 보장대상(${fmt(baseAmt)}) 기준 ${pct2}% · ${parts.join(' · ')}`;
+          baseLine.classList.remove('hidden');
+        } else baseLine.classList.add('hidden');
         genBadge.textContent = `DB손해보험 ${res.label}`;
         const pct = grossTotal > 0 ? Math.min(100, (res.total / grossTotal) * 100).toFixed(1) : '0.0';
         heroCard.className = 'bg-blue-50 border border-blue-200 rounded-2xl p-5 sm:p-6';
         outPayout.textContent = fmt(res.total);
         outPayoutSub.textContent = `급여 ${fmt(res.covPay)} + 비급여·병실 ${fmt(res.nonPay)}`;
         outRatePill.className = 'num px-3 py-1 rounded-full text-xs font-semibold bg-blue-600 text-white';
-        outRatePill.textContent = `총액 대비 ${pct}% 보장`;
+        outRatePill.textContent = `낸 돈 ${fmt(grossTotal)} 중 ${pct}% 수령`;
         outRateBar.style.width = `${pct}%`;
 
         document.getElementById('out-cov-payout').textContent = fmt(res.covPay);
